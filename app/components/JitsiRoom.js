@@ -66,6 +66,8 @@ export default function JitsiRoom({ role = "viewer", room }) {
             disableInviteFunctions: true,
             disableTileView: !isHost,
             disableSelfView: !isHost,
+            desktopSharingFrameRate: { min: 30, max: 30 },
+            resolution: 720,
             filmstrip: { disabled: !isHost },
             hideConferenceSubject: true,
             hideConferenceTimer: true,
