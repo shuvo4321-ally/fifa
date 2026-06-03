@@ -45,7 +45,7 @@ export default function JitsiRoom({ role = "viewer", room }) {
       "settings",
       "hangup",
     ];
-    const toolbar = isHost ? hostToolbar : ["fullscreen"];
+    const toolbar = isHost ? hostToolbar : ["fullscreen", "volume"];
 
     (async () => {
       try {
