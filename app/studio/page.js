@@ -9,6 +9,8 @@ import { LIVE_MATCHES } from "../data/channels";
 // gated by BROADCAST_PASSWORD in .env.local. Pick which match you're broadcasting.
 export default function Studio() {
   const [match, setMatch] = useState(null);  // 1) Choose which match to broadcast
+  const [quality, setQuality] = useState("720p30"); // Default sweet spot
+
   if (!match) {
     return (
       <main className="live-page">
@@ -63,16 +65,30 @@ export default function Studio() {
           </span>
           <h1 className="live-title">Go live</h1>
         </div>
-        <button
-          className="live-broadcast-link live-switch"
-          onClick={() => setMatch(null)}
-        >
-          ← Switch match
-        </button>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <select 
+            value={quality} 
+            onChange={(e) => setQuality(e.target.value)}
+            className="search-input"
+            style={{ padding: "0.5rem", borderRadius: "8px", background: "rgba(255,255,255,0.1)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" }}
+          >
+            <option value="1080p60">1080p @ 60 FPS (Highest Quality, High Bandwidth)</option>
+            <option value="1080p30">1080p @ 30 FPS (High Quality, Medium Bandwidth)</option>
+            <option value="720p60">720p @ 60 FPS (Smooth Motion, Medium Bandwidth)</option>
+            <option value="720p30">720p @ 30 FPS (Standard, Low Bandwidth)</option>
+            <option value="480p30">480p @ 30 FPS (SD, Lowest Bandwidth)</option>
+          </select>
+          <button
+            className="live-broadcast-link live-switch"
+            onClick={() => setMatch(null)}
+          >
+            ← Switch match
+          </button>
+        </div>
       </div>
 
       <div className="live-stage">
-        <JitsiRoom role="host" room={match.room} />
+        <JitsiRoom role="host" room={match.room} quality={quality} />
       </div>
 
       <p className="live-note">
