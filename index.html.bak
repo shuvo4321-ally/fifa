@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Match Archive</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --card: #131c2e;
+      --line: #1f2c44;
+      --text: #e8edf6;
+      --muted: #9fb0cc;
+      --accent: #2dd4bf;
+      --yt: #ff0000;
+      --warn: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 28px 18px 56px;
+    }
+    .wrap { max-width: 1040px; margin: 0 auto; }
+    h1 { font-size: 1.5rem; margin: 0 0 4px; }
+    .sub { color: var(--muted); font-size: .9rem; margin: 0 0 24px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Shared 16:9 frame for every source type */
+    .frame {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      overflow: hidden;
+    }
+    .frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+    /* Click-to-play poster */
+    .poster { cursor: pointer; text-decoration: none; display: block; height: 100%; }
+    .poster .play {
+      position: absolute; inset: 0; margin: auto;
+      width: 64px; height: 46px; border-radius: 12px;
+      background: var(--yt); display: grid; place-items: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,.4); transition: transform .15s ease;
+    }
+    .poster:hover .play { transform: scale(1.08); }
+    .poster .play svg { width: 24px; height: 24px; }
+    .poster .corner {
+      position: absolute; right: 10px; bottom: 10px;
+      background: rgba(0,0,0,.7); color: #fff; font-size: .72rem; font-weight: 600;
+      padding: 4px 8px; border-radius: 6px;
+    }
+
+    /* Fallback card for sources that can't be safely embedded */
+    .blocked {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 10px; text-align: center; padding: 18px;
+      background: repeating-linear-gradient(45deg,#11192a,#11192a 12px,#0e1626 12px,#0e1626 24px);
+    }
+    .blocked svg { width: 34px; height: 34px; color: var(--warn); }
+    .blocked b { font-size: .92rem; }
+    .blocked span { color: var(--muted); font-size: .78rem; line-height: 1.4; max-width: 240px; }
+
+    .meta { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; }
+    .meta .top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .meta h2 { font-size: 1rem; margin: 0; }
+    .meta .year { color: var(--muted); font-size: .8rem; white-space: nowrap; }
+    .meta p { color: var(--muted); font-size: .85rem; margin: 8px 0 0; line-height: 1.5; }
+    .tags { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag {
+      font-size: .72rem; color: var(--accent);
+      border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px;
+    }
+    .src {
+      margin-top: 10px; font-size: .72rem; color: var(--muted);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; }
+    .dot.ok { background: var(--accent); }
+    .dot.bad { background: var(--warn); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Match Archive</h1>
+    <p class="sub">One data model, three safe source types — embed, link-out, and a fallback for anything that can't be trusted.</p>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <script>
+    // ---- Your whole archive is just this array. Add a match = add a line. ----
+    const MATCHES = [
+      {
+        title: "Full Match Replay",
+        year: "2024",
+        source: "streamtape",
+        id: "4dja7jLLBjsKbzO",
+        recap: "Full match provided via Streamtape.",
+        tags: ["Full match"]
+      }
+    ];
+
+    const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>';
+
+    function ytThumb(id) {
+      return `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+    }
+
+    function frameHTML(m) {
+      if (m.source === "youtube") {
+        // Lazy click-to-play: no iframe until the user clicks.
+        return `<div class="frame" data-yt="${m.id}">
+          <a class="poster" href="#" onclick="return playYouTube(this,'${m.id}','${m.title}')">
+            <img src="${ytThumb(m.id)}" alt="" loading="lazy">
+            <span class="play">${ICON_PLAY}</span>
+            <span class="corner">Click to play</span>
+          </a></div>`;
+      }
+      if (m.source === "youtube-link") {
+        return `<div class="frame">
+          <a class="poster" href="https://www.youtube.com/watch?v=${m.id}" target="_blank" rel="noopener">
+            <img src="${ytThumb(m.id)}" alt="" loading="lazy">
+            <span class="play">${ICON_PLAY}</span>
+            <span class="corner">Watch on YouTube</span>
+          </a></div>`;
+      }
+      if (m.source === "dailymotion") {
+        return `<div class="frame">
+          <iframe src="https://geo.dailymotion.com/player.html?video=${m.id}"
+            allow="web-share; fullscreen; picture-in-picture" allowfullscreen
+            loading="lazy" title="${m.title}"></iframe></div>`;
+      }
+      if (m.source === "streamtape") {
+        return `<div class="frame">
+          <iframe src="https://streamtape.com/e/${m.id}/"
+            allowfullscreen allowtransparency allow="autoplay" scrolling="no" frameborder="0"
+            title="${m.title}"></iframe></div>`;
+      }
+      // blocked / untrusted -> fallback, never load the source
+      return `<div class="frame"><div class="blocked">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+        <b>Source not available</b>
+        <span>This match isn't on a safe, embeddable source yet.</span>
+      </div></div>`;
+    }
+
+    function sourceLabel(m) {
+      const map = {
+        "youtube":      ["ok",  "YouTube · embed"],
+        "youtube-link": ["ok",  "YouTube · link-out"],
+        "dailymotion":  ["ok",  "Dailymotion · embed"],
+        "streamtape":   ["ok",  "Streamtape · embed"],
+        "blocked":      ["bad", "Unsafe source · not embedded"]
+      };
+      const [cls, txt] = map[m.source] || ["bad", "Unknown"];
+      return `<div class="src"><span class="dot ${cls}"></span>${txt}</div>`;
+    }
+
+    function cardHTML(m) {
+      const tags = m.tags.map(t => `<span class="tag">${t}</span>`).join("");
+      return `<article class="card">
+        ${frameHTML(m)}
+        <div class="meta">
+          <div class="top"><h2>${m.title}</h2><span class="year">${m.year}</span></div>
+          <p>${m.recap}</p>
+          <div class="tags">${tags}</div>
+          ${sourceLabel(m)}
+        </div>
+      </article>`;
+    }
+
+    // Swap poster -> iframe on click (YouTube only)
+    function playYouTube(el, id, title) {
+      const frame = el.closest(".frame");
+      frame.innerHTML =
+        `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0"
+          title="${title}" allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
+          allowfullscreen></iframe>`;
+      return false;
+    }
+
+    document.getElementById("grid").innerHTML = MATCHES.map(cardHTML).join("");
+  </script>
+</body>
+</html>
