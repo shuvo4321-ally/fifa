@@ -8,76 +8,7 @@ import { LIVE_MATCHES } from "../data/channels";
 // Hidden broadcaster page (not linked anywhere). Reachable only at /studio and
 // gated by BROADCAST_PASSWORD in .env.local. Pick which match you're broadcasting.
 export default function Studio() {
-  const [authed, setAuthed] = useState(false);
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [match, setMatch] = useState(null);
-
-  useEffect(() => {
-    if (sessionStorage.getItem("cron_broadcast_ok") === "1") setAuthed(true);
-  }, []);
-
-  const submit = async (e) => {
-    e.preventDefault();
-    setBusy(true);
-    setError("");
-    try {
-      const res = await fetch("/api/broadcast-auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        sessionStorage.setItem("cron_broadcast_ok", "1");
-        setAuthed(true);
-      } else {
-        setError(data.error || "Wrong password.");
-      }
-    } catch {
-      setError("Could not verify — try again.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  // 1) Locked
-  if (!authed) {
-    return (
-      <main className="live-page">
-        <div className="live-head">
-          <div>
-            <span className="live-kicker">
-              <span className="live-dot is-on" />
-              Studio
-            </span>
-            <h1 className="live-title">Broadcaster sign-in</h1>
-          </div>
-        </div>
-        <div className="live-stage">
-          <form className="live-gate live-cover" onSubmit={submit}>
-            <p className="live-overlay-title">Broadcaster sign-in</p>
-            <p className="live-overlay-sub">Only you can start a stream.</p>
-            <input
-              type="password"
-              className="search-input live-gate-input"
-              placeholder="Broadcast password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoFocus
-            />
-            <button className="live-go" type="submit" disabled={busy}>
-              {busy ? "Checking…" : "Unlock broadcast"}
-            </button>
-            {error && <span className="live-error">{error}</span>}
-          </form>
-        </div>
-      </main>
-    );
-  }
-
-  // 2) Choose which match to broadcast
+  const [match, setMatch] = useState(null);  // 1) Choose which match to broadcast
   if (!match) {
     return (
       <main className="live-page">
@@ -121,7 +52,7 @@ export default function Studio() {
     );
   }
 
-  // 3) Broadcasting the chosen match
+  // 2) Broadcasting the chosen match
   return (
     <main className="live-page">
       <div className="live-head">
