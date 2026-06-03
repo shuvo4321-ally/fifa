@@ -1,64 +1,70 @@
 import { NextResponse } from 'next/server';
 
-function generateMockData(team1, team2) {
-  // Deterministic "random" based on team names to keep it consistent
-  const seed = (team1.trim() + team2.trim()).length;
-  const score1 = seed % 4;
-  const score2 = (seed * 7) % 5;
-  
-  const statusList = ["Live - 34'", "Live - 78'", "Half Time", "Full Time"];
-  const status = statusList[(seed * 2) % 4];
-
-  const events = [];
-  if (score1 > 0) {
-    events.push({ time: "12'", team: team1, type: "goal", player: "Forward (9)" });
-  }
-  if (score2 > 0) {
-    events.push({ time: "28'", team: team2, type: "goal", player: "Winger (11)" });
-  }
-  if (score1 > 1) {
-    events.push({ time: "67'", team: team1, type: "goal", player: "Midfielder (10)" });
-  }
-  if (score2 > 1) {
-    events.push({ time: "89'", team: team2, type: "goal", player: "Sub (21)" });
-  }
-  if (score1 > 2) {
-    events.push({ time: "90+2'", team: team1, type: "goal", player: "Defender (4)" });
-  }
-
-  // Sort events by time loosely
-  events.sort((a, b) => parseInt(a.time) - parseInt(b.time));
-
-  return {
-    score: {
-      team1: score1,
-      team2: score2
-    },
-    status,
-    events,
-    stats: {
-      possession: { team1: 45 + (seed % 15), team2: 55 - (seed % 15) },
-      shotsOnTarget: { team1: score1 + (seed % 4), team2: score2 + (seed % 3) },
-      yellowCards: { team1: seed % 3, team2: (seed * 2) % 3 },
-      corners: { team1: 3 + (seed % 5), team2: 2 + (seed % 4) }
-    }
-  };
-}
+// Simple in-memory cache to stay far below the 10 requests/minute limit
+let cachedData = null;
+let lastFetchTime = 0;
+const CACHE_TTL = 60000; // 60 seconds
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
-  const match = searchParams.get('match');
+  const matchParam = searchParams.get('match');
   
-  if (!match || !match.includes(' vs ')) {
+  if (!matchParam || !matchParam.includes(' vs ')) {
     return NextResponse.json({ error: 'Invalid match format' }, { status: 400 });
   }
 
-  const [team1, team2] = match.split(' vs ');
+  let [team1, team2] = matchParam.split(' vs ');
+  team1 = team1.trim();
+  team2 = team2.trim();
   
-  // Add a slight delay to simulate network request latency
-  await new Promise(resolve => setTimeout(resolve, 800));
+  const apiKey = process.env.FOOTBALL_DATA_API_KEY;
+  if (!apiKey) {
+    return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
+  }
 
-  const data = generateMockData(team1, team2);
-  
-  return NextResponse.json(data);
+  try {
+    const now = Date.now();
+    // Only fetch if cache is empty or expired
+    if (!cachedData || now - lastFetchTime > CACHE_TTL) {
+      const res = await fetch('https://api.football-data.org/v4/competitions/WC/matches', {
+        headers: { 'X-Auth-Token': apiKey },
+        // Use Next.js cache bypass for this specific internal fetch to let our custom TTL handle it
+        cache: 'no-store'
+      });
+      
+      if (res.ok) {
+        cachedData = await res.json();
+        lastFetchTime = now;
+      } else if (cachedData) {
+        // If API fails (e.g. rate limit), fallback to stale cache silently
+      } else {
+        throw new Error(`API Error: ${res.status}`);
+      }
+    }
+
+    if (!cachedData || !cachedData.matches) {
+       return NextResponse.json({ error: 'No data available' }, { status: 404 });
+    }
+
+    // Try to find the specific match.
+    // We use a loose includes match because API names might differ slightly (e.g. "Korea Republic" vs "South Korea").
+    const foundMatch = cachedData.matches.find(m => {
+       const home = m.homeTeam?.name || '';
+       const away = m.awayTeam?.name || '';
+       
+       const matchForward = (home.includes(team1) || team1.includes(home)) && (away.includes(team2) || team2.includes(away));
+       const matchReverse = (home.includes(team2) || team2.includes(home)) && (away.includes(team1) || team1.includes(away));
+       
+       return matchForward || matchReverse;
+    });
+
+    if (foundMatch) {
+       return NextResponse.json(foundMatch);
+    } else {
+       // If the API doesn't have this exact match yet, we return SCHEDULED so the UI gracefully falls back to the countdown
+       return NextResponse.json({ status: 'SCHEDULED', notFound: true });
+    }
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
