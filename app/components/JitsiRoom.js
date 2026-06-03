@@ -68,12 +68,6 @@ export default function JitsiRoom({ role = "viewer", room }) {
             disableSelfView: !isHost,
             desktopSharingFrameRate: { min: 25, max: 25 },
             resolution: 1080,
-            constraints: {
-              video: {
-                height: { ideal: 1080, max: 1080, min: 720 },
-                frameRate: { ideal: 25, max: 25, min: 25 }
-              }
-            },
             filmstrip: { disabled: !isHost },
             hideConferenceSubject: true,
             hideConferenceTimer: true,
