@@ -6,16 +6,12 @@ const JITSI_DOMAIN = "meet.jit.si";
 // Long, unique room name so strangers don't wander in. Change it to your own.
 const ROOM_NAME = "CRONLiveTV-3f9Qx2Lp";
 
-export default function JitsiRoom({ role = "viewer", room, quality = "720p30" }) {
+export default function JitsiRoom({ role = "viewer", room }) {
   const isHost = role === "host";
   const containerRef = useRef(null);
   const apiRef = useRef(null);
   const [error, setError] = useState("");
   const [joined, setJoined] = useState(false); // true once the room is actually live
-
-  // Parse quality setting
-  const res = quality.includes("1080") ? 1080 : quality.includes("480") ? 480 : 720;
-  const fps = parseInt(quality.split("p")[1] || "30");
 
   useEffect(() => {
     let cancelled = false;
@@ -70,8 +66,8 @@ export default function JitsiRoom({ role = "viewer", room, quality = "720p30" })
             disableInviteFunctions: true,
             disableTileView: !isHost,
             disableSelfView: !isHost,
-            desktopSharingFrameRate: { min: fps, max: fps },
-            resolution: res,
+            desktopSharingFrameRate: { min: 30, max: 30 },
+            resolution: 1080,
             filmstrip: { disabled: !isHost },
             hideConferenceSubject: true,
             hideConferenceTimer: true,
@@ -126,7 +122,7 @@ export default function JitsiRoom({ role = "viewer", room, quality = "720p30" })
         apiRef.current = null;
       }
     };
-  }, [isHost, room, quality]);
+  }, [isHost, room]);
 
   return (
     <>
