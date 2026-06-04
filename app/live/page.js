@@ -1,48 +1,31 @@
 import Link from "next/link";
-import { LIVE_MATCHES } from "../data/channels";
+import JitsiRoom from "../components/JitsiRoom";
 
 export const metadata = {
   title: "Live TV — CRON",
-  description: "Live match channels.",
+  description: "Live fan-broadcast.",
 };
 
-export default function LiveTV() {
+export default function BroadcastGuide() {
   return (
-    <main className="live-page">
-      <div className="live-head live-head--center">
-        <div>
-          <span className="live-kicker">
-            <span className="live-dot is-on" />
-            Live TV
-          </span>
-          <h1 className="live-title">Matches</h1>
-        </div>
+    <main
+      className="live-page"
+      style={{
+        padding: "2rem",
+        minHeight: "80vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+      }}
+    >
+      <div className="live-stage" style={{ width: "100%", maxWidth: "1200px", margin: "0 auto" }}>
+        <JitsiRoom role="viewer" room="CRON-GLOBAL-LIVE" />
       </div>
 
-      <div className="live-matches">
-        {LIVE_MATCHES.map((m) => (
-          <Link key={m.slug} href={`/live/${m.slug}`} className="fixture-card">
-            <div className="fixture-card-top">
-              <div className="fixture-card-team">
-                {m.flag1 && <img src={m.flag1} alt="" className="fixture-card-flag" />}
-                <span>{m.team1}</span>
-              </div>
-              <span className="fixture-card-vs">VS</span>
-              <div className="fixture-card-team fixture-card-team--right">
-                <span>{m.team2}</span>
-                {m.flag2 && <img src={m.flag2} alt="" className="fixture-card-flag" />}
-              </div>
-            </div>
-            <div className="fixture-card-meta">
-              {m.date} · {m.time} · {m.stage}
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      <p className="live-note">
-        Pick a match to open its channel — it plays automatically when that game is
-        being broadcast.
+      <p style={{ textAlign: "center", marginTop: "var(--space-6)" }}>
+        <Link href="/studio" className="live-broadcast-link">
+          Are you the broadcaster? Open Studio →
+        </Link>
       </p>
     </main>
   );

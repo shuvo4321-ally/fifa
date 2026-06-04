@@ -6,10 +6,12 @@ const JITSI_DOMAIN = "meet.jit.si";
 // Long, unique room name so strangers don't wander in. Change it to your own.
 const ROOM_NAME = "CRONLiveTV-3f9Qx2Lp";
 
-export default function JitsiRoom({ role = "viewer", room }) {
+export default function JitsiRoom({ role = "viewer", room, onLiveChange }) {
   const isHost = role === "host";
   const containerRef = useRef(null);
   const apiRef = useRef(null);
+  const onLiveRef = useRef(onLiveChange);
+  onLiveRef.current = onLiveChange;
   const [error, setError] = useState("");
   const [joined, setJoined] = useState(false); // true once the room is actually live
 
@@ -102,13 +104,19 @@ export default function JitsiRoom({ role = "viewer", room }) {
         // Until then meet.jit.si shows its own "waiting for moderator / log-in"
         // screen — we keep our cover over it and only reveal on join.
         api.addEventListener("videoConferenceJoined", () => {
-          if (!cancelled) setJoined(true);
+          if (cancelled) return;
+          setJoined(true);
+          onLiveRef.current?.(true);
         });
         api.addEventListener("videoConferenceLeft", () => {
-          if (!cancelled) setJoined(false);
+          if (cancelled) return;
+          setJoined(false);
+          onLiveRef.current?.(false);
         });
         api.addEventListener("readyToClose", () => {
-          if (!cancelled) setJoined(false);
+          if (cancelled) return;
+          setJoined(false);
+          onLiveRef.current?.(false);
         });
       } catch (e) {
         if (!cancelled) setError(e.message || "Failed to start the room.");

@@ -1,85 +1,181 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 import JitsiRoom from "../components/JitsiRoom";
-import { LIVE_MATCHES } from "../data/channels";
 
-// Hidden broadcaster page (not linked anywhere). Reachable only at /studio and
 export default function Studio() {
-  const [match, setMatch] = useState(null);  // 1) Choose which match to broadcast
+  // --- Password gate ---
+  const [unlocked, setUnlocked] = useState(false);
+  const [pw, setPw] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [checking, setChecking] = useState(false);
 
-  if (!match) {
+  // --- Broadcast state ---
+  const [isLive, setIsLive] = useState(false);
+  const [joined, setJoined] = useState(false);
+
+  // Remember a successful unlock for this browser tab.
+  useEffect(() => {
+    if (typeof window !== "undefined" && sessionStorage.getItem("cron-studio-ok") === "1") {
+      setUnlocked(true);
+    }
+  }, []);
+
+  const submitPw = async (e) => {
+    e.preventDefault();
+    setChecking(true);
+    setAuthError("");
+    try {
+      const r = await fetch("/api/broadcast-auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: pw }),
+      });
+      if (r.ok) {
+        sessionStorage.setItem("cron-studio-ok", "1");
+        setUnlocked(true);
+      } else {
+        const d = await r.json().catch(() => ({}));
+        setAuthError(d.error || "Wrong password.");
+      }
+    } catch {
+      setAuthError("Couldn't verify — try again.");
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const goLive = () => setIsLive(true);
+
+  const endLive = () => {
+    setIsLive(false);
+    setJoined(false);
+  };
+
+  const handleLiveChange = useCallback((live) => {
+    setJoined(live);
+    if (!live) setIsLive(false);
+  }, []);
+
+  // --- Locked: ask for the broadcaster password ---
+  if (!unlocked) {
     return (
-      <main className="live-page">
-        <div className="live-head">
-          <div>
-            <span className="live-kicker">
-              <span className="live-dot is-on" />
-              Studio
-            </span>
-            <h1 className="live-title">Pick a match to broadcast</h1>
-          </div>
-          <Link href="/live" className="live-broadcast-link">
-            View public page →
-          </Link>
-        </div>
-        <div className="live-matches">
-          {LIVE_MATCHES.map((m) => (
-            <button
-              key={m.slug}
-              className="fixture-card"
-              onClick={() => setMatch(m)}
-            >
-              <div className="fixture-card-top">
-                <div className="fixture-card-team">
-                  {m.flag1 && <img src={m.flag1} alt="" className="fixture-card-flag" />}
-                  <span>{m.team1}</span>
-                </div>
-                <span className="fixture-card-vs">VS</span>
-                <div className="fixture-card-team fixture-card-team--right">
-                  <span>{m.team2}</span>
-                  {m.flag2 && <img src={m.flag2} alt="" className="fixture-card-flag" />}
-                </div>
-              </div>
-              <div className="fixture-card-meta">
-                {m.date} · {m.time} · {m.stage}
-              </div>
-            </button>
-          ))}
-        </div>
+      <main
+        className="live-page"
+        style={{
+          minHeight: "80vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "2rem",
+        }}
+      >
+        <form
+          onSubmit={submitPw}
+          style={{
+            width: "100%",
+            maxWidth: 360,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "var(--space-4)",
+            textAlign: "center",
+          }}
+        >
+          <span className="live-kicker">
+            <span className="live-dot is-on" />
+            Broadcaster
+          </span>
+          <h1 className="live-overlay-title">Studio access</h1>
+          <p className="live-overlay-sub">
+            Enter the broadcaster password to go live.
+          </p>
+          <input
+            type="password"
+            className="search-input"
+            placeholder="Password"
+            value={pw}
+            onChange={(e) => setPw(e.target.value)}
+            autoFocus
+            style={{ maxWidth: 280 }}
+          />
+          {authError && <p className="live-error">{authError}</p>}
+          <button className="studio-golive" type="submit" disabled={checking}>
+            {checking ? "Checking…" : "Unlock studio"}
+          </button>
+        </form>
       </main>
     );
   }
 
-  // 2) Broadcasting the chosen match
+  // --- Unlocked: the broadcaster studio ---
   return (
-    <main className="live-page">
-      <div className="live-head">
-        <div>
-          <span className="live-kicker">
-            <span className="live-dot is-on" />
-            On air · {match.team1} vs {match.team2}
-          </span>
-          <h1 className="live-title">Go live</h1>
-        <button
-          className="live-broadcast-link live-switch"
-          onClick={() => setMatch(null)}
-        >
-          ← Switch match
-        </button>
-      </div>
+    <main
+      className="live-page"
+      style={{
+        padding: "2rem",
+        minHeight: "80vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        className="studio-stage-wrap"
+        style={{ margin: "0 auto", maxWidth: "1200px", width: "100%", gap: "2rem" }}
+      >
+        <div className="live-stage">
+          {isLive ? (
+            <JitsiRoom role="host" room="CRON-GLOBAL-LIVE" onLiveChange={handleLiveChange} />
+          ) : (
+            <div className="live-overlay live-cover">
+              <span className="live-kicker">
+                <span className="live-dot" />
+                Ready
+              </span>
+              <p className="live-overlay-title">You're not on air yet</p>
+              <p className="live-overlay-sub">
+                Hit Go live, then share your screen or switch to OBS Virtual Camera.
+              </p>
+              <button className="studio-golive" onClick={goLive}>
+                <span className="live-dot is-on" />
+                Go live
+              </button>
+            </div>
+          )}
+        </div>
 
-      <div className="live-stage">
-        <JitsiRoom role="host" room={match.room} />
+        <aside className="studio-panel" style={{ marginTop: 0 }}>
+          <span className="channel-stage">Go live in 3 steps</span>
+          <ol className="studio-checklist">
+            <li>
+              <span className="studio-step-num">1</span>
+              <span>
+                <b>Go live</b> to claim the channel.
+              </span>
+            </li>
+            <li>
+              <span className="studio-step-num">2</span>
+              <span>
+                Click the <b>screen-share</b> (monitor) icon, or <b>Settings → Camera → OBS
+                Virtual Camera</b>.
+              </span>
+            </li>
+            <li>
+              <span className="studio-step-num">3</span>
+              <span>If meet.jit.si asks, log in once so you're the moderator.</span>
+            </li>
+          </ol>
+          <p className="studio-watch">
+            Viewers watch at <b>/live</b>
+          </p>
+          {isLive && (
+            <button className="live-stop" onClick={endLive}>
+              End broadcast
+            </button>
+          )}
+        </aside>
       </div>
-
-      <p className="live-note">
-        Broadcasting <strong>{match.team1} vs {match.team2}</strong> — viewers watch
-        at <strong>/live/{match.slug}</strong>. Click the <strong>screen-share</strong>{" "}
-        (monitor) icon to go live, or <strong>Settings → Camera → OBS Virtual
-        Camera</strong>. If meet.jit.si asks, log in once to be the moderator.
-      </p>
     </main>
   );
 }

@@ -1,59 +1,135 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef, useState, useEffect } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGSAP } from "@gsap/react";
 
-export default function Hero({ hero }) {
+gsap.registerPlugin(ScrollTrigger);
+
+export default function Hero({ hero, slides, pinned = false, onCta }) {
+  const heroRef = useRef(null);
   const bgRef = useRef(null);
   const contentRef = useRef(null);
 
-  // Premium parallax: the hero is pinned (sticky) while the content scrolls up
-  // over it. On scroll the background slowly fades out and zooms a touch — a
-  // cinematic recede — and the title lifts + fades. Opacity + transform are
-  // GPU-composited, so it stays smooth on phones.
+  const isCarousel = Array.isArray(slides) && slides.length > 1;
+  const [active, setActive] = useState(0);
+  const current = isCarousel ? slides[active] : hero;
+  const layers = isCarousel ? slides : [current];
+  const dotCount = isCarousel ? slides.length : 5;
+  const activeIndex = isCarousel ? active : 0;
+
+  // Auto-rotate the carousel; the dots reflect (and control) the active slide.
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!isCarousel) return;
+    const id = setInterval(
+      () => setActive((a) => (a + 1) % slides.length),
+      6000
+    );
+    return () => clearInterval(id);
+  }, [isCarousel, slides]);
 
-    let raf = 0;
-    const update = () => {
-      raf = 0;
-      const vh = window.innerHeight || 1;
-      const p = Math.min(Math.max(window.scrollY / vh, 0), 1); // 0 → 1 over one screen
-      if (bgRef.current) {
-        bgRef.current.style.opacity = `${1 - p}`;
-        bgRef.current.style.transform = `scale(${1 + p * 0.1})`;
-      }
-      if (contentRef.current) {
-        contentRef.current.style.opacity = `${1 - p * 1.3}`;
-        contentRef.current.style.transform = `translate3d(0, ${-p * 32}px, 0)`;
-      }
-    };
+  useGSAP(
+    () => {
+      // Background zoom-in entrance (all viewports — it never hides the text).
+      gsap.fromTo(
+        bgRef.current,
+        { scale: 1.12 },
+        { scale: 1.0, duration: 2.6, ease: "power2.out" }
+      );
 
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(update);
-    };
+      // Text/scroll-driven animations run on DESKTOP ONLY — on phones the short
+      // hero would otherwise fade the copy to near-invisible (see mobile notes).
+      const mm = gsap.matchMedia();
+      mm.add("(min-width: 641px)", () => {
+        const elements = contentRef.current.children;
+        if (elements.length > 0) {
+          gsap.fromTo(
+            elements,
+            { opacity: 0, y: 28, filter: "blur(8px)" },
+            {
+              opacity: 1,
+              y: 0,
+              filter: "blur(0px)",
+              duration: 1.1,
+              stagger: 0.12,
+              delay: 0.3,
+              ease: "power3.out",
+            }
+          );
+        }
 
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll, { passive: true });
-    update();
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
+        gsap.fromTo(
+          contentRef.current,
+          { opacity: 1, y: 0, filter: "blur(0px)" },
+          {
+            opacity: 0,
+            y: -36,
+            filter: "blur(6px)",
+            ease: "power2.in",
+            immediateRender: false,
+            scrollTrigger: {
+              trigger: heroRef.current,
+              start: "bottom bottom",
+              end: "bottom 55%",
+              scrub: 0.6,
+            },
+          }
+        );
+
+        gsap.to(bgRef.current, {
+          scale: 1.18,
+          yPercent: -12,
+          opacity: 0,
+          ease: "none",
+          scrollTrigger: {
+            trigger: heroRef.current,
+            start: "top top",
+            end: "bottom top",
+            scrub: true,
+          },
+        });
+      });
+    },
+    { scope: heroRef, dependencies: [pinned] }
+  );
 
   return (
-    <section className="hero" aria-label={hero.title}>
-      <div
-        className="hero-bg"
-        ref={bgRef}
-        style={{ backgroundImage: `url('${hero.image}')` }}
-      />
+    <section className="hero" aria-label={current.title} ref={heroRef}>
+      <div className="hero-bg" ref={bgRef}>
+        {layers.map((s, i) => (
+          <div
+            key={i}
+            className="hero-bg-img"
+            style={{
+              backgroundImage: `url('${s.image}')`,
+              opacity: i === activeIndex ? 1 : 0,
+            }}
+          />
+        ))}
+      </div>
       <div className="hero-scrim" />
-      <div className="hero-content" ref={contentRef}>
-        {hero.eyebrow && <div className="hero-eyebrow">{hero.eyebrow}</div>}
-        <h1 className="hero-title">{hero.title}</h1>
-        {hero.description && <p className="hero-desc">{hero.description}</p>}
+      <div className={`hero-content ${pinned ? "centered" : ""}`} ref={contentRef}>
+        {current.eyebrow && (
+          <div className="hero-eyebrow">
+            {current.eyebrow}
+            <span className="hero-eyebrow-tm">™</span>
+          </div>
+        )}
+        <h1 className="hero-title">{current.title}</h1>
+        {current.description && <p className="hero-desc">{current.description}</p>}
+        <div className="hero-dots">
+          {Array.from({ length: dotCount }).map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              className={`hero-dot${i === activeIndex ? " active" : ""}`}
+              onClick={isCarousel ? () => setActive(i) : undefined}
+              disabled={!isCarousel}
+              aria-label={`Go to slide ${i + 1}`}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );

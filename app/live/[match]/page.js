@@ -14,7 +14,7 @@ export default function MatchChannel() {
       <main className="live-page">
         <div className="live-head">
           <div>
-            <span className="live-kicker">Live TV</span>
+            <span className="live-kicker">Broadcast</span>
             <h1 className="live-title">Match not found</h1>
           </div>
           <Link href="/live" className="live-broadcast-link">
@@ -31,7 +31,7 @@ export default function MatchChannel() {
         <div>
           <span className="live-kicker">
             <span className="live-dot is-on" />
-            Live TV
+            Broadcast
           </span>
           <h1 className="live-title fixture-title">
             {m.flag1 && <img src={m.flag1} alt="" className="channel-title-flag" />}

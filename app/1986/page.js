@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import MatchCard from "../components/MatchCard";
 import Hero from "../components/Hero";
 import { MATCHES, HERO } from "../data/matches";
@@ -10,6 +10,13 @@ const UP_NEXT_AFTER_MS = 30000;
 export default function WorldCup1986() {
   const [activeMatch, setActiveMatch] = useState(null);
   const [showUpNext, setShowUpNext] = useState(false);
+  const playerRef = useRef(null);
+  // Phones block autoplay-with-sound (and in-app browsers hang on the attempt),
+  // so on mobile we let the player show a clean tap-to-play instead.
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    setIsMobile(window.matchMedia("(max-width: 640px)").matches);
+  }, []);
 
   const openMatch = (match) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -22,6 +29,24 @@ export default function WorldCup1986() {
     setActiveMatch(null);
   };
 
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      const el = playerRef.current;
+      const req = el?.requestFullscreen?.() ?? el?.webkitRequestFullscreen?.();
+      // On phones, rotate to landscape for a true fullscreen (Android; iOS ignores).
+      Promise.resolve(req)
+        .then(() => window.screen?.orientation?.lock?.("landscape"))
+        .catch(() => {});
+    } else {
+      window.screen?.orientation?.unlock?.();
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    }
+  };
+
   const activeIndex = activeMatch ? MATCHES.indexOf(activeMatch) : -1;
   const nextMatch =
     activeIndex >= 0 ? MATCHES[(activeIndex + 1) % MATCHES.length] : null;
@@ -29,20 +54,72 @@ export default function WorldCup1986() {
   useEffect(() => {
     if (!activeMatch) return;
     setShowUpNext(false);
-    const t = setTimeout(() => setShowUpNext(true), UP_NEXT_AFTER_MS);
-    return () => clearTimeout(t);
-  }, [activeMatch]);
+    
+    let transitioned = false;
+
+    const handleMessage = (event) => {
+      if (transitioned) return;
+      try {
+        let isVideoEnd = false;
+        let msg = event.data;
+        
+        // Parse JSON strings just in case Dailymotion sends them
+        if (typeof msg === 'string' && msg.trim().startsWith('{')) {
+          try { msg = JSON.parse(msg); } catch (e) {}
+        }
+
+        if (typeof msg === 'string') {
+          if (msg.includes('event=end') || msg.includes('event=video_end')) {
+            isVideoEnd = true;
+          } else if (msg.includes('event=timeupdate')) {
+            const matchTime = msg.match(/time=([0-9.]+)/);
+            if (matchTime) {
+              const time = parseFloat(matchTime[1]);
+              if (activeMatch.endAt && time >= activeMatch.endAt) {
+                isVideoEnd = true;
+              }
+            }
+          }
+        } 
+        
+        if (typeof msg === 'object' && msg !== null) {
+          if (msg.event === 'end' || msg.event === 'video_end') {
+            isVideoEnd = true;
+          } else if (msg.event === 'timeupdate') {
+            if (msg.time !== undefined) {
+              const time = parseFloat(msg.time);
+              if (activeMatch.endAt && time >= activeMatch.endAt) {
+                isVideoEnd = true;
+              }
+            }
+          }
+        }
+        
+        if (isVideoEnd && nextMatch) {
+          transitioned = true;
+          openMatch(nextMatch); // Transition instantly
+        }
+      } catch (e) {}
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, [activeMatch, nextMatch]);
 
   return (
     <>
       {activeMatch ? (
         <div className="theater-mode">
           <div className="theater-container">
-            <div className="theater-player-wrapper">
-              <img src={activeMatch.thumbnail} alt="" className="theater-poster" />
+            <div className="theater-player-wrapper" ref={playerRef}>
+
               <iframe
-                src={activeMatch.source === 'filemoon' ? `https://filemoon.org/e/${activeMatch.id}` : activeMatch.source === 'voe' ? `https://voe.sx/e/${activeMatch.id}` : `https://streamtape.com/e/${activeMatch.id}`}
-                allowFullScreen
+                src={activeMatch.source === 'dailymotion' ? `https://www.dailymotion.com/embed/video/${activeMatch.id}?api=1&id=dmplayer&origin=${typeof window !== 'undefined' ? encodeURIComponent(window.location.origin) : ''}&autoplay=${isMobile ? "false" : "true"}&mute=false&queue-enable=false&queue-autoplay-next=false&endscreen-enable=false&ui-logo=false&info=0&logo=0&watermark=0` : activeMatch.source === 'filemoon' ? `https://filemoon.org/e/${activeMatch.id}` : activeMatch.source === 'voe' ? `https://voe.sx/e/${activeMatch.id}` : `https://streamtape.com/e/${activeMatch.id}`}
+                allowFullScreen="allowfullscreen"
+                webkitallowfullscreen="true"
+                mozallowfullscreen="true"
                 allowtransparency="true"
                 allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
                 scrolling="no"
@@ -50,6 +127,12 @@ export default function WorldCup1986() {
                 title={activeMatch.title}
                 className="theater-iframe"
               />
+
+              <button onClick={toggleFullscreen} className="custom-fullscreen-btn" aria-label="Toggle Fullscreen">
+                <svg viewBox="0 0 24 24">
+                  <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                </svg>
+              </button>
 
               {showUpNext && nextMatch && (
                 <div className="upnext-overlay" onClick={() => setShowUpNext(false)}>

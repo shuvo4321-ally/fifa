@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { parseKickoff } from '../lib/matchTime';
 
 export default function ScorecardModal({ match, flag1, flag2, onClose }) {
   const [team1, team2] = match.match.split(" vs ");
@@ -10,10 +11,14 @@ export default function ScorecardModal({ match, flag1, flag2, onClose }) {
 
   // Countdown timer logic
   useEffect(() => {
-    const matchDateTime = new Date(`${match.date} ${match.time}`);
+    const matchDateTime = parseKickoff(match.date, match.time);
     const updateTimer = () => {
+      if (!matchDateTime) {
+        setTimeLeft("—");
+        return;
+      }
       const now = new Date();
-      const diff = matchDateTime - now;
+      const diff = matchDateTime.getTime() - now.getTime();
       if (diff <= 0) {
         setTimeLeft("Match time reached");
         return;
