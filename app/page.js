@@ -224,7 +224,7 @@ export default function Home() {
 
         <section className="legends-section" ref={legendsSectionRef}>
           <div className="legends-bg">
-            <img ref={legendsBgRef} src="https://images.unsplash.com/photo-1518091043644-c1d4457512c6?q=80&w=2400&auto=format&fit=crop" alt="Legends Background" className="legends-bg-img" />
+            <img ref={legendsBgRef} src="/images/legends-bg.png" alt="Legends Background" className="legends-bg-img" />
             <div className="legends-bg-scrim"></div>
           </div>
 

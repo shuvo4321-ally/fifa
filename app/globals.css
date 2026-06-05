@@ -1317,7 +1317,72 @@ a.search-result:hover {
 @media (max-width: 900px) {
   .unified-group-content {
     grid-template-columns: 1fr;
+    gap: var(--space-4);
   }
+  .unified-group-card {
+    padding: var(--space-4);
+  }
+}
+
+/* Group Stage Table */
+.group-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-xs);
+}
+
+.group-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+
+.group-table th {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-primary);
+  font-weight: 600;
+  padding: var(--space-3);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.group-table td {
+  padding: var(--space-3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.group-table th.col-team {
+  text-align: left;
+}
+
+.group-table td.col-team {
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 130px;
+}
+
+.team-rank {
+  color: var(--color-text-primary);
+  font-size: 11px;
+  width: 12px;
+}
+
+.flag-icon-small {
+  width: 20px;
+  height: 14px;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+.team-name {
+  font-weight: 600;
+  color: var(--color-text-tertiary);
 }
 
 .group-fixtures-wrapper {
@@ -1902,7 +1967,9 @@ a.search-result:hover {
 .legends-section {
   position: relative;
   padding: calc(var(--space-8) * 2) 0 calc(var(--space-8) * 3) 0;
-  margin-top: var(--space-8);
+  /* Overlap the section above by 2px so a sub-pixel scroll seam can't flicker
+     at the join — the higher-z .home-content covers the overlap. */
+  margin-top: -2px;
   overflow: hidden;
 }
 
@@ -1913,16 +1980,22 @@ a.search-result:hover {
 }
 
 .legends-bg-img {
-  width: 100%;
-  height: 100%;
+  /* Oversized so the GSAP parallax (scale + yPercent shift) never drags the
+     image edge into view — that exposed edge was the "detached" seam. */
+  position: absolute;
+  top: -20%;
+  left: -20%;
+  width: 140%;
+  height: 140%;
   object-fit: cover;
+  object-position: center top;
 }
 
 .legends-bg-scrim {
   position: absolute;
   inset: 0;
-  background: 
-    linear-gradient(to bottom, var(--color-surface-muted) 0%, transparent 15%),
+  background:
+    linear-gradient(to bottom, var(--color-surface-muted) 0%, var(--color-surface-muted) 8%, transparent 42%),
     linear-gradient(to right, #000 0%, rgba(0,0,0,0.8) 30%, rgba(0,0,0,0.3) 100%);
 }
 
@@ -2433,6 +2506,178 @@ a.search-result:hover {
   background: #fff;
 }
 
+/* ===== Broadcast-rights intro modal (Live TV) ===== */
+.brm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  background: rgba(2, 4, 10, 0.74);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: brmFade 0.25s ease;
+}
+
+@keyframes brmFade { from { opacity: 0; } to { opacity: 1; } }
+
+.brm-modal {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  max-height: 92vh;
+  overflow-y: auto;
+  text-align: center;
+  padding: var(--space-8) var(--space-7) var(--space-7);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(86, 54, 150, 0.45), transparent 55%),
+    #0a0e1c;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  animation: brmPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes brmPop {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+.brm-close {
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-5);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background var(--motion-duration-instant) ease;
+}
+.brm-close:hover { background: rgba(255, 255, 255, 0.18); }
+
+.brm-logo {
+  width: 92px;
+  height: 92px;
+  margin: var(--space-2) auto var(--space-6);
+  border-radius: 18px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.brm-logo-trophy { font-size: 38px; line-height: 1; }
+.brm-logo-yr { font-size: 13px; font-weight: 900; color: #111; letter-spacing: 1px; }
+
+.brm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  border-radius: 100px;
+  border: 1px solid rgba(232, 185, 74, 0.5);
+  background: rgba(0, 0, 0, 0.25);
+  color: #e8b94a;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.brm-title {
+  margin: var(--space-6) 0 var(--space-4);
+  font-size: clamp(28px, 6vw, 38px);
+  font-weight: 800;
+  line-height: 1.1;
+  color: #fff;
+}
+.brm-title-grad {
+  background: linear-gradient(90deg, #f6b73c, #ef7d1a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.brm-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #2dd4ef;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.brm-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.brm-dot--gold { background: #e8b94a; }
+.brm-dot--red { background: #ff3b30; }
+
+.brm-info {
+  margin: var(--space-7) 0;
+  text-align: left;
+  padding: var(--space-5) var(--space-6);
+  border-left: 4px solid #f6a623;
+  border-radius: 0 12px 12px 0;
+  background: rgba(255, 255, 255, 0.035);
+  color: #b6bccb;
+  font-size: var(--font-size-md);
+  line-height: 1.6;
+}
+.brm-info b { color: #fff; }
+.brm-info .brm-gold { color: #f6b73c; }
+
+.brm-channels {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-7);
+}
+.brm-channel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+.brm-channel-card {
+  width: 100%;
+  aspect-ratio: 16 / 11;
+  background: #fff;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+.brm-channel-card img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.brm-channel-ph { color: #8a93a6; font-size: 12px; font-weight: 700; }
+.brm-channel-name { color: var(--color-text-primary); font-size: var(--font-size-sm); font-weight: 600; }
+
+.brm-cta {
+  width: 100%;
+  border: none;
+  border-radius: 100px;
+  padding: var(--space-5);
+  background: linear-gradient(90deg, #f6b73c, #ef7d1a);
+  color: #2a1a06;
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: filter var(--motion-duration-instant) ease;
+}
+.brm-cta:hover { filter: brightness(1.06); }
+.brm-play { font-size: 12px; }
+
 /* ===== Broadcast channels + Studio ===== */
 .channel-card {
   position: relative;
@@ -2743,19 +2988,29 @@ a.search-result:hover {
      The desktop sticky-overlap parallax left the pinned hero bleeding
      through as an ugly gap between the cards and the Legends row. On
      phones the hero simply scrolls away and the rows follow it directly. */
+  .hero-bg-img {
+    background-image: var(--bg-mobile) !important;
+  }
   .hero { position: relative; height: 60vh; height: 60svh; min-height: 400px; }
   .home-content { margin-top: 0; }
   .home-content::before { display: none; }
   .hero-eyebrow { font-size: 26px; padding: 6px 12px; }
-  .hero .hero-content.centered {
+  .hero .hero-content {
     left: var(--page-gutter);
     right: var(--page-gutter);
     top: auto;
     bottom: var(--space-8);
     transform: none;
     max-width: none;
+    padding: 0;
   }
-  .hero-desc { font-size: var(--font-size-md); }
+  .hero-desc {
+    font-size: var(--font-size-md);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
   /* Bright pitch images washed out the white copy — anchor to bottom over a
      much stronger scrim, plus a text-shadow for guaranteed legibility. */
   .hero-scrim {

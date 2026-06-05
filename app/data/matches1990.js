@@ -1,7 +1,7 @@
 export const MATCHES = [
   {
     id: "x9nqsg4",
-    source: "dailymotion",
+    source: "geo_dailymotion",
     stage: "Final",
     title: "1990 FIFA World Cup - West Germany v. Argentina (Final)",
     subtitle: "1990 FIFA World Cup Italy™ | Full Match",
@@ -17,7 +17,7 @@ export const MATCHES = [
   },
   {
     id: "k4cUDCuK1qRfd8Goybg",
-    source: "dailymotion",
+    source: "geo_dailymotion",
     endAt: 771, // skips the outro popup
     stage: "Highlights",
     title: "Salvatore Schillaci and Italy | All Goals & Highlights | 1990 FIFA World Cup",
@@ -32,8 +32,8 @@ export const MATCHES = [
     ],
   },
   {
-    id: "k36XWbSqNXUiiyGoyFY",
-    source: "dailymotion",
+    id: "k31ae1Vh4ObYF1GoyFY",
+    source: "geo_dailymotion",
     endAt: 771,
     stage: "Compilation",
     title: "1990 FIFA World Cup | Most Memorable Goals",

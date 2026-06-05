@@ -1,12 +1,12 @@
 export const MATCHES = [
   {
-    id: "placeholder_baggio", // Placeholder ID
-    source: "dailymotion",
+    id: "k2KJz9EO0wckRtGqt8a",
+    source: "geo_dailymotion",
     stage: "Highlights",
     title: "Brazil Stop Italy & Baggio | 1994 FIFA World Cup",
     subtitle: "1994 FIFA World Cup USA™ | Match Highlights",
     description: "Watch the highlights of the dramatic final where Brazil stops Italy and Roberto Baggio to claim the 1994 FIFA World Cup.",
-    date: "1994",
+    date: "17 JUL 1994",
     type: "Highlights",
     thumbnail: "/1994_hero_new.png",
     badges: [
@@ -49,7 +49,7 @@ export const MATCHES = [
   },
   {
     id: "x9l4nb0", // Real Dailymotion ID
-    source: "dailymotion",
+    source: "geo_dailymotion",
     stage: "Semi-Final",
     title: "1994 FIFA World Cup - Bulgaria v. Italy (Semi-Final) fulltime",
     subtitle: "1994 FIFA World Cup USA™",
@@ -65,7 +65,7 @@ export const MATCHES = [
   },
   {
     id: "x9jhgl0", // Real Dailymotion ID
-    source: "dailymotion",
+    source: "geo_dailymotion",
     stage: "Semi-Final",
     title: "1994 FIFA World Cup - Sweden v. Brazil (Semi-Final) fulltime",
     subtitle: "1994 FIFA World Cup USA™",

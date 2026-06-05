@@ -126,7 +126,9 @@ export default function Hero({ hero, slides, pinned = false, onCta }) {
             key={i}
             className="hero-bg-img"
             style={{
-              backgroundImage: `url('${s.image}')`,
+              '--bg-desktop': `url('${s.image}')`,
+              '--bg-mobile': `url('${s.mobileImage || s.image}')`,
+              backgroundImage: 'var(--bg-desktop)',
               opacity: i === activeIndex ? 1 : 0,
             }}
           />
@@ -142,18 +144,19 @@ export default function Hero({ hero, slides, pinned = false, onCta }) {
         )}
         <h1 className="hero-title">{current.title}</h1>
         {current.description && <p className="hero-desc">{current.description}</p>}
-        <div className="hero-dots">
-          {Array.from({ length: dotCount }).map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              className={`hero-dot${i === activeIndex ? " active" : ""}`}
-              onClick={isCarousel ? () => setActive(i) : undefined}
-              disabled={!isCarousel}
-              aria-label={`Go to slide ${i + 1}`}
-            />
-          ))}
-        </div>
+        {isCarousel && (
+          <div className="hero-dots">
+            {Array.from({ length: dotCount }).map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`hero-dot${i === activeIndex ? " active" : ""}`}
+                onClick={() => setActive(i)}
+                aria-label={`Go to slide ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

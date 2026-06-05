@@ -13,4 +13,14 @@ export const TV_CHANNELS = [
     group: "Bangla",
     url: "https://tvsen6.aynaott.com/btvctg/index.m3u8?e=1779283747&u=78be6644-0a65-48ec-81a4-089ac65a2619&token=9bca925fbdfe526b29d41ab7802348ec",
   },
+  {
+    name: "Somoy News TV",
+    logo: "https://s3.aynaott.com/storage/ece71c1163a377fbe2d93f9d28c34f60",
+    group: "News",
+    url: "https://tvsen6.aynaott.com/somoytv/index.m3u8?e=1779283766&u=78be6644-0a65-48ec-81a4-089ac65a2619&token=269246b8a31fb3a656624d71e10e447d",
+    status: "live",
+    verified_at: "2026-06-04T15:05:55.720188",
+    status_code: 200,
+    content_type: "application/vnd.apple.mpegurl"
+  },
 ];

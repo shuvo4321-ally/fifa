@@ -29,24 +29,7 @@ export default function WorldCup1990() {
     setActiveMatch(null);
   };
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      const el = playerRef.current;
-      const req = el?.requestFullscreen?.() ?? el?.webkitRequestFullscreen?.();
-      // On phones, rotate to landscape for a true fullscreen (Android; iOS ignores).
-      Promise.resolve(req)
-        .then(() => window.screen?.orientation?.lock?.("landscape"))
-        .catch(() => {});
-    } else {
-      window.screen?.orientation?.unlock?.();
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      } else if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
-      }
-    }
-  };
-
+  
   const activeIndex = activeMatch ? MATCHES.indexOf(activeMatch) : -1;
   const nextMatch =
     activeIndex >= 0 ? MATCHES[(activeIndex + 1) % MATCHES.length] : null;
@@ -116,7 +99,7 @@ export default function WorldCup1990() {
             <div className="theater-player-wrapper" ref={playerRef}>
 
               <iframe
-                src={activeMatch.source === 'dailymotion' ? `https://www.dailymotion.com/embed/video/${activeMatch.id}?api=1&id=dmplayer&origin=${typeof window !== 'undefined' ? encodeURIComponent(window.location.origin) : ''}&autoplay=${isMobile ? "false" : "true"}&mute=false&queue-enable=false&queue-autoplay-next=false&endscreen-enable=false&ui-logo=false&info=0&logo=0&watermark=0` : activeMatch.source === 'filemoon' ? `https://filemoon.org/e/${activeMatch.id}` : activeMatch.source === 'voe' ? `https://voe.sx/e/${activeMatch.id}` : `https://streamtape.com/e/${activeMatch.id}`}
+                src={activeMatch.source === 'dailymotion' ? `https://www.dailymotion.com/embed/video/${activeMatch.id}?api=1&id=dmplayer&origin=${typeof window !== 'undefined' ? encodeURIComponent(window.location.origin) : ''}&autoplay=${isMobile ? "false" : "true"}&mute=false&queue-enable=false&queue-autoplay-next=false&endscreen-enable=false&ui-logo=false&info=0&logo=0&watermark=0` : activeMatch.source === 'filemoon' ? `https://filemoon.org/e/${activeMatch.id}` : activeMatch.source === 'voe' ? `https://voe.sx/e/${activeMatch.id}` : `https://geo.dailymotion.com/player.html?video=${activeMatch.id}&autoplay=true`}
                 allowFullScreen="allowfullscreen"
                 webkitallowfullscreen="true"
                 mozallowfullscreen="true"
@@ -128,11 +111,7 @@ export default function WorldCup1990() {
                 className="theater-iframe"
               />
 
-              <button onClick={toggleFullscreen} className="custom-fullscreen-btn" aria-label="Toggle Fullscreen">
-                <svg viewBox="0 0 24 24">
-                  <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
-                </svg>
-              </button>
+              
 
               {showUpNext && nextMatch && (
                 <div className="upnext-overlay" onClick={() => setShowUpNext(false)}>

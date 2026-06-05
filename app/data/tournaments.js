@@ -37,7 +37,7 @@ export const TOURNAMENTS = [
   {
     slug: "1998",
     title: "1998 FIFA World Cup France™",
-    thumbnail: "https://images.unsplash.com/photo-1560272564-c83b66b1ad12?q=80&w=800&auto=format&fit=crop",
+    thumbnail: "/1998_card.png",
   },
   {
     slug: "1994",
@@ -62,7 +62,7 @@ export const HOME_HERO = {
   description:
     "Stream live matches from around the globe, relive iconic FIFA World Cup moments and enjoy world class documentaries",
   cta: "Discover more",
-  image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=2400&auto=format&fit=crop",
+  image: "/maxresdefault.jpg",
 };
 
 // Rotating featured slides for the home hero. The dots track / control these.
@@ -73,7 +73,8 @@ export const HERO_SLIDES = [
     description:
       "Stream live matches from around the globe, relive iconic FIFA World Cup moments and enjoy world-class documentaries.",
     image:
-      "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=1600&auto=format&fit=crop",
+      "/maxresdefault.jpg",
+    mobileImage: "/images/home-mobile-1.png"
   },
   {
     eyebrow: "Legends",
@@ -81,7 +82,8 @@ export const HERO_SLIDES = [
     description:
       "From Pelé to Cristiano Ronaldo — witness the magic of football's all-time greats in action.",
     image:
-      "https://images.unsplash.com/photo-1551958219-acbc608c6377?q=80&w=1600&auto=format&fit=crop",
+      "/maxresdefault_1.jpg",
+    mobileImage: "/images/home-mobile-2.png"
   },
   {
     eyebrow: "Classics",
@@ -89,7 +91,8 @@ export const HERO_SLIDES = [
     description:
       "Full-match replays of the greatest World Cup finals ever played.",
     image:
-      "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?q=80&w=1600&auto=format&fit=crop",
+      "/images/pele-obit.webp",
+    mobileImage: "/images/home-mobile-3.png"
   },
   {
     eyebrow: "2026",
@@ -97,6 +100,7 @@ export const HERO_SLIDES = [
     description:
       "Get ready for the FIFA World Cup across the USA, Canada and Mexico.",
     image:
-      "https://images.unsplash.com/photo-1553778263-73a83bab9b0c?q=80&w=1600&auto=format&fit=crop",
+      "/road_to_2026.png",
+    mobileImage: "/images/home-mobile-4.png"
   },
 ];

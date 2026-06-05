@@ -1,7 +1,7 @@
 export const MATCHES = [
   {
     id: "x9g676i",
-    source: "dailymotion",
+    source: "geo_dailymotion",
     stage: "Final",
     title: "Final | Argentina vs. Germany FR",
     subtitle: "1986 FIFA World Cup Mexico™ | Highlights",
@@ -18,7 +18,7 @@ export const MATCHES = [
   },
   {
     id: "k6rZmkWJle2iK8GoUWM",
-    source: "dailymotion",
+    source: "geo_dailymotion",
     endAt: 771, // 12:51 - skips the outro popup
     stage: "Semi-Final",
     title: "Argentina vs W Germany 1986 FIFA World Cup Final Highlights",
