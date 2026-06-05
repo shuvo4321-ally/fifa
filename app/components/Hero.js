@@ -19,15 +19,32 @@ export default function Hero({ hero, slides, pinned = false, onCta }) {
   const dotCount = isCarousel ? slides.length : 5;
   const activeIndex = isCarousel ? active : 0;
 
-  // Auto-rotate the carousel; the dots reflect (and control) the active slide.
+  // Swipe (touch) / drag (mouse) to change slide — one path via pointer events.
+  const swipe = useRef(null);
+  const onPointerDown = (e) => {
+    swipe.current = { x: e.clientX, y: e.clientY };
+  };
+  const onPointerUp = (e) => {
+    if (!swipe.current) return;
+    const dx = e.clientX - swipe.current.x;
+    const dy = e.clientY - swipe.current.y;
+    swipe.current = null;
+    // Horizontal swipe past the threshold, and clearly horizontal (not a scroll).
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+      setActive((a) => (a + (dx < 0 ? 1 : -1) + slides.length) % slides.length);
+    }
+  };
+
+  // Auto-rotate; the timer resets whenever the slide changes (manual or auto),
+  // so a swipe/tap gives you a fresh 6s before it advances on its own.
   useEffect(() => {
     if (!isCarousel) return;
-    const id = setInterval(
+    const id = setTimeout(
       () => setActive((a) => (a + 1) % slides.length),
       6000
     );
-    return () => clearInterval(id);
-  }, [isCarousel, slides]);
+    return () => clearTimeout(id);
+  }, [isCarousel, slides, active]);
 
   useGSAP(
     () => {
@@ -95,7 +112,14 @@ export default function Hero({ hero, slides, pinned = false, onCta }) {
   );
 
   return (
-    <section className="hero" aria-label={current.title} ref={heroRef}>
+    <section
+      className="hero"
+      aria-label={current.title}
+      ref={heroRef}
+      onPointerDown={isCarousel ? onPointerDown : undefined}
+      onPointerUp={isCarousel ? onPointerUp : undefined}
+      style={isCarousel ? { touchAction: "pan-y", userSelect: "none", cursor: "grab" } : undefined}
+    >
       <div className="hero-bg" ref={bgRef}>
         {layers.map((s, i) => (
           <div

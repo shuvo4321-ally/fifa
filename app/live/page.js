@@ -11,7 +11,7 @@ export default function BroadcastGuide() {
     <main
       className="live-page"
       style={{
-        padding: "2rem",
+        padding: "var(--page-gutter)",
         minHeight: "80vh",
         display: "flex",
         flexDirection: "column",

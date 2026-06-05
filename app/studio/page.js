@@ -14,11 +14,14 @@ export default function Studio() {
   const [isLive, setIsLive] = useState(false);
   const [joined, setJoined] = useState(false);
 
-  // Remember a successful unlock for this browser tab.
+  // Phones can't screen-share, so we show camera-based steps there.
+  const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
     if (typeof window !== "undefined" && sessionStorage.getItem("cron-studio-ok") === "1") {
       setUnlocked(true);
     }
+    setIsMobile(window.matchMedia("(max-width: 640px)").matches);
   }, []);
 
   const submitPw = async (e) => {
@@ -67,7 +70,7 @@ export default function Studio() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: "2rem",
+          padding: "var(--page-gutter)",
         }}
       >
         <form
@@ -87,9 +90,7 @@ export default function Studio() {
             Broadcaster
           </span>
           <h1 className="live-overlay-title">Studio access</h1>
-          <p className="live-overlay-sub">
-            Enter the broadcaster password to go live.
-          </p>
+          <p className="live-overlay-sub">Enter the broadcaster password to go live.</p>
           <input
             type="password"
             className="search-input"
@@ -113,7 +114,7 @@ export default function Studio() {
     <main
       className="live-page"
       style={{
-        padding: "2rem",
+        padding: "var(--page-gutter)",
         minHeight: "80vh",
         display: "flex",
         flexDirection: "column",
@@ -122,7 +123,7 @@ export default function Studio() {
     >
       <div
         className="studio-stage-wrap"
-        style={{ margin: "0 auto", maxWidth: "1200px", width: "100%", gap: "2rem" }}
+        style={{ margin: "0 auto", maxWidth: "1200px", width: "100%", gap: "var(--space-7)" }}
       >
         <div className="live-stage">
           {isLive ? (
@@ -135,7 +136,9 @@ export default function Studio() {
               </span>
               <p className="live-overlay-title">You're not on air yet</p>
               <p className="live-overlay-sub">
-                Hit Go live, then share your screen or switch to OBS Virtual Camera.
+                {isMobile
+                  ? "Hit Go live, then tap the camera icon to broadcast your camera."
+                  : "Hit Go live, then share your screen or switch to OBS Virtual Camera."}
               </p>
               <button className="studio-golive" onClick={goLive}>
                 <span className="live-dot is-on" />
@@ -146,26 +149,56 @@ export default function Studio() {
         </div>
 
         <aside className="studio-panel" style={{ marginTop: 0 }}>
-          <span className="channel-stage">Go live in 3 steps</span>
-          <ol className="studio-checklist">
-            <li>
-              <span className="studio-step-num">1</span>
-              <span>
-                <b>Go live</b> to claim the channel.
-              </span>
-            </li>
-            <li>
-              <span className="studio-step-num">2</span>
-              <span>
-                Click the <b>screen-share</b> (monitor) icon, or <b>Settings → Camera → OBS
-                Virtual Camera</b>.
-              </span>
-            </li>
-            <li>
-              <span className="studio-step-num">3</span>
-              <span>If meet.jit.si asks, log in once so you're the moderator.</span>
-            </li>
-          </ol>
+          {isMobile ? (
+            <>
+              <span className="channel-stage">Go live from your phone</span>
+              <ol className="studio-checklist">
+                <li>
+                  <span className="studio-step-num">1</span>
+                  <span>
+                    Tap <b>Go live</b>.
+                  </span>
+                </li>
+                <li>
+                  <span className="studio-step-num">2</span>
+                  <span>
+                    Tap the <b>camera</b> icon in the player to start broadcasting your camera
+                    (allow camera access if asked).
+                  </span>
+                </li>
+                <li>
+                  <span className="studio-step-num">3</span>
+                  <span>
+                    <b>Screen-share &amp; OBS aren't available on phones</b> — use a computer for
+                    those.
+                  </span>
+                </li>
+              </ol>
+            </>
+          ) : (
+            <>
+              <span className="channel-stage">Go live in 3 steps</span>
+              <ol className="studio-checklist">
+                <li>
+                  <span className="studio-step-num">1</span>
+                  <span>
+                    <b>Go live</b> to claim the channel.
+                  </span>
+                </li>
+                <li>
+                  <span className="studio-step-num">2</span>
+                  <span>
+                    Click the <b>screen-share</b> (monitor) icon, or <b>Settings → Camera → OBS
+                    Virtual Camera</b>.
+                  </span>
+                </li>
+                <li>
+                  <span className="studio-step-num">3</span>
+                  <span>If meet.jit.si asks, log in once so you're the moderator.</span>
+                </li>
+              </ol>
+            </>
+          )}
           <p className="studio-watch">
             Viewers watch at <b>/live</b>
           </p>
