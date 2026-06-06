@@ -27,12 +27,12 @@ export const TOURNAMENTS = [
   {
     slug: "2006",
     title: "2006 FIFA World Cup Germany™",
-    thumbnail: "https://images.unsplash.com/photo-1551958219-acbc608c6377?q=80&w=800&auto=format&fit=crop",
+    thumbnail: "/images/2006.png",
   },
   {
     slug: "2002",
     title: "2002 FIFA World Cup Korea/Japan™",
-    thumbnail: "https://images.unsplash.com/photo-1553778263-73a83bab9b0c?q=80&w=800&auto=format&fit=crop",
+    thumbnail: "/2002_card.png",
   },
   {
     slug: "1998",

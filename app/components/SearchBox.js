@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { TOURNAMENTS } from "../data/tournaments";
+import { ALL_MATCHES } from "../data/allMatches";
 
-export default function SearchBox() {
+export default function SearchBox({ onResultClick }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const boxRef = useRef(null);
@@ -32,9 +33,19 @@ export default function SearchBox() {
 
   const query = q.trim().toLowerCase();
   // With no query, show what's actually watchable (the tournaments with a page).
-  const results = query
+  const tournamentResults = query
     ? TOURNAMENTS.filter((t) => t.title.toLowerCase().includes(query))
     : TOURNAMENTS.filter((t) => t.slug);
+
+  const matchResults = query
+    ? ALL_MATCHES.filter(
+        (m) =>
+          m.title?.toLowerCase().includes(query) ||
+          m.subtitle?.toLowerCase().includes(query) ||
+          m.description?.toLowerCase().includes(query) ||
+          m.year?.includes(query)
+      )
+    : [];
 
   return (
     <div className="search-box" ref={boxRef}>
@@ -65,32 +76,66 @@ export default function SearchBox() {
             ref={inputRef}
             className="search-input"
             type="text"
-            placeholder="Search World Cups…"
+            placeholder="Search World Cups or Matches…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
           <ul className="search-results">
-            {results.length === 0 && (
-              <li className="search-empty">No tournaments found</li>
+            {tournamentResults.length === 0 && matchResults.length === 0 && (
+              <li className="search-empty">No results found</li>
             )}
-            {results.map((t, i) =>
+            
+            {tournamentResults.length > 0 && (
+              <li style={{ padding: "8px 16px", fontSize: "12px", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "1px" }}>
+                Tournaments
+              </li>
+            )}
+            {tournamentResults.map((t, i) =>
               t.slug ? (
-                <li key={i}>
+                <li key={`t-${i}`}>
                   <Link
                     href={`/${t.slug}`}
                     className="search-result"
-                    onClick={() => setOpen(false)}
+                    onClick={() => {
+                      setOpen(false);
+                      if (onResultClick) onResultClick();
+                    }}
                   >
                     {t.title}
                   </Link>
                 </li>
               ) : (
-                <li key={i} className="search-result search-result--soon">
+                <li key={`t-${i}`} className="search-result search-result--soon">
                   {t.title}
                   <span>Coming soon</span>
                 </li>
               )
             )}
+
+            {matchResults.length > 0 && (
+              <li style={{ padding: "8px 16px", fontSize: "12px", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "1px" }}>
+                Matches
+              </li>
+            )}
+            {matchResults.map((m, i) => (
+              <li key={`m-${i}`}>
+                <Link
+                  href={`/${m.year}`}
+                  className="search-result"
+                  onClick={() => {
+                    setOpen(false);
+                    if (onResultClick) onResultClick();
+                  }}
+                >
+                  <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                    <span>{m.title}</span>
+                    <span style={{ fontSize: "0.8em", color: "rgba(255,255,255,0.6)" }}>
+                      {m.year} • {m.stage || m.type}
+                    </span>
+                  </div>
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
       )}

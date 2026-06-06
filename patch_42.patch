@@ -1,0 +1,8 @@
+diff --git a/public/flags/hn.svg b/public/flags/hn.svg
+deleted file mode 100644
+index 3ddeb2c88f17cee7af9cfc611e352b7ef104b296..0000000000000000000000000000000000000000
+--- a/public/flags/hn.svg
++++ /dev/null
+@@ -1 +0,0 @@
+-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="600" viewBox="0 0 72 36" fill="#00BCE4"><path fill="#fff" d="M0 0h72v36H0z"/><path d="M0 0h72v12H0zm0 24h72v12H0z"/><g id="b"><path id="a" d="m26 13 1.176 3.618-3.078-2.236h3.804l-3.078 2.236z"/><use xlink:href="#a" y="6"/></g><use xlink:href="#a" x="10" y="3"/><use xlink:href="#b" x="20"/></svg>
+\ No newline at end of file

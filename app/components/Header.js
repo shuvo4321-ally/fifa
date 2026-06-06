@@ -22,11 +22,21 @@ export default function Header() {
     return pathname === href || pathname.startsWith(href + "/");
   };
 
+  const handleNavClick = (e, href) => {
+    if (href === "/" && pathname === "/") {
+      if (window.location.hash) {
+        window.history.pushState(null, "", "/");
+        window.dispatchEvent(new Event("hashchange"));
+      }
+    }
+    setMenuOpen(false);
+  };
+
   return (
     <>
       <header className="site-header">
         <div className="header-left">
-          <Link href="/" className="logo" aria-label="Home">
+          <Link href="/" className="logo" aria-label="Home" onClick={(e) => handleNavClick(e, "/")}>
             <svg viewBox="0 0 100 100" className="logo-mark" fill="none" aria-hidden="true">
               <path
                 d="M8 8 H92 V41 L79 50 L92 59 V92 H8 V59 L21 50 L8 41 Z"
@@ -44,6 +54,7 @@ export default function Header() {
                 key={item.label}
                 href={item.href}
                 className={`nav-link${isActive(item.href) ? " is-active" : ""}`}
+                onClick={(e) => handleNavClick(e, item.href)}
               >
                 {item.label}
               </Link>
@@ -52,7 +63,7 @@ export default function Header() {
         </div>
 
         <div className="header-right">
-          <SearchBox />
+          <SearchBox onResultClick={() => setMenuOpen(false)} />
           <button
             type="button"
             className={`hamburger${menuOpen ? " is-open" : ""}`}
@@ -74,7 +85,7 @@ export default function Header() {
               key={item.label}
               href={item.href}
               className={`nav-mobile-link${isActive(item.href) ? " is-active" : ""}`}
-              onClick={() => setMenuOpen(false)}
+              onClick={(e) => handleNavClick(e, item.href)}
             >
               {item.label}
             </Link>

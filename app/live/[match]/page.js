@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import JitsiRoom from "../../components/JitsiRoom";
+import dynamic from "next/dynamic";
+const JitsiRoom = dynamic(() => import("../../components/JitsiRoom"), { ssr: false });
 import { getMatch } from "../../data/channels";
 
 export default function MatchChannel() {

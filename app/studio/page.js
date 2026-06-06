@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import JitsiRoom from "../components/JitsiRoom";
+import dynamic from "next/dynamic";
+const JitsiRoom = dynamic(() => import("../components/JitsiRoom"), { ssr: false });
 
 export default function Studio() {
   // --- Password gate ---

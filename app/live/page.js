@@ -1,5 +1,5 @@
 import Link from "next/link";
-import JitsiRoom from "../components/JitsiRoom";
+import JitsiRoomClientWrapper from "../components/JitsiRoomClientWrapper";
 
 export const metadata = {
   title: "Live TV — CRON",
@@ -19,7 +19,7 @@ export default function BroadcastGuide() {
       }}
     >
       <div className="live-stage" style={{ width: "100%", maxWidth: "1200px", margin: "0 auto" }}>
-        <JitsiRoom role="viewer" room="CRON-GLOBAL-LIVE" />
+        <JitsiRoomClientWrapper role="viewer" room="CRON-GLOBAL-LIVE" />
       </div>
 
       <p style={{ textAlign: "center", marginTop: "var(--space-6)" }}>

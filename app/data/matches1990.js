@@ -10,9 +10,9 @@ export const MATCHES = [
     type: "Full Replay",
     thumbnail: "/hq720.jpg",
     badges: [
-      "https://upload.wikimedia.org/wikipedia/en/9/90/1990_FIFA_World_Cup_logo.svg",
-      "https://flagcdn.com/de.svg",
-      "https://flagcdn.com/ar.svg"
+      "https://upload.wikimedia.org/wikipedia/en/9/90/1990_FIFA_World_Cup_logo.png",
+      "https://flagcdn.com/de.png",
+      "https://flagcdn.com/ar.png"
     ],
   },
   {
@@ -27,8 +27,8 @@ export const MATCHES = [
     type: "Highlights",
     thumbnail: "/hq720_1.jpg",
     badges: [
-      "https://upload.wikimedia.org/wikipedia/en/9/90/1990_FIFA_World_Cup_logo.svg",
-      "https://flagcdn.com/it.svg"
+      "https://upload.wikimedia.org/wikipedia/en/9/90/1990_FIFA_World_Cup_logo.png",
+      "https://flagcdn.com/it.png"
     ],
   },
   {
@@ -43,7 +43,7 @@ export const MATCHES = [
     type: "Highlights",
     thumbnail: "/1990_last_card_new.png",
     badges: [
-      "https://upload.wikimedia.org/wikipedia/en/9/90/1990_FIFA_World_Cup_logo.svg"
+      "https://upload.wikimedia.org/wikipedia/en/9/90/1990_FIFA_World_Cup_logo.png"
     ],
   }
 ];

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { GROUPS_2026, FIXTURES_2026 } from "../data/schedule2026";
-import ScorecardModal from "../components/ScorecardModal";
+const ScorecardModal = dynamic(() => import("../components/ScorecardModal"));
 import LiveScoreInline from "../components/LiveScoreInline";
 const STAGES = ["Group Stage", "Round of 32", "Round of 16", "Quarter-Final", "Semi-Final", "Final"];
 

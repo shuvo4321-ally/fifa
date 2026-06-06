@@ -6,34 +6,55 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import Hero from "./components/Hero";
+import MatchCard from "./components/MatchCard";
 
 gsap.registerPlugin(ScrollTrigger);
 import { TOURNAMENTS, HERO_SLIDES } from "./data/tournaments";
 
 const LEGENDS = [
   {
+    id: "messi",
     firstName: "Lionel",
     lastName: "MESSI",
     title: "Classic Players: Lionel Messi",
-    image: "https://images.unsplash.com/photo-1551280857-2b9bbe5204f6?q=80&w=800&auto=format&fit=crop",
+    subtitle: "Legend",
+    description: "Witness the magic of Lionel Messi in action.",
+    image: "/images/messi.jpg",
+    source: "dailymotion",
+    videoId: "x8qdamr"
   },
   {
+    id: "pele",
     firstName: "",
     lastName: "PELÉ",
     title: "Classic Players: Pelé",
-    image: "https://images.unsplash.com/photo-1508344928928-7165b67de128?q=80&w=800&auto=format&fit=crop",
+    subtitle: "Legend",
+    description: "The King of Football.",
+    image: "/images/pele.webp",
+    source: "dailymotion",
+    videoId: "x6amtxf"
   },
   {
-    firstName: "Cristiano",
-    lastName: "RONALDO",
-    title: "Classic Players: Cristiano Ronaldo",
-    image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=800&auto=format&fit=crop",
+    id: "ronaldo",
+    firstName: "Ronaldo",
+    lastName: "NAZÁRIO",
+    title: "Classic Players: Ronaldo Nazário",
+    subtitle: "Legend",
+    description: "O Fenômeno. One of the greatest strikers to ever play the game.",
+    image: "/images/ronaldo.jpg",
+    source: "dailymotion",
+    videoId: "x9qfdc8"
   },
   {
-    firstName: "Johan",
-    lastName: "Cruyff",
-    title: "Classic Players: Johan Cruyff",
-    image: "https://images.unsplash.com/photo-1518605368461-1e9de4504eb9?q=80&w=800&auto=format&fit=crop",
+    id: "maradona",
+    firstName: "Diego",
+    lastName: "MARADONA",
+    title: "Classic Players: Diego Maradona",
+    subtitle: "Legend",
+    description: "El Pibe de Oro. One of the greatest players in the history of football.",
+    image: "/images/maradona.jpg",
+    source: "dailymotion",
+    videoId: "x982suy"
   }
 ];
 
@@ -61,10 +82,44 @@ function TournamentImg({ src }) {
 }
 
 export default function Home() {
+  const [activeLegend, setActiveLegend] = useState(null);
+  const playerRef = useRef(null);
   const scrollRef = useRef(null);
   const filmsScrollRef = useRef(null);
   const legendsSectionRef = useRef(null);
   const legendsBgRef = useRef(null);
+
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (hash) {
+      const legend = LEGENDS.find(l => l.id === hash);
+      if (legend && legend.source) setActiveLegend(legend);
+    }
+    const handleHashChange = () => {
+      const currentHash = window.location.hash.replace('#', '');
+      if (currentHash) {
+        const legend = LEGENDS.find(l => l.id === currentHash);
+        if (legend && legend.source) setActiveLegend(legend);
+      } else {
+        setActiveLegend(null);
+      }
+    };
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  const openLegend = (legend) => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.location.hash = legend.id;
+  };
+
+  const backToHome = () => {
+    if (window.location.hash) {
+      window.history.back();
+    } else {
+      setActiveLegend(null);
+    }
+  };
 
   useGSAP(() => {
     // 1. Cinematic parallax for legends background
@@ -155,7 +210,52 @@ export default function Home() {
 
   return (
     <>
-      <main className="home">
+      {activeLegend ? (
+        <div className="theater-mode">
+          <div className="theater-container">
+            <div className="theater-player-wrapper" ref={playerRef}>
+              <iframe
+                src={
+                  activeLegend.source === 'youtube' 
+                    ? `https://www.youtube.com/embed/${activeLegend.videoId}?autoplay=1` 
+                    : activeLegend.source === 'dailymotion'
+                      ? `https://geo.dailymotion.com/player.html?video=${activeLegend.videoId}&autoplay=true`
+                      : ""
+                }
+                allowFullScreen="allowfullscreen"
+                allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                frameBorder="0"
+                title={activeLegend.title}
+                className="theater-iframe"
+              />
+            </div>
+            <div className="theater-meta">
+              <div className="meta-left">
+                <h1>{activeLegend.title}</h1>
+                <p>{activeLegend.subtitle}</p>
+              </div>
+            </div>
+            <p className="theater-description">{activeLegend.description}</p>
+            {LEGENDS.filter((l) => l.id !== activeLegend.id && l.source).length > 0 && (
+              <section className="carousel-section" style={{ marginTop: "var(--space-8)" }}>
+                <div className="carousel-header">
+                  <h2 className="carousel-title">Related</h2>
+                </div>
+                <div className="calendar-grid">
+                  {LEGENDS.filter((l) => l.id !== activeLegend.id && l.source).map((legend, i) => (
+                    <MatchCard
+                      key={i}
+                      match={{...legend, thumbnail: legend.image}}
+                      onPlay={() => openLegend(legend)}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        </div>
+      ) : (
+        <main className="home">
         <Hero
           slides={HERO_SLIDES}
           pinned={true}
@@ -188,7 +288,7 @@ export default function Home() {
               onMouseMove={(e) => handleMouseMove(e, scrollRef)}
               style={{ cursor: 'grab' }}
             >
-              {TOURNAMENTS.map((t, i) =>
+              {([...TOURNAMENTS].reverse()).map((t, i) =>
                 t.slug ? (
                   <Link
                     key={i}
@@ -257,7 +357,12 @@ export default function Home() {
               style={{ cursor: 'grab' }}
             >
               {LEGENDS.map((f, i) => (
-                <div className="legend-card-container" key={i}>
+                <div 
+                  className="legend-card-container" 
+                  key={i}
+                  onClick={() => { if(f.source) openLegend(f); }}
+                  style={{ cursor: f.source ? 'pointer' : 'grab' }}
+                >
                   <div className="legend-card">
                     <img src={f.image} alt={f.lastName} className="legend-card-bg" />
                     <div className="legend-card-overlay"></div>
@@ -282,6 +387,7 @@ export default function Home() {
           </div>
         </section>
       </main>
+      )}
     </>
   );
 }

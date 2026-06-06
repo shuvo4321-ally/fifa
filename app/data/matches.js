@@ -11,9 +11,9 @@ export const MATCHES = [
     type: "Full Replay",
     thumbnail: "/imgi_205_hq720.jpeg",
     badges: [
-      "https://upload.wikimedia.org/wikipedia/en/3/3a/1986_FIFA_World_Cup.svg",
-      "https://upload.wikimedia.org/wikipedia/commons/1/1a/Flag_of_Argentina.svg",
-      "https://upload.wikimedia.org/wikipedia/commons/b/ba/Flag_of_Germany.svg"
+      "https://upload.wikimedia.org/wikipedia/en/3/3a/1986_FIFA_World_Cup.png",
+      "https://upload.wikimedia.org/wikipedia/commons/1/1a/Flag_of_Argentina.png",
+      "https://upload.wikimedia.org/wikipedia/commons/b/ba/Flag_of_Germany.png"
     ],
   },
   {
@@ -29,8 +29,8 @@ export const MATCHES = [
     type: "Highlights",
     thumbnail: "/ffff.jpeg",
     badges: [
-      "https://upload.wikimedia.org/wikipedia/en/3/3a/1986_FIFA_World_Cup.svg",
-      "https://upload.wikimedia.org/wikipedia/commons/1/1a/Flag_of_Argentina.svg"
+      "https://upload.wikimedia.org/wikipedia/en/3/3a/1986_FIFA_World_Cup.png",
+      "https://upload.wikimedia.org/wikipedia/commons/1/1a/Flag_of_Argentina.png"
     ],
   }
 ];

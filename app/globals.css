@@ -1,9 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800;900&display=swap');
-
 :root {
   /* Typography */
   /* Oscine is DAZN's proprietary font (not available); Hanken Grotesk is a close free stand-in. */
-  --font-family-primary: 'Hanken Grotesk', Oscine, 'Helvetica Neue', helvetica, arial, sans-serif;
+  --font-family-primary: var(--font-hanken), Oscine, 'Helvetica Neue', helvetica, arial, sans-serif;
   --font-weight-base: 400;
   --font-line-height-base: normal;
   
@@ -2085,7 +2083,7 @@ a.search-result:hover {
 .legend-card-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(110deg, rgba(15,23,42,1) 40%, rgba(15,23,42,0.6) 60%, transparent 80%);
+  background: linear-gradient(110deg, rgba(15,23,42,0.95) 15%, rgba(15,23,42,0.5) 35%, transparent 55%);
 }
 
 .legend-card-content {
@@ -3003,6 +3001,11 @@ a.search-result:hover {
     transform: none;
     max-width: none;
     padding: 0;
+  }
+
+  .hero .hero-content.centered {
+    left: var(--page-gutter);
+    top: 75%;
   }
   .hero-desc {
     font-size: var(--font-size-md);

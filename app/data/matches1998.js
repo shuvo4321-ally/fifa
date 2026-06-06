@@ -10,9 +10,9 @@ export const MATCHES = [
     type: "Full Replay",
     thumbnail: "/images/hero-1998.png",
     badges: [
-      "https://upload.wikimedia.org/wikipedia/en/2/23/1998_FIFA_World_Cup_logo.svg",
-      "https://flagcdn.com/br.svg",
-      "https://flagcdn.com/fr.svg"
+      "https://upload.wikimedia.org/wikipedia/en/2/23/1998_FIFA_World_Cup_logo.png",
+      "https://flagcdn.com/br.png",
+      "https://flagcdn.com/fr.png"
     ],
   },
   {
@@ -26,9 +26,9 @@ export const MATCHES = [
     type: "Full Replay",
     thumbnail: "/images/fra-cro-1998.jpg",
     badges: [
-      "https://upload.wikimedia.org/wikipedia/en/2/23/1998_FIFA_World_Cup_logo.svg",
-      "https://flagcdn.com/fr.svg",
-      "https://flagcdn.com/hr.svg"
+      "https://upload.wikimedia.org/wikipedia/en/2/23/1998_FIFA_World_Cup_logo.png",
+      "https://flagcdn.com/fr.png",
+      "https://flagcdn.com/hr.png"
     ],
   },
   {
@@ -42,9 +42,9 @@ export const MATCHES = [
     type: "Full Replay",
     thumbnail: "/images/bra-ned-fulltime-1998.webp",
     badges: [
-      "https://upload.wikimedia.org/wikipedia/en/2/23/1998_FIFA_World_Cup_logo.svg",
-      "https://flagcdn.com/br.svg",
-      "https://flagcdn.com/nl.svg"
+      "https://upload.wikimedia.org/wikipedia/en/2/23/1998_FIFA_World_Cup_logo.png",
+      "https://flagcdn.com/br.png",
+      "https://flagcdn.com/nl.png"
     ],
   },
   {
@@ -58,9 +58,9 @@ export const MATCHES = [
     type: "Full Replay",
     thumbnail: "/images/bra-ned-extratime-1998.png",
     badges: [
-      "https://upload.wikimedia.org/wikipedia/en/2/23/1998_FIFA_World_Cup_logo.svg",
-      "https://flagcdn.com/br.svg",
-      "https://flagcdn.com/nl.svg"
+      "https://upload.wikimedia.org/wikipedia/en/2/23/1998_FIFA_World_Cup_logo.png",
+      "https://flagcdn.com/br.png",
+      "https://flagcdn.com/nl.png"
     ],
   }
 ];

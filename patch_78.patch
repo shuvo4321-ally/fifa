@@ -1,0 +1,8 @@
+diff --git a/public/flags/qa.svg b/public/flags/qa.svg
+deleted file mode 100644
+index 65b21848a5ca472a472cb076b5be9eff7a8505b2..0000000000000000000000000000000000000000
+--- a/public/flags/qa.svg
++++ /dev/null
+@@ -1 +0,0 @@
+-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="550" preserveAspectRatio="none" viewBox="0 0 75 18"><path fill="#8a1538" d="M0 0h75v18H0"/><path fill="#fff" d="M22 18H0V0h22l6 1-6 1 6 1-6 1 6 1-6 1 6 1-6 1 6 1-6 1 6 1-6 1 6 1-6 1 6 1-6 1 6 1z"/></svg>
+\ No newline at end of file

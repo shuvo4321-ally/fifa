@@ -1,0 +1,8 @@
+diff --git a/public/flags/jm.svg b/public/flags/jm.svg
+deleted file mode 100644
+index 7273742b6549b2a56c0bebd99ac1ea29c81c8fe1..0000000000000000000000000000000000000000
+--- a/public/flags/jm.svg
++++ /dev/null
+@@ -1 +0,0 @@
+-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 12 6"><defs><clipPath id="a"><path d="M0 0h12v6H0z"/></clipPath></defs><path fill="#007749" d="M0 0h12v6H0z"/><path stroke="#ffb81c" clip-path="url(#a)" d="M-2-1v8l16-8v8z"/></svg>
+\ No newline at end of file

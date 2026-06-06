@@ -1,0 +1,8 @@
+diff --git a/public/flags/at.svg b/public/flags/at.svg
+deleted file mode 100644
+index 1229a26cf8b8804bfa6e6a287f9ac66172eb36a2..0000000000000000000000000000000000000000
+--- a/public/flags/at.svg
++++ /dev/null
+@@ -1 +0,0 @@
+-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><path fill="#c8102e" d="M0 0h900v600H0z"/><path fill="#fff" d="M0 200h900v200H0z"/></svg>
+\ No newline at end of file

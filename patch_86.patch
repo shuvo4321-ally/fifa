@@ -1,0 +1,8 @@
+diff --git a/public/flags/tn.svg b/public/flags/tn.svg
+deleted file mode 100644
+index 482b55a90d8e5e248197b132504216ff305e4bf7..0000000000000000000000000000000000000000
+--- a/public/flags/tn.svg
++++ /dev/null
+@@ -1 +0,0 @@
+-<svg width="1200" height="800" viewBox="-60 -40 120 80" xmlns="http://www.w3.org/2000/svg" fill="#e70013"><path d="M-60-40H60v80H-60z"/><circle fill="#fff" r="20"/><circle r="15"/><circle fill="#fff" cx="4" r="12"/><path d="m-5 0 16.281-5.29L1.22 8.56V-8.56L11.28 5.29z"/></svg>
+\ No newline at end of file

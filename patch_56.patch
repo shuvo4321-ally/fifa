@@ -1,0 +1,8 @@
+diff --git a/public/flags/jp.svg b/public/flags/jp.svg
+deleted file mode 100644
+index 0f02949295f965b714af739948287bec15667d0d..0000000000000000000000000000000000000000
+--- a/public/flags/jp.svg
++++ /dev/null
+@@ -1 +0,0 @@
+-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><path fill="#fff" d="M0 0h900v600H0z"/><circle fill="#bc002d" cx="450" cy="300" r="180"/></svg>
+\ No newline at end of file

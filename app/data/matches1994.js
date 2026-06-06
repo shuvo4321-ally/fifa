@@ -10,9 +10,9 @@ export const MATCHES = [
     type: "Highlights",
     thumbnail: "/1994_hero_new.png",
     badges: [
-      "https://upload.wikimedia.org/wikipedia/en/9/9c/1994_FIFA_World_Cup_logo.svg",
-      "https://flagcdn.com/br.svg",
-      "https://flagcdn.com/it.svg"
+      "https://upload.wikimedia.org/wikipedia/en/9/9c/1994_FIFA_World_Cup_logo.png",
+      "https://flagcdn.com/br.png",
+      "https://flagcdn.com/it.png"
     ],
   },
   {
@@ -26,9 +26,9 @@ export const MATCHES = [
     type: "Full Replay",
     thumbnail: "/1994_final_fulltime.jpg",
     badges: [
-      "https://upload.wikimedia.org/wikipedia/en/9/9c/1994_FIFA_World_Cup_logo.svg",
-      "https://flagcdn.com/br.svg",
-      "https://flagcdn.com/it.svg"
+      "https://upload.wikimedia.org/wikipedia/en/9/9c/1994_FIFA_World_Cup_logo.png",
+      "https://flagcdn.com/br.png",
+      "https://flagcdn.com/it.png"
     ],
   },
   {
@@ -42,9 +42,9 @@ export const MATCHES = [
     type: "Full Replay",
     thumbnail: "/1994_extratime.jpg",
     badges: [
-      "https://upload.wikimedia.org/wikipedia/en/9/9c/1994_FIFA_World_Cup_logo.svg",
-      "https://flagcdn.com/br.svg",
-      "https://flagcdn.com/it.svg"
+      "https://upload.wikimedia.org/wikipedia/en/9/9c/1994_FIFA_World_Cup_logo.png",
+      "https://flagcdn.com/br.png",
+      "https://flagcdn.com/it.png"
     ],
   },
   {
@@ -58,9 +58,9 @@ export const MATCHES = [
     type: "Full Replay",
     thumbnail: "/1994_bul_ita.png",
     badges: [
-      "https://upload.wikimedia.org/wikipedia/en/9/9c/1994_FIFA_World_Cup_logo.svg",
-      "https://flagcdn.com/bg.svg",
-      "https://flagcdn.com/it.svg"
+      "https://upload.wikimedia.org/wikipedia/en/9/9c/1994_FIFA_World_Cup_logo.png",
+      "https://flagcdn.com/bg.png",
+      "https://flagcdn.com/it.png"
     ],
   },
   {
@@ -74,9 +74,9 @@ export const MATCHES = [
     type: "Full Replay",
     thumbnail: "/1994_swe_bra.jpg",
     badges: [
-      "https://upload.wikimedia.org/wikipedia/en/9/9c/1994_FIFA_World_Cup_logo.svg",
-      "https://flagcdn.com/se.svg",
-      "https://flagcdn.com/br.svg"
+      "https://upload.wikimedia.org/wikipedia/en/9/9c/1994_FIFA_World_Cup_logo.png",
+      "https://flagcdn.com/se.png",
+      "https://flagcdn.com/br.png"
     ],
   }
 ];

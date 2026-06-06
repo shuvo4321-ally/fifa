@@ -3,31 +3,45 @@
 import { useState, useEffect, useRef } from "react";
 import MatchCard from "../components/MatchCard";
 import Hero from "../components/Hero";
+import useMediaQuery from "../lib/useMediaQuery";
 import { MATCHES, HERO } from "../data/matches1998";
-
-const UP_NEXT_AFTER_MS = 30000;
 
 export default function WorldCup1998() {
   const [activeMatch, setActiveMatch] = useState(null);
-  const [showUpNext, setShowUpNext] = useState(false);
   const playerRef = useRef(null);
   // Phones block autoplay-with-sound (and in-app browsers hang on the attempt),
   // so on mobile we let the player show a clean tap-to-play instead.
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    setIsMobile(window.matchMedia("(max-width: 640px)").matches);
-  }, []);
+  const isMobile = useMediaQuery("(max-width: 640px)");
 
   const openMatch = (match) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
-    setShowUpNext(false);
     setActiveMatch(match);
+    window.location.hash = match.id;
   };
 
-  const backToHome = () => {
-    setShowUpNext(false);
-    setActiveMatch(null);
-  };
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (hash) {
+      const match = MATCHES.find(m => m.id === hash);
+      if (match) {
+        setActiveMatch(match);
+      }
+    }
+    
+    const handleHashChange = () => {
+      const currentHash = window.location.hash.replace('#', '');
+      if (currentHash) {
+        const match = MATCHES.find(m => m.id === currentHash);
+        if (match) {
+          setActiveMatch(match);
+        }
+      } else {
+        setActiveMatch(null);
+      }
+    };
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
 
   
   const activeIndex = activeMatch ? MATCHES.indexOf(activeMatch) : -1;
@@ -36,7 +50,6 @@ export default function WorldCup1998() {
 
   useEffect(() => {
     if (!activeMatch) return;
-    setShowUpNext(false);
     
     let transitioned = false;
 
@@ -113,36 +126,6 @@ export default function WorldCup1998() {
 
               
 
-              {showUpNext && nextMatch && (
-                <div className="upnext-overlay" onClick={() => setShowUpNext(false)}>
-                  <button
-                    className="upnext-close"
-                    aria-label="Dismiss"
-                    onClick={() => setShowUpNext(false)}
-                  >
-                    ✕
-                  </button>
-
-
-
-                  <div className="upnext-panel">
-                    <span className="upnext-label">Up next</span>
-                    <button
-                      className="upnext-card"
-                      onClick={() => openMatch(nextMatch)}
-                    >
-                      <img src={nextMatch.thumbnail} alt="" className="upnext-thumb" />
-                      <div className="upnext-text">
-                        <strong>{nextMatch.title}</strong>
-                        <span>{nextMatch.subtitle}</span>
-                      </div>
-                    </button>
-                    <button className="upnext-home" onClick={backToHome}>
-                      Back to home
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
 
             <div className="theater-meta">

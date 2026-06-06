@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 export default function MatchCard({ match, onPlay }) {
   return (
     <article className="match-card">
@@ -12,7 +14,13 @@ export default function MatchCard({ match, onPlay }) {
             if (onPlay) onPlay(match);
           }}
         >
-          <img src={match.thumbnail} alt="" loading="lazy" className="poster-img" />
+          <Image 
+            src={match.thumbnail} 
+            alt={match.title || "Match thumbnail"} 
+            fill={true}
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="poster-img" 
+          />
           
           {match.date && <div className="date-pill">{match.date}</div>}
         </a>
