@@ -88,6 +88,7 @@ export default function Home() {
   const filmsScrollRef = useRef(null);
   const legendsSectionRef = useRef(null);
   const legendsBgRef = useRef(null);
+  const isDraggingRef = useRef(false);
 
   useEffect(() => {
     const hash = window.location.hash.replace('#', '');
@@ -184,6 +185,7 @@ export default function Home() {
     ref.current.scrollLeftStart = ref.current.scrollLeft;
     ref.current.style.scrollSnapType = 'none';
     ref.current.style.scrollBehavior = 'auto';
+    isDraggingRef.current = false;
   };
 
   const handleMouseLeave = (ref) => {
@@ -198,6 +200,7 @@ export default function Home() {
     ref.current.isDown = false;
     ref.current.style.scrollSnapType = 'x mandatory';
     ref.current.style.scrollBehavior = 'smooth';
+    setTimeout(() => { isDraggingRef.current = false; }, 50);
   };
 
   const handleMouseMove = (e, ref) => {
@@ -205,6 +208,9 @@ export default function Home() {
     e.preventDefault();
     const x = e.pageX - ref.current.offsetLeft;
     const walk = (x - ref.current.startX) * 1.5;
+    if (Math.abs(walk) > 5) {
+      isDraggingRef.current = true;
+    }
     ref.current.scrollLeft = ref.current.scrollLeftStart - walk;
   };
 
@@ -294,6 +300,9 @@ export default function Home() {
                     key={i}
                     href={`/${t.slug}`}
                     className="tournament-card"
+                    onClick={(e) => {
+                      if (isDraggingRef.current) e.preventDefault();
+                    }}
                   >
                     <div className="tournament-poster">
                       <TournamentImg src={t.thumbnail} />
@@ -360,7 +369,13 @@ export default function Home() {
                 <div 
                   className="legend-card-container" 
                   key={i}
-                  onClick={() => { if(f.source) openLegend(f); }}
+                  onClick={(e) => { 
+                    if (isDraggingRef.current) {
+                      e.preventDefault();
+                      return;
+                    }
+                    if(f.source) openLegend(f); 
+                  }}
                   style={{ cursor: f.source ? 'pointer' : 'grab' }}
                 >
                   <div className="legend-card">

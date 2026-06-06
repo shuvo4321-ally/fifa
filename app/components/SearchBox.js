@@ -120,7 +120,7 @@ export default function SearchBox({ onResultClick }) {
             {matchResults.map((m, i) => (
               <li key={`m-${i}`}>
                 <Link
-                  href={`/${m.year}`}
+                  href={`/${m.year}#${m.id}`}
                   className="search-result"
                   onClick={() => {
                     setOpen(false);

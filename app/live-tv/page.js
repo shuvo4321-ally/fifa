@@ -68,8 +68,7 @@ export default function LiveTvPage() {
         )}
 
         <p className="live-note">
-          {active?.group ? `${active.group} · ` : ""}Live stream. Tap the player to
-          unmute.
+          {active?.group ? `${active.group} · ` : ""}Live stream.
         </p>
       </main>
     </>

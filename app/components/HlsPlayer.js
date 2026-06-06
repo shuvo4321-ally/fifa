@@ -63,7 +63,6 @@ export default function HlsPlayer({ src, poster }) {
       controls
       autoPlay
       playsInline
-      muted
       poster={poster}
     />
   );
