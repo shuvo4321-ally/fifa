@@ -68,7 +68,7 @@ function TournamentImg({ src }) {
     // mount and hide it so only the gradient placeholder shows.
     if (img && img.complete && img.naturalWidth === 0) setHidden(true);
   }, []);
-  if (hidden) return null;
+  if (hidden || !src) return null;
   return (
     <img
       ref={ref}

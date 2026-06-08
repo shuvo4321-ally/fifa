@@ -1,28 +1,28 @@
 export const TOURNAMENTS = [
   {
     slug: null,
-    title: "2026 FIFA World Cup™",
-    thumbnail: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=800&auto=format&fit=crop",
+    title: "2026 FIFA World Cup USA/Canada/Mexico™",
+    thumbnail: null,
   },
   {
     slug: null,
     title: "2022 FIFA World Cup Qatar™",
-    thumbnail: "https://images.unsplash.com/photo-1518605368461-1e9de4504eb9?q=80&w=800&auto=format&fit=crop",
+    thumbnail: "/2022_card.png",
   },
   {
     slug: null,
     title: "2018 FIFA World Cup Russia™",
-    thumbnail: "https://images.unsplash.com/photo-1551280857-2b9bbe5204f6?q=80&w=800&auto=format&fit=crop",
+    thumbnail: "/2018_card.png",
   },
   {
     slug: null,
     title: "2014 FIFA World Cup Brazil™",
-    thumbnail: "https://images.unsplash.com/photo-1508344928928-7165b67de128?q=80&w=800&auto=format&fit=crop",
+    thumbnail: "/2014_card.png",
   },
   {
     slug: null,
     title: "2010 FIFA World Cup South Africa™",
-    thumbnail: "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?q=80&w=800&auto=format&fit=crop",
+    thumbnail: "/2010_card.png",
   },
   {
     slug: "2006",

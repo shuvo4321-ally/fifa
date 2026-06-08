@@ -2223,10 +2223,19 @@ a.search-result:hover {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
+  max-height: 75vh;
   background: #000;
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+@media (max-width: 640px) {
+  .live-stage {
+    aspect-ratio: auto;
+    height: 65vh;
+    min-height: 380px;
+  }
 }
 
 .live-video {
@@ -3029,10 +3038,11 @@ a.search-result:hover {
   .hero-desc { text-shadow: 0 2px 14px rgba(0, 0, 0, 0.75); }
 
   /* ---- Schedule: reclaim side space, tighten ---- */
-  .unified-groups-grid { padding: var(--space-6) var(--space-5); gap: var(--space-6); }
-  .fixtures-list { padding: var(--space-6) var(--space-5); }
-  .calendar-hero { padding: var(--space-7) var(--space-5) 0; }
-  .calendar-subnav { padding: 0 var(--space-5); gap: var(--space-6); }
+  .calendar-content { padding: var(--space-4) 0; }
+  .unified-groups-grid { padding: 0 var(--space-3); gap: 32px; }
+  .fixtures-list { padding: 0 var(--space-3); }
+  .calendar-hero { padding: var(--space-7) var(--space-3) 0; }
+  .calendar-subnav { padding: 0 var(--space-3); gap: var(--space-6); }
 
   /* ---- Scorecard modal ---- */
   .scorecard-overlay { padding: var(--space-5); }

@@ -15,6 +15,12 @@ export default function LiveTvPage() {
     if (!hasSeenPopup) {
       setShowPopup(true);
       localStorage.setItem("hasSeenLiveTvPopup", "true");
+      
+      const timer = setTimeout(() => {
+        setShowPopup(false);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
     }
   }, []);
 

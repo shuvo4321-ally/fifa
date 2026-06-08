@@ -39,11 +39,14 @@ export default function SearchBox({ onResultClick }) {
 
   const matchResults = query
     ? ALL_MATCHES.filter(
-        (m) =>
-          m.title?.toLowerCase().includes(query) ||
-          m.subtitle?.toLowerCase().includes(query) ||
-          m.description?.toLowerCase().includes(query) ||
-          m.year?.includes(query)
+        (m) => {
+          const qStr = query.replace("reply", "replay"); // handle common typo
+          return m.title?.toLowerCase().includes(qStr) ||
+          m.subtitle?.toLowerCase().includes(qStr) ||
+          m.description?.toLowerCase().includes(qStr) ||
+          m.year?.includes(qStr) ||
+          m.type?.toLowerCase().includes(qStr);
+        }
       )
     : [];
 
