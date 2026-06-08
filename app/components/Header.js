@@ -7,7 +7,7 @@ import SearchBox from "./SearchBox";
 
 const NAV = [
   { label: "Home", href: "/" },
-  { label: "Broadcast", href: "/live" },
+  { label: "Prediction", href: "/live" },
   { label: "Live TV", href: "/live-tv" },
   { label: "Schedule", href: "/calendar" },
 ];

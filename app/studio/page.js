@@ -1,8 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { LIVE_MATCHES } from "../data/channels";
+
 const JitsiRoom = dynamic(() => import("../components/JitsiRoom"), { ssr: false });
+
+function genToken() {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
 
 export default function Studio() {
   // --- Password gate ---
@@ -14,15 +20,43 @@ export default function Studio() {
   // --- Broadcast state ---
   const [isLive, setIsLive] = useState(false);
   const [joined, setJoined] = useState(false);
+  const [selectedSlug, setSelectedSlug] = useState("__global__");
+  const [lockError, setLockError] = useState("");
+
+  const tokenRef = useRef(genToken());
+  const heartbeatRef = useRef(null);
 
   // Phones can't screen-share, so we show camera-based steps there.
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && sessionStorage.getItem("cron-studio-ok") === "1") {
+    if (sessionStorage.getItem("cron-studio-ok") === "1") {
       setUnlocked(true);
     }
-    setIsMobile(window.matchMedia("(max-width: 640px)").matches);
+    const mq = window.matchMedia("(max-width: 640px)");
+    setIsMobile(mq.matches);
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  // Release the broadcast lock on page unload / unmount.
+  useEffect(() => {
+    const releaseOnUnload = () => {
+      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+      navigator.sendBeacon(
+        "/api/broadcast",
+        new Blob(
+          [JSON.stringify({ action: "stop", token: tokenRef.current })],
+          { type: "application/json" }
+        )
+      );
+    };
+    window.addEventListener("beforeunload", releaseOnUnload);
+    return () => {
+      window.removeEventListener("beforeunload", releaseOnUnload);
+      releaseOnUnload(); // also fire on client-side navigation
+    };
   }, []);
 
   const submitPw = async (e) => {
@@ -37,6 +71,7 @@ export default function Studio() {
       });
       if (r.ok) {
         sessionStorage.setItem("cron-studio-ok", "1");
+        sessionStorage.setItem("cron-studio-pw", pw);
         setUnlocked(true);
       } else {
         const d = await r.json().catch(() => ({}));
@@ -49,16 +84,75 @@ export default function Studio() {
     }
   };
 
-  const goLive = () => setIsLive(true);
+  /** Call the broadcast-lock API. */
+  const broadcastApi = async (action, slug) => {
+    try {
+      const storedPw = sessionStorage.getItem("cron-studio-pw") || "";
+      const r = await fetch("/api/broadcast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          slug: slug || null,
+          token: tokenRef.current,
+          password: storedPw,
+        }),
+      });
+      return await r.json();
+    } catch {
+      return { ok: false };
+    }
+  };
 
-  const endLive = () => {
+  const selectedMatch =
+    LIVE_MATCHES.find((m) => m.slug === selectedSlug) || null;
+  const broadcastSlug = selectedMatch ? selectedMatch.slug : null;
+  const roomName = selectedMatch ? selectedMatch.room : "CRON-GLOBAL-LIVE";
+
+  const goLive = async () => {
+    setLockError("");
+    const res = await broadcastApi("start", broadcastSlug);
+    if (!res.ok) {
+      setLockError(
+        res.liveSlug
+          ? `Another broadcaster is already live on "${res.liveSlug}". Wait for them to finish.`
+          : "Couldn't acquire the broadcast lock — try again."
+      );
+      return;
+    }
+    setIsLive(true);
+    // Heartbeat every 8 s — the server expires the lock after 20 s of silence.
+    heartbeatRef.current = setInterval(() => {
+      broadcastApi("beat", broadcastSlug);
+    }, 8000);
+  };
+
+  const endLive = async () => {
+    if (heartbeatRef.current) {
+      clearInterval(heartbeatRef.current);
+      heartbeatRef.current = null;
+    }
+    await broadcastApi("stop", broadcastSlug);
     setIsLive(false);
     setJoined(false);
+    setLockError("");
   };
 
   const handleLiveChange = useCallback((live) => {
     setJoined(live);
-    if (!live) setIsLive(false);
+    if (!live) {
+      // Jitsi disconnected — release the lock.
+      setIsLive(false);
+      if (heartbeatRef.current) {
+        clearInterval(heartbeatRef.current);
+        heartbeatRef.current = null;
+      }
+      fetch("/api/broadcast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "stop", token: tokenRef.current }),
+      }).catch(() => {});
+    }
   }, []);
 
   // --- Locked: ask for the broadcaster password ---
@@ -128,7 +222,7 @@ export default function Studio() {
       >
         <div className="live-stage">
           {isLive ? (
-            <JitsiRoom role="host" room="CRON-GLOBAL-LIVE" onLiveChange={handleLiveChange} />
+            <JitsiRoom role="host" room={roomName} onLiveChange={handleLiveChange} />
           ) : (
             <div className="live-overlay live-cover">
               <span className="live-kicker">
@@ -138,9 +232,27 @@ export default function Studio() {
               <p className="live-overlay-title">You're not on air yet</p>
               <p className="live-overlay-sub">
                 {isMobile
-                  ? "Hit Go live, then tap the camera icon to broadcast your camera."
-                  : "Hit Go live, then share your screen or switch to OBS Virtual Camera."}
+                  ? "Select a channel, hit Go live, then tap the camera icon to broadcast."
+                  : "Select a channel below, then hit Go live to start broadcasting."}
               </p>
+
+              {/* Match / channel selector */}
+              <select
+                className="search-input"
+                style={{ maxWidth: 340, margin: "0 auto var(--space-4)", cursor: "pointer" }}
+                value={selectedSlug}
+                onChange={(e) => setSelectedSlug(e.target.value)}
+              >
+                <option value="__global__">🌐 Global broadcast (all /live viewers)</option>
+                {LIVE_MATCHES.map((m) => (
+                  <option key={m.slug} value={m.slug}>
+                    {m.team1} vs {m.team2} — {m.date}
+                  </option>
+                ))}
+              </select>
+
+              {lockError && <p className="live-error">{lockError}</p>}
+
               <button className="studio-golive" onClick={goLive}>
                 <span className="live-dot is-on" />
                 Go live
@@ -150,6 +262,26 @@ export default function Studio() {
         </div>
 
         <aside className="studio-panel" style={{ marginTop: 0 }}>
+          {isLive && (
+            <div style={{ marginBottom: "var(--space-4)" }}>
+              <span className="live-kicker">
+                <span className="live-dot is-on" />
+                On air
+              </span>
+              <p style={{ margin: "var(--space-2) 0 0", opacity: 0.7 }}>
+                Broadcasting to:{" "}
+                <b>
+                  {selectedMatch
+                    ? `${selectedMatch.team1} vs ${selectedMatch.team2}`
+                    : "Global"}
+                </b>
+              </p>
+              <p style={{ margin: "var(--space-1) 0 0", opacity: 0.5, fontSize: "0.85em" }}>
+                Room: {roomName}
+              </p>
+            </div>
+          )}
+
           {isMobile ? (
             <>
               <span className="channel-stage">Go live from your phone</span>
@@ -157,7 +289,7 @@ export default function Studio() {
                 <li>
                   <span className="studio-step-num">1</span>
                   <span>
-                    Tap <b>Go live</b>.
+                    Select a channel and tap <b>Go live</b>.
                   </span>
                 </li>
                 <li>
@@ -183,7 +315,7 @@ export default function Studio() {
                 <li>
                   <span className="studio-step-num">1</span>
                   <span>
-                    <b>Go live</b> to claim the channel.
+                    Select a channel and click <b>Go live</b>.
                   </span>
                 </li>
                 <li>
@@ -201,7 +333,8 @@ export default function Studio() {
             </>
           )}
           <p className="studio-watch">
-            Viewers watch at <b>/live</b>
+            Viewers watch at{" "}
+            <b>{selectedMatch ? `/live/${selectedMatch.slug}` : "/live"}</b>
           </p>
           {isLive && (
             <button className="live-stop" onClick={endLive}>

@@ -44,6 +44,12 @@ export default function HlsPlayer({ src, poster }) {
     return () => {
       cancelled = true;
       if (hls) hls.destroy();
+      // On Safari (native HLS), hls is never created — clean up the native src.
+      if (video) {
+        video.pause();
+        video.removeAttribute("src");
+        video.load(); // resets the element
+      }
     };
   }, [src]);
 

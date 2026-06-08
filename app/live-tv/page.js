@@ -18,7 +18,7 @@ export default function LiveTvPage() {
       
       const timer = setTimeout(() => {
         setShowPopup(false);
-      }, 5000);
+      }, 2500);
       
       return () => clearTimeout(timer);
     }

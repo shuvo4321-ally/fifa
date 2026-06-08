@@ -27,12 +27,17 @@ export async function POST(request) {
     return Response.json({ error: "bad request" }, { status: 400 });
   }
 
-  const { action, slug, token } = body || {};
+  const { action, slug, token, password } = body || {};
   if (!token) return Response.json({ error: "missing token" }, { status: 400 });
 
   const l = current();
 
   if (action === "start") {
+    // Validate broadcast password before allowing a new lock.
+    const expected = (process.env.BROADCAST_PASSWORD || "").trim();
+    if (expected && (!password || password.trim() !== expected)) {
+      return Response.json({ error: "invalid password" }, { status: 401 });
+    }
     // Acquire only if the channel is free or already held by us.
     if (l.token && l.token !== token) {
       return Response.json({ ok: false, liveSlug: l.liveSlug }, { status: 409 });
