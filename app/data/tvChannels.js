@@ -50,6 +50,12 @@ export const TV_CHANNELS = [
   },
 
   {
+    name: "BTV National",
+    logo: "https://images.seeklogo.com/logo-png/45/1/btv-bangladesh-television-logo-png_seeklogo-459657.png",
+    group: "Bangla",
+    url: "https://tvsen6.aynaott.com/btvhd/index.m3u8",
+  },
+  {
     name: "BTV CTG",
     logo: "https://s3.aynaott.com/storage/00da8a07fb26b2fb79359ee535e4c7bc",
     group: "Bangla",
