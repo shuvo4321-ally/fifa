@@ -17,28 +17,43 @@ export async function GET(request) {
   team1 = team1.trim();
   team2 = team2.trim();
   
-  const apiKey = process.env.FOOTBALL_DATA_API_KEY;
-  if (!apiKey) {
+  const keysStr = process.env.FOOTBALL_DATA_SCHEDULE_KEY || process.env.FOOTBALL_DATA_API_KEY;
+  if (!keysStr) {
     return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
   }
+  const apiKeys = keysStr.split(",").map(k => k.trim()).filter(Boolean);
 
   try {
     const now = Date.now();
     // Only fetch if cache is empty or expired
     if (!cachedData || now - lastFetchTime > CACHE_TTL) {
-      const res = await fetch('https://api.football-data.org/v4/competitions/WC/matches', {
-        headers: { 'X-Auth-Token': apiKey },
-        // Use Next.js cache bypass for this specific internal fetch to let our custom TTL handle it
-        cache: 'no-store'
-      });
-      
-      if (res.ok) {
-        cachedData = await res.json();
-        lastFetchTime = now;
-      } else if (cachedData) {
-        // If API fails (e.g. rate limit), fallback to stale cache silently
-      } else {
-        throw new Error(`API Error: ${res.status}`);
+      let success = false;
+      let lastErrorStatus = null;
+
+      for (let i = 0; i < apiKeys.length; i++) {
+        const key = apiKeys[i];
+        const res = await fetch('https://api.football-data.org/v4/competitions/WC/matches', {
+          headers: { 'X-Auth-Token': key },
+          cache: 'no-store'
+        });
+        
+        if (res.ok) {
+          cachedData = await res.json();
+          lastFetchTime = now;
+          success = true;
+          break; // Stop looping on success
+        } else {
+          lastErrorStatus = res.status;
+          // If rate limited, try next key
+          if (res.status === 429 || res.status === 403) {
+            continue;
+          }
+          break; // Stop looping on fatal error
+        }
+      }
+
+      if (!success && !cachedData) {
+         throw new Error(`API Error. Last status: ${lastErrorStatus}`);
       }
     }
 

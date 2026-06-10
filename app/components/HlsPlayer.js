@@ -2,15 +2,22 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export default function HlsPlayer({ src, poster }) {
+export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext }) {
   const videoRef = useRef(null);
+  const containerRef = useRef(null);
+  const hlsRef = useRef(null);
+  const hoverTimeoutRef = useRef(null);
+  
   const [error, setError] = useState("");
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !src) return;
     setError("");
-    let hls;
     let cancelled = false;
 
     (async () => {
@@ -23,14 +30,13 @@ export default function HlsPlayer({ src, poster }) {
         const { default: Hls } = await import("hls.js");
         if (cancelled) return;
         if (Hls.isSupported()) {
-          hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+          const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+          hlsRef.current = hls;
           hls.loadSource(src);
           hls.attachMedia(video);
           hls.on(Hls.Events.ERROR, (_e, data) => {
             if (data?.fatal) {
-              setError(
-                "This channel couldn't load — the token may have expired, or it's geo-blocked / blocking cross-site playback."
-              );
+              setError("This channel couldn't load — the token may have expired, or it's geo-blocked / blocking cross-site playback.");
             }
           });
         } else {
@@ -43,15 +49,92 @@ export default function HlsPlayer({ src, poster }) {
 
     return () => {
       cancelled = true;
-      if (hls) hls.destroy();
-      // On Safari (native HLS), hls is never created — clean up the native src.
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
       if (video) {
         video.pause();
         video.removeAttribute("src");
-        video.load(); // resets the element
+        video.load();
       }
     };
   }, [src]);
+
+  // Sync state with video
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+    video.addEventListener("play", onPlay);
+    video.addEventListener("pause", onPause);
+    return () => {
+      video.removeEventListener("play", onPlay);
+      video.removeEventListener("pause", onPause);
+    };
+  }, []);
+
+  const handleMouseMove = () => {
+    setIsHovering(true);
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHovering(false);
+    }, 2500);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+  };
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (videoRef.current.paused) videoRef.current.play();
+      else videoRef.current.pause();
+    }
+  };
+
+  const handleVolumeChange = (e) => {
+    const val = parseFloat(e.target.value);
+    setVolume(val);
+    if (videoRef.current) {
+      videoRef.current.volume = val;
+      if (val > 0 && isMuted) {
+        setIsMuted(false);
+        videoRef.current.muted = false;
+      }
+    }
+  };
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      const newMuted = !isMuted;
+      setIsMuted(newMuted);
+      videoRef.current.muted = newMuted;
+    }
+  };
+
+  const togglePip = async () => {
+    if (videoRef.current && document.pictureInPictureEnabled) {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else {
+        await videoRef.current.requestPictureInPicture();
+      }
+    }
+  };
+
+  const reloadStream = () => {
+    if (hlsRef.current && videoRef.current) {
+      hlsRef.current.stopLoad();
+      hlsRef.current.startLoad();
+      videoRef.current.play();
+    } else if (videoRef.current) {
+      videoRef.current.load();
+      videoRef.current.play();
+    }
+  };
 
   if (error) {
     return (
@@ -63,13 +146,81 @@ export default function HlsPlayer({ src, poster }) {
   }
 
   return (
-    <video
-      ref={videoRef}
-      className="live-video"
-      controls
-      autoPlay
-      playsInline
-      poster={poster}
-    />
+    <div 
+      className="custom-player-wrapper" 
+      ref={containerRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      <video
+        ref={videoRef}
+        className="live-video"
+        disablePictureInPicture={false}
+        autoPlay
+        playsInline
+        poster={poster}
+        onClick={togglePlay}
+        onDoubleClick={onFullscreen}
+      />
+      
+      {onPrev && (
+        <button 
+          className={`custom-nav-btn custom-nav-left ${isHovering || !isPlaying ? "is-visible" : ""}`}
+          onClick={(e) => { e.stopPropagation(); onPrev(); }}
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="11 17 6 12 11 7"></polyline><polyline points="18 17 13 12 18 7"></polyline></svg>
+        </button>
+      )}
+
+      {onNext && (
+        <button 
+          className={`custom-nav-btn custom-nav-right ${isHovering || !isPlaying ? "is-visible" : ""}`}
+          onClick={(e) => { e.stopPropagation(); onNext(); }}
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg>
+        </button>
+      )}
+
+      <div className={`custom-controls-bar ${isHovering || !isPlaying ? "is-visible" : ""}`}>
+        <div className="custom-controls-left">
+          <button className="control-btn" onClick={togglePlay}>
+            {isPlaying ? (
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"></rect><rect x="14" y="4" width="4" height="16" rx="1"></rect></svg>
+            ) : (
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            )}
+          </button>
+          
+          <button className="control-btn" onClick={toggleMute}>
+            {isMuted || volume === 0 ? (
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+            ) : (
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+            )}
+          </button>
+
+          <input 
+            type="range" 
+            className="volume-slider" 
+            min="0" max="1" step="0.05" 
+            value={isMuted ? 0 : volume} 
+            onChange={handleVolumeChange} 
+            style={{ '--vol-fill': `${(isMuted ? 0 : volume) * 100}%` }}
+          />
+        </div>
+
+        <div className="custom-controls-right">
+          <button className="control-btn" onClick={togglePip} title="Picture-in-Picture">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect><rect x="12" y="11" width="7" height="5" rx="1" ry="1"></rect></svg>
+          </button>
+          <button className="control-btn" onClick={reloadStream} title="Reload Stream">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+          </button>
+          <button className="control-btn" onClick={onFullscreen} title="Fullscreen">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m11-5h3a2 2 0 0 1 2 2v3m0 8v3a2 2 0 0 1-2 2h-3m-8 0H5a2 2 0 0 1-2-2v-3"></path></svg>
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -3,6 +3,9 @@
  * Used to fetch real squad data, coaches, and recent results
  * before passing them as RAG context to Gemini.
  */
+import { findRapidTeam, getRapidSquad, getRapidRecentStats } from "./apiFootball.js";
+import { supabase } from "./supabase.js";
+
 
 const API_BASE = "https://api.football-data.org/v4";
 
@@ -21,28 +24,49 @@ function setCache(key, data) {
 }
 
 async function fetchApi(endpoint) {
-  const key = process.env.FOOTBALL_DATA_API_KEY;
-  if (!key) return null;
+  // Use the specific schedule key if fetching matches, otherwise use the main key
+  const isMatchSchedule = endpoint.includes("/matches");
+  const keysStr = isMatchSchedule 
+    ? process.env.FOOTBALL_DATA_SCHEDULE_KEY || process.env.FOOTBALL_DATA_API_KEY 
+    : process.env.FOOTBALL_DATA_API_KEY;
+
+  if (!keysStr) return null;
+  const apiKeys = keysStr.split(",").map(k => k.trim()).filter(Boolean);
 
   const cached = getCached(endpoint);
   if (cached) return cached;
 
-  try {
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      headers: { "X-Auth-Token": key },
-      next: { revalidate: 3600 },
-    });
-    if (!res.ok) {
-      console.warn(`football-data.org ${res.status} for ${endpoint}`);
-      return null;
+  let lastError = null;
+
+  for (let i = 0; i < apiKeys.length; i++) {
+    const key = apiKeys[i];
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        headers: { "X-Auth-Token": key },
+        next: { revalidate: 3600 },
+      });
+      
+      if (!res.ok) {
+        console.warn(`football-data.org ${res.status} for ${endpoint} using key ${i+1}/${apiKeys.length}`);
+        lastError = res.status;
+        // If 429 Too Many Requests or 403 Forbidden (quota limit), try next key
+        if (res.status === 429 || res.status === 403) {
+          continue;
+        }
+        return null; // Other errors like 404, 400 don't need retry
+      }
+      
+      const data = await res.json();
+      setCache(endpoint, data);
+      return data;
+    } catch (err) {
+      console.warn(`football-data.org fetch failed with key ${i+1}/${apiKeys.length}:`, err.message);
+      lastError = err.message;
     }
-    const data = await res.json();
-    setCache(endpoint, data);
-    return data;
-  } catch (err) {
-    console.warn("football-data.org fetch failed:", err.message);
-    return null;
   }
+
+  console.error("All football-data.org API keys exhausted. Last error:", lastError);
+  return null;
 }
 
 // ── Helpers ──
@@ -73,6 +97,18 @@ function matchTeam(apiTeams, name) {
 // ── Public API ──
 
 /** Try to find a team in the WC 2026 competition, then fall back to global search. */
+export async function getSupabaseTeam(teamName) {
+  if (!supabase) return null;
+  const n = teamName.toLowerCase().trim();
+  const { data, error } = await supabase
+    .from('fifa_wc26_prediction')
+    .select('*')
+    .ilike('country', `%${n}%`)
+    .limit(1);
+  if (!error && data && data.length > 0) return data[0];
+  return null;
+}
+
 export async function findTeam(teamName) {
   // 1. Try WC competition (code may be WC or a season-specific id)
   const wcTeams = await fetchApi("/competitions/WC/teams");
@@ -103,28 +139,53 @@ export async function getRecentMatches(teamId, limit = 8) {
  * Build a rich RAG context string for a match between two teams.
  * Fetches squads, coaches, and recent results from football-data.org.
  */
-export async function buildMatchContext(team1Name, team2Name) {
-  const [team1, team2] = await Promise.all([findTeam(team1Name), findTeam(team2Name)]);
+export async function buildMatchAnalysis(team1Name, team2Name) {
+  const [team1, team2, rapidTeam1, rapidTeam2, supaTeam1, supaTeam2] = await Promise.all([
+    findTeam(team1Name),
+    findTeam(team2Name),
+    findRapidTeam(team1Name),
+    findRapidTeam(team2Name),
+    getSupabaseTeam(team1Name),
+    getSupabaseTeam(team2Name)
+  ]);
 
   const parts = [];
+  const signals = [];
 
-  for (const [name, team] of [
-    [team1Name, team1],
-    [team2Name, team2],
+  for (const [name, team, rapidTeam, supaTeam] of [
+    [team1Name, team1, rapidTeam1, supaTeam1],
+    [team2Name, team2, rapidTeam2, supaTeam2],
   ]) {
-    if (!team) {
+    // Structured signals the deterministic baseline model reads (see predictModel.js).
+    const signal = {
+      name,
+      hasData: false,
+      squadRating: null, // EA FC 26 squad average
+      top11: null,
+      form: null, // { w, d, l, played }
+      gf: 0,
+      ga: 0,
+      outcomes: [], // ["W","D","L", ...] most recent first
+    };
+
+    if (!team && !rapidTeam && !supaTeam) {
       parts.push(`\n## ${name}\n(No live API data — use your built-in knowledge)\n`);
+      signals.push(signal);
       continue;
     }
 
-    // Fetch squad + recent matches in parallel
-    const [details, matches] = await Promise.all([
-      getTeamSquad(team.id),
-      getRecentMatches(team.id, 8),
+    signal.hasData = true;
+
+    // Fetch squad + recent matches in parallel from both APIs
+    const [details, matches, rapidSquad, rapidStats] = await Promise.all([
+      team ? getTeamSquad(team.id) : null,
+      team ? getRecentMatches(team.id, 8) : [],
+      rapidTeam ? getRapidSquad(rapidTeam.id) : [],
+      rapidTeam ? getRapidRecentStats(rapidTeam.id) : []
     ]);
 
     let section = `\n## ${name}`;
-    if (team.tla) section += ` (${team.tla})`;
+    if (team && team.tla) section += ` (${team.tla})`;
     section += "\n";
 
     // Coach
@@ -132,8 +193,60 @@ export async function buildMatchContext(team1Name, team2Name) {
       section += `**Coach:** ${details.coach.name} (${details.coach.nationality || ""})\n`;
     }
 
-    // Squad grouped by position
-    if (details?.squad?.length) {
+    // Supabase Detailed Squad & Metrics (Highest Priority)
+    if (supaTeam && supaTeam.metrics && supaTeam.players) {
+      const sa = Number(supaTeam.metrics.squadAvg);
+      const t11 = Number(supaTeam.metrics.top11Avg);
+      if (!Number.isNaN(sa)) signal.squadRating = sa;
+      if (!Number.isNaN(t11)) signal.top11 = t11;
+      section += "\n### Current Squad & EA FC 26 Metrics (Database)\n";
+      section += `**Overall Squad Rating:** ${supaTeam.metrics.squadAvg} | **Top 11 Average:** ${supaTeam.metrics.top11Avg}\n`;
+      if (supaTeam.metrics.attack) {
+        section += `**Attack:** ${supaTeam.metrics.attack.overall} (Shooting: ${supaTeam.metrics.attack.sho}, Pace: ${supaTeam.metrics.attack.pac})\n`;
+        section += `**Midfield:** ${supaTeam.metrics.midfield.overall} (Passing: ${supaTeam.metrics.midfield.pas}, Dribbling: ${supaTeam.metrics.midfield.dri})\n`;
+        section += `**Defense:** ${supaTeam.metrics.defense.overall} (Defending: ${supaTeam.metrics.defense.def}, Physical: ${supaTeam.metrics.defense.phy})\n`;
+        section += `**Goalkeeper:** ${supaTeam.metrics.goalkeeper.overall} (Reflexes: ${supaTeam.metrics.goalkeeper.ref})\n`;
+      }
+      
+      const grouped = {};
+      for (const p of supaTeam.players) {
+        const pos = p.pos || "Unknown";
+        if (!grouped[pos]) grouped[pos] = [];
+        grouped[pos].push(p);
+      }
+      const order = ["GK", "DF", "MF", "FW", "Unknown"];
+      for (const pos of order) {
+        if (!grouped[pos]) continue;
+        section += `**${pos}:** `;
+        section += grouped[pos]
+          .map((p) => {
+            const ea = p.ea;
+            if (ea) return `${ea.ea_name} (OVR: ${ea.overall})`;
+            return p.name;
+          })
+          .join(" · ");
+        section += "\n";
+      }
+    } else if (rapidSquad && rapidSquad.length > 0) {
+      section += "\n### Current Squad (Advanced Data from API-Football)\n";
+      const grouped = {};
+      for (const p of rapidSquad) {
+        const pos = p.position || "Unknown";
+        if (!grouped[pos]) grouped[pos] = [];
+        grouped[pos].push(p);
+      }
+      const order = ["Goalkeeper", "Defender", "Midfielder", "Attacker", "Unknown"];
+      for (const pos of order) {
+        if (!grouped[pos]) continue;
+        section += `**${pos}:** `;
+        section += grouped[pos]
+          .map((p) => {
+            return `${p.name} (Age: ${p.age || "?"})`;
+          })
+          .join(" · ");
+        section += "\n";
+      }
+    } else if (details?.squad?.length) {
       const grouped = {};
       for (const p of details.squad) {
         const pos = p.position || "Unknown";
@@ -141,7 +254,7 @@ export async function buildMatchContext(team1Name, team2Name) {
         grouped[pos].push(p);
       }
 
-      section += "\n### Current Squad\n";
+      section += "\n### Current Squad (Basic Data)\n";
       const order = ["Goalkeeper", "Defence", "Midfield", "Offence", "Unknown"];
       for (const pos of order) {
         if (!grouped[pos]) continue;
@@ -156,8 +269,8 @@ export async function buildMatchContext(team1Name, team2Name) {
       }
     }
 
-    // Recent results
-    if (matches.length) {
+    // Recent results (football-data)
+    if (matches && matches.length > 0) {
       section += "\n### Recent Results\n";
       for (const m of matches.slice(0, 8)) {
         const home = m.homeTeam?.shortName || m.homeTeam?.name || "?";
@@ -171,23 +284,38 @@ export async function buildMatchContext(team1Name, team2Name) {
     }
 
     // Win/Draw/Loss record from recent matches
-    if (matches.length && team.id) {
+    if (matches && matches.length && team?.id) {
       let w = 0, d = 0, l = 0, gf = 0, ga = 0;
-      for (const m of matches) {
+      // Most-recent-first so the form strip reads left→right newest→oldest.
+      const ordered = [...matches].sort(
+        (m1, m2) => new Date(m2.utcDate || 0) - new Date(m1.utcDate || 0)
+      );
+      for (const m of ordered) {
         const isHome = m.homeTeam?.id === team.id;
         const homeG = m.score?.fullTime?.home ?? 0;
         const awayG = m.score?.fullTime?.away ?? 0;
         gf += isHome ? homeG : awayG;
         ga += isHome ? awayG : homeG;
-        if (homeG === awayG) d++;
-        else if ((isHome && homeG > awayG) || (!isHome && awayG > homeG)) w++;
-        else l++;
+        let r;
+        if (homeG === awayG) { d++; r = "D"; }
+        else if ((isHome && homeG > awayG) || (!isHome && awayG > homeG)) { w++; r = "W"; }
+        else { l++; r = "L"; }
+        signal.outcomes.push(r);
       }
+      signal.form = { w, d, l, played: matches.length };
+      signal.gf = gf;
+      signal.ga = ga;
       section += `\n**Form (last ${matches.length}):** ${w}W ${d}D ${l}L — ${gf} goals scored, ${ga} conceded\n`;
     }
 
     parts.push(section);
+    signals.push(signal);
   }
 
-  return parts.join("\n---\n");
+  return { context: parts.join("\n---\n"), signalA: signals[0], signalB: signals[1] };
+}
+
+/** Backward-compatible string-only context. */
+export async function buildMatchContext(team1Name, team2Name) {
+  return (await buildMatchAnalysis(team1Name, team2Name)).context;
 }

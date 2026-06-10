@@ -1,174 +1,274 @@
 "use client";
 
-import { useState } from "react";
-import { FIXTURES_2026 } from "../data/schedule2026";
+import { useState, useEffect, useCallback } from "react";
+import { FIXTURES_2026, GROUPS_2026 } from "../data/schedule2026";
+
+// Build a name → flag lookup once from the group data.
+const FLAGS = {};
+for (const g of GROUPS_2026) for (const t of g.teams) FLAGS[t.name.trim()] = t.flag;
+const getFlag = (name) => FLAGS[(name || "").trim()] || null;
+const splitMatch = (m) => (m || "").split(" vs ").map((s) => s.trim());
 
 export default function PredictionHub() {
   const [activeMatch, setActiveMatch] = useState(null);
-  const [prediction, setPrediction] = useState("");
+  const [activeMeta, setActiveMeta] = useState(null);
+  const [prediction, setPrediction] = useState(null);
+  const [predictionText, setPredictionText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const [chatMessage, setChatMessage] = useState("");
-  const [chatHistory, setChatHistory] = useState([]);
-  const [chatLoading, setChatLoading] = useState(false);
+  const upcomingFixtures = FIXTURES_2026.filter((f) => f.stage === "Group Stage");
 
-  // Group fixtures to only show upcoming ones
-  const upcomingFixtures = FIXTURES_2026.slice(0, 12); // Just show first 12 for the UI
+  const closeModal = useCallback(() => {
+    setActiveMatch(null);
+    setActiveMeta(null);
+    setPrediction(null);
+    setPredictionText("");
+    setError("");
+    setLoading(false);
+  }, []);
 
-  async function handlePredict(matchStr) {
+  const handlePredict = useCallback(async (fixture) => {
+    const matchStr = typeof fixture === "string" ? fixture : fixture.match;
     setActiveMatch(matchStr);
-    setPrediction("");
+    if (fixture && fixture.date) setActiveMeta({ date: fixture.date, group: fixture.group });
+    setPrediction(null);
+    setPredictionText("");
     setError("");
     setLoading(true);
-
     try {
       const res = await fetch("/api/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type: "predict", match: matchStr }),
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to fetch prediction");
-
-      setPrediction(data.text);
+      if (data.prediction) setPrediction(data.prediction);
+      else if (data.text) setPredictionText(data.text);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  async function handleChat(e) {
-    e.preventDefault();
-    if (!chatMessage.trim() || chatLoading) return;
-
-    const msg = chatMessage.trim();
-    setChatMessage("");
-    setChatHistory((prev) => [...prev, { role: "user", text: msg }]);
-    setChatLoading(true);
-
-    try {
-      const res = await fetch("/api/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "chat", message: msg }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Chat failed");
-
-      setChatHistory((prev) => [...prev, { role: "ai", text: data.text }]);
-    } catch (err) {
-      setChatHistory((prev) => [...prev, { role: "ai", text: "Error: " + err.message }]);
-    } finally {
-      setChatLoading(false);
-    }
-  }
+  // Lock body scroll while the modal is open. It closes only via the ✕ button.
+  useEffect(() => {
+    if (!activeMatch) return;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [activeMatch]);
 
   return (
-    <div className="live-page" style={{ paddingTop: "120px" }}>
+    <div className="live-page predict-page">
       <div className="live-head">
         <div>
-          <span className="live-kicker">
-            <span className="live-dot is-on" />
-            AI Match Predictor
-          </span>
           <h1 className="live-title">World Cup 2026 Analytics</h1>
+          <p className="predict-sub">Tap any fixture for a data-driven prediction.</p>
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", marginTop: "2rem" }}>
-        
-        {/* Left Col: Fixtures */}
-        <div>
-          <h2 style={{ color: "white", marginBottom: "1rem" }}>Upcoming Matches</h2>
-          <div className="live-matches" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            {upcomingFixtures.map((f, i) => (
-              <div key={i} className="fixture-card" style={{ padding: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div className="fixture-card-meta">{f.date} | {f.group}</div>
-                  <div className="fixture-card-team" style={{ marginTop: "0.5rem" }}>
-                    {f.match}
-                  </div>
-                </div>
-                <button
-                  onClick={() => handlePredict(f.match)}
-                  className="studio-golive"
-                  style={{ padding: "8px 16px", fontSize: "14px" }}
-                  disabled={loading}
-                >
-                  Predict
-                </button>
+      <div className="match-grid">
+        {upcomingFixtures.map((f, i) => {
+          const [t1, t2] = splitMatch(f.match);
+          return (
+            <button key={i} className="match-card" onClick={() => handlePredict(f)}>
+              <div className="match-card-meta">
+                <span>{f.date}</span>
+                <span className="match-card-group">{f.group}</span>
               </div>
-            ))}
+              <div className="match-card-teams">
+                <span className="match-card-side">
+                  <FlagImg src={getFlag(t1)} className="match-card-flag" />
+                  <span className="match-card-name">{t1}</span>
+                </span>
+                <span className="match-card-vs">VS</span>
+                <span className="match-card-side match-card-side--right">
+                  <span className="match-card-name">{t2}</span>
+                  <FlagImg src={getFlag(t2)} className="match-card-flag" />
+                </span>
+              </div>
+              <span className="match-card-cta">
+                Predict result
+                <span className="match-card-cta-arrow" aria-hidden="true">→</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {activeMatch && (
+        <PredictionModal
+          match={activeMatch}
+          meta={activeMeta}
+          loading={loading}
+          error={error}
+          prediction={prediction}
+          predictionText={predictionText}
+          onClose={closeModal}
+          onRetry={() => handlePredict(activeMatch)}
+        />
+      )}
+    </div>
+  );
+}
+
+function FlagImg({ src, className }) {
+  if (!src) return null;
+  return <img src={src} alt="" className={className} loading="lazy" decoding="async" />;
+}
+
+function PredictionModal({ match, meta, loading, error, prediction, predictionText, onClose, onRetry }) {
+  const [t1, t2] = splitMatch(match);
+  return (
+    <div className="pred-modal-backdrop">
+      <div className="pred-modal" role="dialog" aria-modal="true">
+        <button className="pred-modal-close" onClick={onClose} aria-label="Close">✕</button>
+
+        <div className="pred-modal-head">
+          <span className="live-kicker">
+            AI Prediction{meta ? ` · ${meta.group}` : ""}
+          </span>
+          <div className="pred-modal-match">
+            <span className="pred-modal-side">
+              <FlagImg src={getFlag(t1)} className="pred-modal-flag" />
+              <span>{t1}</span>
+            </span>
+            <span className="pred-modal-vs">vs</span>
+            <span className="pred-modal-side pred-modal-side--right">
+              <span>{t2}</span>
+              <FlagImg src={getFlag(t2)} className="pred-modal-flag" />
+            </span>
           </div>
         </div>
 
-        {/* Right Col: Prediction & Chat */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-          
-          {/* Prediction Box */}
-          <div style={{ background: "var(--color-surface-raised)", borderRadius: "14px", padding: "1.5rem", minHeight: "300px", border: "1px solid rgba(255,255,255,0.1)" }}>
-            {activeMatch ? (
-              <>
-                <h3 style={{ color: "var(--brand-yellow)", marginBottom: "1rem" }}>Prediction: {activeMatch}</h3>
-                {loading ? (
-                  <div style={{ color: "white", opacity: 0.7 }}>
-                    Fetching live squads & running AI simulation...
-                  </div>
-                ) : error ? (
-                  <div style={{ color: "#ff6b6b" }}>{error}</div>
-                ) : (
-                  <div className="markdown-body" style={{ color: "white", fontSize: "15px", lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
-                    {prediction}
-                  </div>
-                )}
-              </>
-            ) : (
-              <div style={{ color: "rgba(255,255,255,0.4)", display: "flex", height: "100%", alignItems: "center", justifyContent: "center" }}>
-                Select a match to generate an AI prediction.
-              </div>
-            )}
-          </div>
-
-          {/* AI Chat */}
-          <div style={{ background: "var(--color-surface-raised)", borderRadius: "14px", padding: "1.5rem", border: "1px solid rgba(255,255,255,0.1)", display: "flex", flexDirection: "column", height: "400px" }}>
-            <h3 style={{ color: "white", marginBottom: "1rem" }}>Ask the Analyst</h3>
-            
-            <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "1rem", marginBottom: "1rem" }}>
-              {chatHistory.map((msg, i) => (
-                <div key={i} style={{ 
-                  background: msg.role === "user" ? "rgba(255,255,255,0.1)" : "rgba(232,185,74,0.1)", 
-                  padding: "12px", 
-                  borderRadius: "8px",
-                  color: "white",
-                  alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
-                  maxWidth: "90%"
-                }}>
-                  <div style={{ whiteSpace: "pre-wrap" }}>{msg.text}</div>
-                </div>
-              ))}
-              {chatLoading && <div style={{ color: "rgba(255,255,255,0.5)" }}>Typing...</div>}
+        <div className="pred-modal-body">
+          {loading ? (
+            <div className="predict-loading">
+              <span className="predict-spinner" />
+              <p>Crunching squads, form &amp; the matchup…</p>
             </div>
-
-            <form onSubmit={handleChat} style={{ display: "flex", gap: "0.5rem" }}>
-              <input 
-                type="text" 
-                value={chatMessage}
-                onChange={(e) => setChatMessage(e.target.value)}
-                placeholder="Ask about team form, players..."
-                style={{ flex: 1, padding: "12px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(0,0,0,0.5)", color: "white" }}
-              />
-              <button type="submit" disabled={chatLoading || !chatMessage.trim()} className="studio-golive" style={{ padding: "0 20px" }}>
-                Send
-              </button>
-            </form>
-          </div>
-
+          ) : error ? (
+            <div className="predict-error-block">
+              <p className="predict-error">{error}</p>
+              <button className="predict-btn" onClick={onRetry}>Try again</button>
+            </div>
+          ) : prediction ? (
+            <PredictionCard p={prediction} />
+          ) : predictionText ? (
+            <div className="predict-fallback">{predictionText}</div>
+          ) : null}
         </div>
       </div>
+    </div>
+  );
+}
+
+function PredictionCard({ p }) {
+  const a = Number(p.winProbA) || 0;
+  const d = Number(p.drawProb) || 0;
+  const b = Number(p.winProbB) || 0;
+  const isDraw = (p.favorite || "").toLowerCase() === "draw";
+  const favA = !isDraw && p.favorite === p.teamA;
+  const favB = !isDraw && p.favorite === p.teamB;
+  const conf = (p.confidence || "Medium").toLowerCase();
+
+  return (
+    <div className="pred">
+      {/* Predicted scoreline */}
+      <div className="pred-score">
+        <span className={`pred-score-team${favA ? " is-fav" : ""}`}>
+          <FlagImg src={getFlag(p.teamA)} className="pred-score-flag" />
+        </span>
+        <span className="pred-scoreline">{p.predictedScore}</span>
+        <span className={`pred-score-team pred-score-team--right${favB ? " is-fav" : ""}`}>
+          <FlagImg src={getFlag(p.teamB)} className="pred-score-flag" />
+        </span>
+      </div>
+
+      {/* Headline */}
+      <div className="pred-headline">
+        <span className="pred-fav-label">
+          {isDraw ? "Too close to call" : `${p.favorite} favoured`}
+        </span>
+        <span className={`pred-conf pred-conf--${conf}`}>{p.confidence} confidence</span>
+      </div>
+
+      {p.basis && <p className="pred-basis">{p.basis}</p>}
+
+      {/* Probability bar */}
+      <div className="pred-probs">
+        <div className="pred-bar">
+          <div className="pred-seg pred-seg--a" style={{ width: `${a}%` }} title={`${p.teamA} ${a}%`} />
+          <div className="pred-seg pred-seg--d" style={{ width: `${d}%` }} title={`Draw ${d}%`} />
+          <div className="pred-seg pred-seg--b" style={{ width: `${b}%` }} title={`${p.teamB} ${b}%`} />
+        </div>
+        <div className="pred-prob-labels">
+          <span><b>{a}%</b> {p.teamA}</span>
+          <span><b>{d}%</b> Draw</span>
+          <span><b>{b}%</b> {p.teamB}</span>
+        </div>
+      </div>
+
+      {/* Recent form */}
+      {(p.formA || p.formB) && (
+        <div className="pred-block">
+          <h4 className="pred-block-title">Recent form</h4>
+          <div className="pred-form">
+            <FormRow team={p.teamA} form={p.formA} />
+            <FormRow team={p.teamB} form={p.formB} />
+          </div>
+        </div>
+      )}
+
+      {/* Key factors */}
+      {Array.isArray(p.keyFactors) && p.keyFactors.length > 0 && (
+        <div className="pred-block">
+          <h4 className="pred-block-title">Key factors</h4>
+          <ul className="pred-factors">
+            {p.keyFactors.map((f, i) => (
+              <li key={i}>{f}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Head-to-head */}
+      {p.headToHead && (
+        <p className="pred-h2h">
+          <span className="pred-h2h-label">Head-to-head</span> {p.headToHead}
+        </p>
+      )}
+
+      {/* Verdict */}
+      {p.verdict && <div className="pred-verdict">“{p.verdict}”</div>}
+    </div>
+  );
+}
+
+function FormRow({ team, form }) {
+  const flag = getFlag(team);
+  return (
+    <div className="pred-form-row">
+      <span className="pred-form-team">
+        {flag && <FlagImg src={flag} className="pred-form-flag" />}
+        <span className="pred-form-team-name">{team}</span>
+      </span>
+      {form ? (
+        <>
+          <span className="pred-form-pills">
+            {(form.outcomes || []).slice(0, 6).map((o, i) => (
+              <span key={i} className={`pred-pill pred-pill--${o.toLowerCase()}`}>{o}</span>
+            ))}
+          </span>
+          <span className="pred-form-rec">{form.w}W {form.d}D {form.l}L</span>
+        </>
+      ) : (
+        <span className="pred-form-na">No recent data</span>
+      )}
     </div>
   );
 }
