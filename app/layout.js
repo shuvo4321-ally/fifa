@@ -2,6 +2,7 @@ import "./globals.css";
 import Header from "./components/Header";
 import { GROUPS_2026 } from "./data/schedule2026";
 import { Hanken_Grotesk } from "next/font/google";
+import Script from "next/script";
 
 const hankenGrotesk = Hanken_Grotesk({
   subsets: ["latin"],
@@ -14,8 +15,6 @@ export const metadata = {
   description: "One data model, three safe source types.",
 };
 
-import Script from "next/script";
-
 export default function RootLayout({ children }) {
   const flags = GROUPS_2026.flatMap(g => g.teams.map(t => t.flag)).filter(Boolean);
 
@@ -27,6 +26,10 @@ export default function RootLayout({ children }) {
         ))}
       </head>
       <body>
+        <Script
+          src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.7/shaka-player.compiled.js"
+          strategy="lazyOnload"
+        />
         <Header />
         {children}
       </body>
