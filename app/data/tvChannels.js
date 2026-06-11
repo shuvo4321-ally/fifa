@@ -48,6 +48,26 @@ export const TV_CHANNELS = [
     status_code: 200,
     content_type: "application/vnd.apple.mpegurl",
   },
+  {
+    name: "CAZE TV",
+    logo: "https://images.seeklogo.com/logo-png/61/1/cazetv-logo-png_seeklogo-619708.png",
+    group: "Sports",
+    url: "https://dfr80qz435crc.cloudfront.net/MNOP/Amagi/Caze/Caze_TV_BR/Caze_TV.m3u8",
+    status: "live",
+    verified_at: "2026-06-04T15:06:07.595445",
+    status_code: 200,
+    content_type: "application/vnd.apple.mpegurl",
+  },
+  {
+    name: "CAZE TV (1080p)",
+    logo: "https://images.seeklogo.com/logo-png/61/1/cazetv-logo-png_seeklogo-619708.png",
+    group: "Sports",
+    url: "https://dfr80qz435crc.cloudfront.net/MNOP/Amagi/Caze/Caze_TV_BR/1080p-vtt/index.m3u8",
+    status: "live",
+    verified_at: "2026-06-04T15:06:07.595445",
+    status_code: 200,
+    content_type: "application/vnd.apple.mpegurl",
+  },
 
   {
     name: "BTV National",
