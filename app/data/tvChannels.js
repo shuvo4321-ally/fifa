@@ -1,36 +1,93 @@
-// Live TV channels (HLS / .m3u8). The aynaott tokens expire — refresh the `url`
+// Live TV channels (HLS / .m3u8 / DASH). The aynaott tokens expire — refresh the `url`
 // when a stream stops working. Only HTTPS, H.264 streams are kept (HEVC plays
 // audio-only in browsers; HTTP streams are blocked as mixed-content on the
 // HTTPS deploy).
+
 export const TV_CHANNELS = [
   {
-    name: "FIFA+",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/FIFA%2B_(2025).svg/960px-FIFA%2B_(2025).svg.png",
+    name: "WORLD CUP TV (ENG)",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/4/4b/FIFA_WorldCup_logo.svg",
+    group: "FIFA",
+    url: "https://qp-pldt-live-bpk-ucd-prod.akamaized.net/bpk-tv/ch299/default/index.mpd",
+    type: "dash",
+    kid: "549ab7cd35a64bb6bb479ecead04d69d",
+    key: "829799ed534d11fcadeb4b192467e050"
+  },
+  {
+    name: "D Sports",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/5/5a/DSports.png",
+    group: "FIFA",
+    url: "https://otte.live.fly.ww.aiv-cdn.net/gru-nitro/live/clients/dash/enc/ubehitlwzo/out/v1/8e09c381a51f4366a19e979418112e8f/cenc.mpd",
+    type: "dash",
+    kid: "a7d11d37a1f7611ee88d4db880171f32",
+    key: "68f96d618b0b956b008c445896a25a79"
+  },
+  {
+    name: "TUDN",
+    logo: "https://i.imgur.com/oT5CAvd.png",
+    group: "FIFA",
+    url: "https://otte.live.fly.ww.aiv-cdn.net/gru-nitro/live/clients/dash/enc/8u9cregwlt/out/v1/687f6b2a559943549be271504a948ffd/cenc.mpd",
+    type: "dash",
+    kid: "1710ac2bbfcd3032d0f6533850968f47",
+    key: "d2548dacc8efcd1cd0af0373060c82dc"
+  },
+  {
+    name: "SporTV",
+    logo: "https://i.postimg.cc/gr9x3z71/Spor-TV-2021.png",
+    group: "FIFA",
+    url: "https://a151aivottlinear-a.akamaihd.net/OTTB/sin-nitro/live/dash/enc/m7duvnk2bu/out/v1/d1ad69118b5647309b1eb7213affdb3d/cenc.mpd",
+    type: "dash",
+    kid: "4bbcff3289d457b4dd5dbdd21221de9a",
+    key: "c4906b9a9f8dda3c0725bddb8c497733"
+  },
+  {
+    name: "TSN Sports 1",
+    logo: "https://i.imgur.com/eRFE0jZ.png",
+    group: "FIFA",
+    url: "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/7janu55dwc/out/v1/69a2a7041395406b970598f61680e7cf/cenc.mpd",
+    type: "dash",
+    kid: "e51aa21f2a0fef9aabc120dfb655b52f",
+    key: "a12a987fe725a40b6be95cd84b15f689"
+  },
+  {
+    name: "Telemundo",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Telemundo_logo_2018.svg/960px-Telemundo_logo_2018.svg.png",
+    group: "FIFA",
+    url: "https://live-oneapp-prd-news.akamaized.net/Content/CMAF_OL2-CTR-4s-v2/Live/channel(kvea)/master.mpd",
+    type: "dash",
+    kid: "ce7ab3022e753307997f58afe001bac4",
+    key: "72d631a66e635c60829a0fe7705516c1"
+  },
+  {
+    name: "M6 Direct TV",
+    logo: "https://i.imgur.com/7GVp3fW.png",
+    group: "FIFA",
+    url: "https://origin-m6web.live.6cloud.fr/out/v1/6play/6play-m6/cmaf_cenc00/dash-short-hd.mpd",
+    type: "dash",
+    kid: "433ffba670963e70857859a9dff4be04",
+    key: "51ede3a821229fe81e71282c8eff80e3"
+  },
+  {
+    name: "Zee5 Bangla",
+    logo: "",
+    group: "FIFA",
+    url: "https://d1g8wgjurz8via.cloudfront.net/bpk-tv/Zeebanglacinema/default/manifest.mpd",
+    type: "dash",
+    kid: "fbbfd9ce4bbe4d818b16df7dfe89f05b",
+    key: "1e96d0f88ef740e982d6f6105721c8bc"
+  },
+  {
+    name: "beIN Sports 1 MAX (Arabic)",
+    logo: "https://i.imgur.com/FjWQjdy.png",
+    group: "FIFA",
+    url: "https://cdn.yallashooot.pp.ua/hls/ch1.m3u8",
+    type: "hls"
+  },
+  {
+    name: "P Tv Sports (Mono)",
+    logo: "https://i.postimg.cc/sXpJqtm3/Ptv.png",
     group: "Sports",
-    url: "https://a62dad94.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWV1X0ZJRkFQbHVzRW5nbGlzaF9ITFM/playlist.m3u8",
-    tvg_id: "FIFAPlus.uk@English",
-    status: "live",
-    verified_at: "2026-06-04T15:14:38.748252",
-    status_code: 200,
-    content_type: "application/vnd.apple.mpegurl",
-  },
-  {
-    name: "T Sports HD",
-    logo: "https://s3.aynaott.com/storage/dbc585f70a60b9855b6e13a8ce4cb6f4",
-    group: "FIFA",
-    url: "https://tvsen7.aynaott.com/tsports-hd/index.m3u8?e=1779283784&u=78be6644-0a65-48ec-81a4-089ac65a2619&token=3b4c5a2cfa872fa7f91ffbfb4aa0f658",
-  },
-  {
-    name: "T Sports HD 2",
-    logo: "https://i.imgur.com/2JzlorD.png",
-    group: "FIFA",
-    url: "https://tvsen7.aynaott.com/tsportsfhd/index.m3u8",
-  },
-  {
-    name: "T Sports HD 3",
-    logo: "https://i.imgur.com/2JzlorD.png",
-    group: "FIFA",
-    url: "https://tvsen7.aynaott.com/tsports-hd/index.m3u8",
+    url: "https://tvsen5.aynaott.com/PtvSports/tracks-v1a1/mono.ts.m3u8"
   },
   {
     name: "PTV Sports",
@@ -41,30 +98,5 @@ export const TV_CHANNELS = [
     verified_at: "2026-06-04T15:05:55.820885",
     status_code: 200,
     content_type: "application/vnd.apple.mpegurl",
-  },
-  {
-    name: "BTV National",
-    logo: "https://images.seeklogo.com/logo-png/45/1/btv-bangladesh-television-logo-png_seeklogo-459657.png",
-    group: "Bangla",
-    url: "https://tvsen6.aynaott.com/btvhd/index.m3u8",
-  },
-  {
-    name: "BTV HD",
-    logo: "https://static.wikia.nocookie.net/logopedia/images/1/12/BTV_HD_Logo.svg",
-    group: "FIFA",
-    url: "https://owrcovcrpy.gpcdn.net/bpk-tv/1709/output/index.m3u8",
-    tvg_id: "btvhd-9",
-  },
-  {
-    name: "BTV CTG",
-    logo: "https://s3.aynaott.com/storage/00da8a07fb26b2fb79359ee535e4c7bc",
-    group: "FIFA",
-    url: "https://tvsen6.aynaott.com/btvctg/index.m3u8?e=1779283747&u=78be6644-0a65-48ec-81a4-089ac65a2619&token=9bca925fbdfe526b29d41ab7802348ec",
-  },
-  {
-    name: "Somoy TV",
-    logo: "https://i.postimg.cc/Qxn4JFNV/20250529-071147.png",
-    group: "FIFA",
-    url: "https://sm-monirul.top/toffee/play/somoy_tv.m3u8",
-  },
+  }
 ];

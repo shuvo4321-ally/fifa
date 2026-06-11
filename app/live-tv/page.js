@@ -110,6 +110,9 @@ export default function LiveTvPage() {
             <HlsPlayer
               src={active.url || undefined}
               poster={active.logo || undefined}
+              streamType={active.type}
+              drmKid={active.kid}
+              drmKey={active.key}
               onFullscreen={toggleFullscreen}
               onPrev={handlePrev}
               onNext={handleNext}

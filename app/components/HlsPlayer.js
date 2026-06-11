@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext }) {
+export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, streamType, drmKid, drmKey, onErrorCallback }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const hlsRef = useRef(null);
+  const shakaRef = useRef(null);
   const hoverTimeoutRef = useRef(null);
   
   const [error, setError] = useState("");
@@ -41,35 +42,79 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext })
     setError("");
     let cancelled = false;
 
+    const isDash = streamType === "dash" || src.toLowerCase().includes(".mpd");
+
     (async () => {
-      // Safari / iOS play HLS natively.
-      if (video.canPlayType("application/vnd.apple.mpegurl")) {
-        video.src = src;
-        return;
-      }
       try {
-        const { default: Hls } = await import("hls.js");
-        if (cancelled) return;
-        if (Hls.isSupported()) {
-          const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
-          hlsRef.current = hls;
-          hls.loadSource(src);
-          hls.attachMedia(video);
-          hls.on(Hls.Events.ERROR, (_e, data) => {
-            if (data?.fatal) {
-              console.error("Hls.js fatal error:", data);
-              if (data.details === "manifestParsingError" || data.details === "bufferAddCodecError" || data.reason?.includes("codec")) {
-                setError("This channel uses HEVC (H.265) video encoding. Your browser or device does not support HEVC decoding. Please try Edge, Safari, or enable hardware acceleration in Chrome settings.");
-              } else {
-                setError("This channel couldn't load — the token may have expired, or it's geo-blocked / blocking cross-site playback.");
+        if (isDash) {
+          // DASH stream
+          const shakaModule = await import("shaka-player/dist/shaka-player.compiled.js");
+          const shaka = shakaModule.default || shakaModule;
+          shaka.polyfill.installAll();
+          
+          if (shaka.Player.isBrowserSupported()) {
+            const player = new shaka.Player(video);
+            shakaRef.current = player;
+            
+            // Configure DRM if keys are provided
+            if (drmKid && drmKey) {
+              player.configure({
+                drm: {
+                  clearKeys: {
+                    [drmKid]: drmKey
+                  }
+                }
+              });
+            }
+
+            player.addEventListener('error', (event) => {
+              console.error('Shaka Error:', event.detail);
+              if (onErrorCallback) onErrorCallback(true);
+            });
+
+            try {
+              await player.load(src);
+            } catch (e) {
+              // Ignore load interrupted errors when unmounting
+              if (e.code !== shaka.util.Error.Code.LOAD_INTERRUPTED) {
+                throw e;
               }
             }
-          });
+          } else {
+            setError("Browser not supported for DASH playback.");
+          }
         } else {
-          video.src = src;
+          // HLS stream
+          if (video.canPlayType("application/vnd.apple.mpegurl")) {
+            video.src = src;
+            return;
+          }
+          const { default: Hls } = await import("hls.js");
+          if (cancelled) return;
+          if (Hls.isSupported()) {
+            const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+            hlsRef.current = hls;
+            hls.loadSource(src);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.ERROR, (_e, data) => {
+              if (data?.fatal) {
+                console.error("Hls.js fatal error:", data);
+                if (data.details === "manifestParsingError" || data.details === "bufferAddCodecError" || data.reason?.includes("codec")) {
+                  setError("This channel uses HEVC (H.265) video encoding. Your browser or device does not support HEVC decoding.");
+                } else {
+                  setError("This channel couldn't load — the token may have expired, or it's geo-blocked.");
+                  if (onErrorCallback) onErrorCallback(true);
+                }
+              }
+            });
+          } else {
+            video.src = src;
+          }
         }
-      } catch {
+      } catch (err) {
+        console.error("Player init error:", err.code ? `Code ${err.code}` : err);
         if (!cancelled) setError("Could not start the player.");
+        if (onErrorCallback) onErrorCallback(true);
       }
     })();
 
@@ -78,28 +123,57 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext })
       if (hlsRef.current) {
         hlsRef.current.destroy();
         hlsRef.current = null;
-      }
-      if (video) {
+        if (video) {
+          video.pause();
+          video.removeAttribute("src");
+          video.load();
+        }
+      } else if (shakaRef.current) {
+        shakaRef.current.destroy();
+        shakaRef.current = null;
+        // Do not manually modify video.src here; Shaka's destroy() handles it safely.
+      } else if (video) {
         video.pause();
         video.removeAttribute("src");
         video.load();
       }
     };
-  }, [src]);
+  }, [src, streamType, drmKid, drmKey]);
 
   // Sync state with video
+  const [isBuffering, setIsBuffering] = useState(true);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
     const onPlay = () => setIsPlaying(true);
     const onPause = () => setIsPlaying(false);
+    const onWaiting = () => setIsBuffering(true);
+    const onPlaying = () => setIsBuffering(false);
+    const onCanPlay = () => setIsBuffering(false);
+    const onLoadStart = () => setIsBuffering(true);
+    
     video.addEventListener("play", onPlay);
     video.addEventListener("pause", onPause);
+    video.addEventListener("waiting", onWaiting);
+    video.addEventListener("playing", onPlaying);
+    video.addEventListener("canplay", onCanPlay);
+    video.addEventListener("loadstart", onLoadStart);
+    
     return () => {
       video.removeEventListener("play", onPlay);
       video.removeEventListener("pause", onPause);
+      video.removeEventListener("waiting", onWaiting);
+      video.removeEventListener("playing", onPlaying);
+      video.removeEventListener("canplay", onCanPlay);
+      video.removeEventListener("loadstart", onLoadStart);
     };
   }, []);
+
+  // Reset buffering state when source changes
+  useEffect(() => {
+    setIsBuffering(true);
+  }, [src]);
 
   const handleMouseMove = () => {
     setIsHovering(true);
@@ -214,6 +288,12 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext })
           >
             ✕
           </button>
+        </div>
+      )}
+      {isBuffering && (
+        <div className="custom-loading-overlay">
+          <div className="custom-spinner"></div>
+          <p className="custom-loading-text">PLEASE WAIT</p>
         </div>
       )}
       <video
