@@ -33,18 +33,6 @@ export const TV_CHANNELS = [
     url: "https://tvsen7.aynaott.com/tsports-hd/index.m3u8",
   },
   {
-    name: "TSN 1",
-    logo: "https://s3.aynaott.com/storage/59fe7ff434fed04ecec29b4d737ebc95",
-    group: "Sports",
-    url: "https://tvsen7.aynaott.com/tsn1/index.m3u8?e=1779283805&u=78be6644-0a65-48ec-81a4-089ac65a2619&token=e5ce886378c54bd381b9833b5d57649a",
-  },
-  {
-    name: "TSN 2",
-    logo: "https://s3.aynaott.com/storage/17642cb60c2af7fc36ca1e08cc54fdae",
-    group: "Sports",
-    url: "https://tvsen7.aynaott.com/tsn2/index.m3u8?e=1779283793&u=78be6644-0a65-48ec-81a4-089ac65a2619&token=636d9b8b83d4316193c2d1c9aad8951c",
-  },
-  {
     name: "PTV Sports",
     logo: "https://s3.aynaott.com/storage/9d9d7cbfba5a8ceea648bbd963ad1014",
     group: "Sports",
