@@ -242,18 +242,18 @@ Stay within ~10-15% of these numbers unless the breaking news clearly justifies 
 
     userPrompt = `Predict this FIFA World Cup 2026 match: ${match}
 ${newsContext}${baselineBlock}
-LIVE RAG Data (current squads, coaches, ages, recent form, EA FC 26 ratings):
+LIVE RAG Data (current squads, coaches, ages, recent form, player ratings, World Football Elo Ratings):
 ${liveDataStr}
 
 Fill every field of the structured prediction:
 - teamA / teamB: the two teams, using the EXACT names from "${match}".
-- winProbA / drawProb / winProbB: integer percentages (teamA win, draw, teamB win) that MUST sum to exactly 100. Anchor them to the recent form + squad ratings above.
+- winProbA / drawProb / winProbB: integer percentages (teamA win, draw, teamB win) that MUST sum to exactly 100. Anchor them to the recent form, squad ratings, and World Football Elo Ratings above.
 - predictedScore: most likely scoreline as "X-Y" (teamA goals - teamB goals).
 - favorite: the favored team's EXACT name, or "Draw" if a draw is most likely.
 - confidence: "High", "Medium", or "Low" — how decisive the data is.
-- keyFactors: 3-4 short, SPECIFIC factors that decide the match (name players, form runs, a tactical edge, conditions). No markdown.
-- headToHead: one short sentence on their past World Cup meetings. No markdown.
-- verdict: one punchy, confident sentence — your final pundit take. No markdown.`;
+- keyFactors: 3-4 short, SPECIFIC factors that decide the match (name players, form runs, a tactical edge, conditions). No markdown. Do not mention EA Sports.
+- headToHead: one short sentence on all their past meetings across all competitions in the last 13 years (not just World Cup). No markdown.
+- verdict: one punchy, confident sentence — your final pundit take. No markdown. Do not mention EA Sports or EA FC.`;
   } else if (type === "chat" && message) {
     userPrompt = message;
   } else {
@@ -269,7 +269,7 @@ ${buildHistoricalContext()}
 
 CRITICAL RULES FOR PREDICTIONS:
 1. STRICT DATA ADHERENCE: Anchor your prediction mathematically to the "Form" (Wins/Draws/Losses) and "Recent Results" in the LIVE RAG DATA. If one team has significantly more recent wins, favor them heavily.
-2. SQUAD & EA FC 26 METRICS: Use the EA FC 26 metrics (Overall, Attack, Midfield, Defense, GK) and player overalls to weigh positional matchups, star impact, and squad strength. A much higher squad rating (e.g. 85 vs 75) should strongly influence the call.
+2. SQUAD, PLAYER METRICS & ELO RATINGS: Use the provided World Football Elo Ratings, squad ratings, and player overalls to weigh positional matchups, star impact, and squad strength. Elo ratings are highly predictive of match outcomes. A much higher squad rating or Elo rating should strongly influence the call. NEVER mention 'EA Sports' or 'EA FC' in your output.
 3. BREAKING NEWS CONTEXT: Treat "LATEST BREAKING NEWS" as a modifier, not the foundation. A single injury/weather event nudges probabilities but never overturns a massive form advantage.
 4. PROBABILITIES: winProbA + drawProb + winProbB MUST equal 100, and predictedScore must be consistent with them.`;
 

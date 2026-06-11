@@ -162,6 +162,7 @@ export async function buildMatchAnalysis(team1Name, team2Name) {
       hasData: false,
       squadRating: null, // EA FC 26 squad average
       top11: null,
+      elo: null, // World Football Elo Rating
       form: null, // { w, d, l, played }
       gf: 0,
       ga: 0,
@@ -199,8 +200,9 @@ export async function buildMatchAnalysis(team1Name, team2Name) {
       const t11 = Number(supaTeam.metrics.top11Avg);
       if (!Number.isNaN(sa)) signal.squadRating = sa;
       if (!Number.isNaN(t11)) signal.top11 = t11;
+      if (supaTeam.metrics.elo) signal.elo = Number(supaTeam.metrics.elo);
       section += "\n### Current Squad & EA FC 26 Metrics (Database)\n";
-      section += `**Overall Squad Rating:** ${supaTeam.metrics.squadAvg} | **Top 11 Average:** ${supaTeam.metrics.top11Avg}\n`;
+      section += `**Overall Squad Rating:** ${supaTeam.metrics.squadAvg} | **Top 11 Average:** ${supaTeam.metrics.top11Avg} | **World Football Elo Rating:** ${supaTeam.metrics.elo || "N/A"}\n`;
       if (supaTeam.metrics.attack) {
         section += `**Attack:** ${supaTeam.metrics.attack.overall} (Shooting: ${supaTeam.metrics.attack.sho}, Pace: ${supaTeam.metrics.attack.pac})\n`;
         section += `**Midfield:** ${supaTeam.metrics.midfield.overall} (Passing: ${supaTeam.metrics.midfield.pas}, Dribbling: ${supaTeam.metrics.midfield.dri})\n`;

@@ -42,6 +42,15 @@ function teamStrength(s) {
     ? s.squadRating
     : null;
 
+  if (s?.elo) {
+    const eloRating = 65 + ((s.elo - 1400) / 750) * 27;
+    if (rating != null) {
+      rating = 0.5 * rating + 0.5 * eloRating;
+    } else {
+      rating = eloRating;
+    }
+  }
+
   if (rating == null) {
     // No squad rating — synthesise one from form so the model still runs.
     rating =
