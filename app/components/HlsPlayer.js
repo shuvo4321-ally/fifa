@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-
+import shaka from "shaka-player/dist/shaka-player.compiled.js";
+import Hls from "hls.js";
 export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, streamType, drmKid, drmKey, onErrorCallback }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
@@ -48,8 +49,6 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
       try {
         if (isDash) {
           // DASH stream
-          const shakaModule = await import("shaka-player/dist/shaka-player.compiled.js");
-          const shaka = shakaModule.default || shakaModule;
           shaka.polyfill.installAll();
           
           if (shaka.Player.isBrowserSupported()) {
@@ -89,7 +88,6 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
             video.src = src;
             return;
           }
-          const { default: Hls } = await import("hls.js");
           if (cancelled) return;
           if (Hls.isSupported()) {
             const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
