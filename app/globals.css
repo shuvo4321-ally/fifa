@@ -4032,35 +4032,3 @@ a.search-result:hover {
   object-fit: contain;
 }
 
-.custom-loading-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background-color: rgba(0, 0, 0, 0.6);
-  z-index: 10;
-  pointer-events: none;
-}
-
-.custom-spinner {
-  width: 48px;
-  height: 48px;
-  border: 4px solid rgba(255, 235, 59, 0.2);
-  border-top-color: #ffeb3b;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 16px;
-}
-
-.custom-loading-text {
-  color: #ffeb3b;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 1px;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}

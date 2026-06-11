@@ -14,8 +14,6 @@ export const metadata = {
   description: "One data model, three safe source types.",
 };
 
-import Script from "next/script";
-
 export default function RootLayout({ children }) {
   const flags = GROUPS_2026.flatMap(g => g.teams.map(t => t.flag)).filter(Boolean);
 

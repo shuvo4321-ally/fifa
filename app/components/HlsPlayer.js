@@ -1,14 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import '@vidstack/react/player/styles/default/theme.css';
-import '@vidstack/react/player/styles/default/layouts/video.css';
-import { MediaPlayer, MediaProvider, isDASHProvider } from '@vidstack/react';
-import { defaultLayoutIcons, DefaultVideoLayout } from '@vidstack/react/player/layouts/default';
 
 export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, streamType, drmKid, drmKey, onErrorCallback }) {
+  const videoRef = useRef(null);
+  const containerRef = useRef(null);
+  const hlsRef = useRef(null);
+  const shakaRef = useRef(null);
+  const hoverTimeoutRef = useRef(null);
+  
   const [error, setError] = useState("");
   const [hevcWarning, setHevcWarning] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
 
   useEffect(() => {
     if (!src) return;
@@ -30,33 +36,218 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
     }
   }, [src]);
 
-  const onProviderChange = (provider) => {
-    if (isDASHProvider(provider)) {
-      if (drmKid && drmKey) {
-        const protData = {
-          "org.w3.clearkey": {
-            clearkeys: {
-              [drmKid]: drmKey
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !src) return;
+    setError("");
+    let cancelled = false;
+
+    const isDash = streamType === "dash" || src.toLowerCase().includes(".mpd");
+
+    const initShaka = async () => {
+      if (cancelled) return;
+      try {
+        const shaka = window.shaka;
+        if (!shaka) {
+          setError("Failed to load DASH player.");
+          return;
+        }
+        shaka.polyfill.installAll();
+        if (shaka.Player.isBrowserSupported()) {
+          const player = new shaka.Player(video);
+          shakaRef.current = player;
+          if (drmKid && drmKey) {
+            player.configure({
+              drm: { clearKeys: { [drmKid]: drmKey } }
+            });
+          }
+          player.addEventListener('error', (event) => {
+            console.error('Shaka Error:', event.detail);
+            if (onErrorCallback) onErrorCallback(true);
+          });
+          try {
+            await player.load(src);
+          } catch (e) {
+            if (e.code !== shaka.util.Error.Code.LOAD_INTERRUPTED) {
+              throw e;
             }
           }
-        };
-        // Some versions of Vidstack have onSetup, others don't.
-        if (provider.onSetup) {
-          provider.onSetup(() => {
-            provider.player?.setProtectionData?.(protData);
-          });
-        } else if (provider.player) {
-          provider.player.setProtectionData?.(protData);
+        } else {
+          setError("Browser not supported for DASH playback.");
         }
+      } catch (err) {
+        console.error("Player init error:", err);
+        if (!cancelled) setError("Could not start the player.");
+        if (onErrorCallback) onErrorCallback(true);
+      }
+    };
+
+    if (isDash) {
+      const loadShaka = () => {
+        return new Promise((resolve, reject) => {
+          if (window.shaka) {
+            resolve(window.shaka);
+            return;
+          }
+          const scriptId = "shaka-player-script";
+          let script = document.getElementById(scriptId);
+          if (!script) {
+            script = document.createElement("script");
+            script.id = scriptId;
+            script.src = "https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.7/shaka-player.compiled.js";
+            script.addEventListener("load", () => resolve(window.shaka));
+            script.addEventListener("error", () => reject(new Error("CDN script failed to load")));
+            document.head.appendChild(script);
+          } else {
+            // Script tag exists but hasn't finished loading yet — poll briefly
+            const check = setInterval(() => {
+              if (window.shaka) {
+                clearInterval(check);
+                resolve(window.shaka);
+              }
+            }, 50);
+            // Give up after 10s
+            setTimeout(() => { clearInterval(check); reject(new Error("Shaka load timeout")); }, 10000);
+          }
+        });
+      };
+
+      loadShaka()
+        .then((shaka) => {
+          if (cancelled) return;
+          return initShaka();
+        })
+        .catch((err) => {
+          console.error("Shaka CDN load error:", err);
+          if (!cancelled) setError("Could not load the DASH player from CDN.");
+        });
+    } else {
+      (async () => {
+        if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          video.src = src;
+          return;
+        }
+        try {
+          const { default: Hls } = await import("hls.js");
+          if (cancelled) return;
+          if (Hls.isSupported()) {
+            const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+            hlsRef.current = hls;
+            hls.loadSource(src);
+            hls.attachMedia(video);
+            hls.on(Hls.Events.ERROR, (_e, data) => {
+              if (data?.fatal) {
+                console.error("Hls.js fatal error:", data);
+                if (data.details === "manifestParsingError" || data.details === "bufferAddCodecError" || data.reason?.includes("codec")) {
+                  setError("This channel uses HEVC (H.265) video encoding. Your browser or device does not support HEVC decoding.");
+                } else {
+                  setError("This channel couldn't load — the token may have expired, or it's geo-blocked.");
+                  if (onErrorCallback) onErrorCallback(true);
+                }
+              }
+            });
+          } else {
+            video.src = src;
+          }
+        } catch {
+          if (!cancelled) setError("Could not start the player.");
+        }
+      })();
+    }
+
+    return () => {
+      cancelled = true;
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+        if (video) {
+          video.pause();
+          video.removeAttribute("src");
+          video.load();
+        }
+      } else if (shakaRef.current) {
+        shakaRef.current.destroy();
+        shakaRef.current = null;
+      } else if (video) {
+        video.pause();
+        video.removeAttribute("src");
+        video.load();
+      }
+    };
+  }, [src, streamType, drmKid, drmKey]);
+
+  // Sync state with video
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+    video.addEventListener("play", onPlay);
+    video.addEventListener("pause", onPause);
+    return () => {
+      video.removeEventListener("play", onPlay);
+      video.removeEventListener("pause", onPause);
+    };
+  }, []);
+
+  const handleMouseMove = () => {
+    setIsHovering(true);
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHovering(false);
+    }, 2500);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+  };
+
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (videoRef.current.paused) videoRef.current.play();
+      else videoRef.current.pause();
+    }
+  };
+
+  const handleVolumeChange = (e) => {
+    const val = parseFloat(e.target.value);
+    setVolume(val);
+    if (videoRef.current) {
+      videoRef.current.volume = val;
+      if (val > 0 && isMuted) {
+        setIsMuted(false);
+        videoRef.current.muted = false;
       }
     }
   };
 
-  const onError = (e) => {
-    console.error("Vidstack Error:", e);
-    // Ignore aborted or network errors during unmount
-    if (e?.code !== 1 && e?.code !== 2) {
-      if (onErrorCallback) onErrorCallback(true);
+  const toggleMute = () => {
+    if (videoRef.current) {
+      const newMuted = !isMuted;
+      setIsMuted(newMuted);
+      videoRef.current.muted = newMuted;
+    }
+  };
+
+  const togglePip = async () => {
+    if (videoRef.current && document.pictureInPictureEnabled) {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else {
+        await videoRef.current.requestPictureInPicture();
+      }
+    }
+  };
+
+  const reloadStream = () => {
+    if (hlsRef.current && videoRef.current) {
+      hlsRef.current.stopLoad();
+      hlsRef.current.startLoad();
+      videoRef.current.play();
+    } else if (videoRef.current) {
+      videoRef.current.load();
+      videoRef.current.play();
     }
   };
 
@@ -69,11 +260,13 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
     );
   }
 
-  // Determine type if not specified
-  const isDash = streamType === "dash" || src?.toLowerCase().includes(".mpd");
-
   return (
-    <div className="custom-player-wrapper" style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div 
+      className="custom-player-wrapper" 
+      ref={containerRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
       {hevcWarning && (
         <div style={{
           position: "absolute",
@@ -86,7 +279,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
           borderRadius: "8px",
           fontSize: "12.5px",
           fontWeight: "600",
-          zIndex: 50,
+          zIndex: 20,
           display: "flex",
           alignItems: "center",
           gap: "8px",
@@ -112,30 +305,20 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
           </button>
         </div>
       )}
-
-      <MediaPlayer 
-        className="vds-player"
-        style={{ width: '100%', height: '100%' }}
-        src={{
-          src: src,
-          type: isDash ? 'application/dash+xml' : 'application/x-mpegurl'
-        }}
+      <video
+        ref={videoRef}
+        className="live-video"
+        disablePictureInPicture={false}
         autoPlay
         playsInline
         poster={poster}
-        onProviderChange={onProviderChange}
-        onError={onError}
-        crossOrigin="anonymous"
-      >
-        <MediaProvider />
-        <DefaultVideoLayout icons={defaultLayoutIcons} />
-      </MediaPlayer>
-
-      {/* Custom Prev/Next Buttons Hovering Over Vidstack */}
+        onClick={togglePlay}
+        onDoubleClick={onFullscreen}
+      />
+      
       {onPrev && (
         <button 
-          className="custom-nav-btn custom-nav-left is-visible"
-          style={{ zIndex: 40 }}
+          className={`custom-nav-btn custom-nav-left ${isHovering || !isPlaying ? "is-visible" : ""}`}
           onClick={(e) => { e.stopPropagation(); onPrev(); }}
         >
           <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="11 17 6 12 11 7"></polyline><polyline points="18 17 13 12 18 7"></polyline></svg>
@@ -144,13 +327,53 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
 
       {onNext && (
         <button 
-          className="custom-nav-btn custom-nav-right is-visible"
-          style={{ zIndex: 40 }}
+          className={`custom-nav-btn custom-nav-right ${isHovering || !isPlaying ? "is-visible" : ""}`}
           onClick={(e) => { e.stopPropagation(); onNext(); }}
         >
           <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg>
         </button>
       )}
+
+      <div className={`custom-controls-bar ${isHovering || !isPlaying ? "is-visible" : ""}`}>
+        <div className="custom-controls-left">
+          <button className="control-btn" onClick={togglePlay}>
+            {isPlaying ? (
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"></rect><rect x="14" y="4" width="4" height="16" rx="1"></rect></svg>
+            ) : (
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            )}
+          </button>
+          
+          <button className="control-btn" onClick={toggleMute}>
+            {isMuted || volume === 0 ? (
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+            ) : (
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+            )}
+          </button>
+
+          <input 
+            type="range" 
+            className="volume-slider" 
+            min="0" max="1" step="0.05" 
+            value={isMuted ? 0 : volume} 
+            onChange={handleVolumeChange} 
+            style={{ '--vol-fill': `${(isMuted ? 0 : volume) * 100}%` }}
+          />
+        </div>
+
+        <div className="custom-controls-right">
+          <button className="control-btn" onClick={togglePip} title="Picture-in-Picture">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="16" rx="2" ry="2"></rect><rect x="12" y="11" width="7" height="5" rx="1" ry="1"></rect></svg>
+          </button>
+          <button className="control-btn" onClick={reloadStream} title="Reload Stream">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+          </button>
+          <button className="control-btn" onClick={onFullscreen} title="Fullscreen">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m11-5h3a2 2 0 0 1 2 2v3m0 8v3a2 2 0 0 1-2 2h-3m-8 0H5a2 2 0 0 1-2-2v-3"></path></svg>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
