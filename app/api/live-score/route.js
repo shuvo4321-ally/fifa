@@ -1,14 +1,48 @@
 import { NextResponse } from 'next/server';
 
-// Simple in-memory cache to stay far below the 10 requests/minute limit
+// In-memory cache (60s) instead of Next's Data Cache: on Vercel the Data Cache
+// kept serving a ~20h-old pre-kickoff snapshot when background revalidation was
+// rate-limited, so live matches stayed "TIMED" forever. This stays fresh, keeps
+// us under football-data's 10 req/min, and falls back to the last good snapshot
+// if the upstream call fails.
 let cachedData = null;
 let lastFetchTime = 0;
 const CACHE_TTL = 60000; // 60 seconds
 
+async function getWcMatches(apiKeys) {
+  const now = Date.now();
+  if (cachedData && now - lastFetchTime < CACHE_TTL) return cachedData;
+
+  let lastErrorStatus = null;
+  for (let i = 0; i < apiKeys.length; i++) {
+    const res = await fetch('https://api.football-data.org/v4/competitions/WC/matches', {
+      headers: { 'X-Auth-Token': apiKeys[i] },
+      cache: 'no-store',
+    });
+
+    if (res.ok) {
+      cachedData = await res.json();
+      lastFetchTime = now;
+      return cachedData;
+    }
+
+    lastErrorStatus = res.status;
+    // If rate limited or quota-blocked, try the next key
+    if (res.status === 429 || res.status === 403) {
+      continue;
+    }
+    break; // Stop looping on fatal error
+  }
+
+  // Upstream failed — serve the last good snapshot rather than erroring out.
+  if (cachedData) return cachedData;
+  throw new Error(`API Error. Last status: ${lastErrorStatus}`);
+}
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const matchParam = searchParams.get('match');
-  
+
   if (!matchParam || !matchParam.includes(' vs ')) {
     return NextResponse.json({ error: 'Invalid match format' }, { status: 400 });
   }
@@ -16,7 +50,7 @@ export async function GET(request) {
   let [team1, team2] = matchParam.split(' vs ');
   team1 = team1.trim();
   team2 = team2.trim();
-  
+
   const keysStr = process.env.FOOTBALL_DATA_SCHEDULE_KEY || process.env.FOOTBALL_DATA_API_KEY;
   if (!keysStr) {
     return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
@@ -24,35 +58,7 @@ export async function GET(request) {
   const apiKeys = keysStr.split(",").map(k => k.trim()).filter(Boolean);
 
   try {
-    const now = Date.now();
-    let apiData = null;
-    let success = false;
-    let lastErrorStatus = null;
-
-    for (let i = 0; i < apiKeys.length; i++) {
-      const key = apiKeys[i];
-      const res = await fetch('https://api.football-data.org/v4/competitions/WC/matches', {
-        headers: { 'X-Auth-Token': key },
-        next: { revalidate: 60 }
-      });
-      
-      if (res.ok) {
-        apiData = await res.json();
-        success = true;
-        break; // Stop looping on success
-      } else {
-        lastErrorStatus = res.status;
-        // If rate limited, try next key
-        if (res.status === 429 || res.status === 403) {
-          continue;
-        }
-        break; // Stop looping on fatal error
-      }
-    }
-
-    if (!success && !apiData) {
-       throw new Error(`API Error. Last status: ${lastErrorStatus}`);
-    }
+    const apiData = await getWcMatches(apiKeys);
 
     if (!apiData || !apiData.matches) {
        return NextResponse.json({ error: 'No data available' }, { status: 404 });
@@ -63,12 +69,12 @@ export async function GET(request) {
     const foundMatch = apiData.matches.find(m => {
        const home = m.homeTeam?.name || '';
        const away = m.awayTeam?.name || '';
-       
+
        if (!home || !away) return false;
-       
+
        const matchForward = (home.includes(team1) || team1.includes(home)) && (away.includes(team2) || team2.includes(away));
        const matchReverse = (home.includes(team2) || team2.includes(home)) && (away.includes(team1) || team1.includes(away));
-       
+
        return matchForward || matchReverse;
     });
 
