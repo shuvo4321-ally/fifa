@@ -9,6 +9,18 @@ let cachedData = null;
 let lastFetchTime = 0;
 const CACHE_TTL = 60000; // 60 seconds
 
+// Newest lastUpdated across all matches — football-data's replicas flap
+// between fresh and hours-old snapshots under load, so we only ever move
+// forward in time and never overwrite newer data with an older snapshot.
+function freshness(data) {
+  let max = 0;
+  for (const m of data?.matches || []) {
+    const t = Date.parse(m.lastUpdated || "") || 0;
+    if (t > max) max = t;
+  }
+  return max;
+}
+
 async function getWcMatches(apiKeys) {
   const now = Date.now();
   if (cachedData && now - lastFetchTime < CACHE_TTL) return cachedData;
@@ -21,9 +33,14 @@ async function getWcMatches(apiKeys) {
     });
 
     if (res.ok) {
-      cachedData = await res.json();
-      lastFetchTime = now;
-      return cachedData;
+      const fresh = await res.json();
+      if (!cachedData || freshness(fresh) >= freshness(cachedData)) {
+        cachedData = fresh;
+        lastFetchTime = now;
+        return cachedData;
+      }
+      // Stale replica — try the next key, a new request may hit a fresh one.
+      continue;
     }
 
     lastErrorStatus = res.status;
@@ -34,8 +51,11 @@ async function getWcMatches(apiKeys) {
     break; // Stop looping on fatal error
   }
 
-  // Upstream failed — serve the last good snapshot rather than erroring out.
-  if (cachedData) return cachedData;
+  // All keys failed or returned stale snapshots — serve the newest we have.
+  if (cachedData) {
+    lastFetchTime = now; // don't hammer the API again for another TTL window
+    return cachedData;
+  }
   throw new Error(`API Error. Last status: ${lastErrorStatus}`);
 }
 
