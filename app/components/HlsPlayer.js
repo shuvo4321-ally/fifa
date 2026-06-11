@@ -9,10 +9,31 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext })
   const hoverTimeoutRef = useRef(null);
   
   const [error, setError] = useState("");
+  const [hevcWarning, setHevcWarning] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
+
+  useEffect(() => {
+    if (!src) return;
+    const isMaybeHevc = src.toLowerCase().includes("caze") || src.toLowerCase().includes("hevc") || src.toLowerCase().includes("h265");
+    if (isMaybeHevc) {
+      const hasHevcSupport = 
+        (window.MediaSource && MediaSource.isTypeSupported('video/mp4; codecs="hvc1.1.6.L93.B0"')) ||
+        (window.MediaSource && MediaSource.isTypeSupported('video/mp4; codecs="hev1.1.6.L93.B0"')) ||
+        (document.createElement('video').canPlayType('video/mp4; codecs="hvc1.1.6.L93.B0"') === "probably") ||
+        (document.createElement('video').canPlayType('video/mp4; codecs="hev1.1.6.L93.B0"') === "probably");
+      
+      if (!hasHevcSupport) {
+        setHevcWarning(true);
+      } else {
+        setHevcWarning(false);
+      }
+    } else {
+      setHevcWarning(false);
+    }
+  }, [src]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -36,7 +57,12 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext })
           hls.attachMedia(video);
           hls.on(Hls.Events.ERROR, (_e, data) => {
             if (data?.fatal) {
-              setError("This channel couldn't load — the token may have expired, or it's geo-blocked / blocking cross-site playback.");
+              console.error("Hls.js fatal error:", data);
+              if (data.details === "manifestParsingError" || data.details === "bufferAddCodecError" || data.reason?.includes("codec")) {
+                setError("This channel uses HEVC (H.265) video encoding. Your browser or device does not support HEVC decoding. Please try Edge, Safari, or enable hardware acceleration in Chrome settings.");
+              } else {
+                setError("This channel couldn't load — the token may have expired, or it's geo-blocked / blocking cross-site playback.");
+              }
             }
           });
         } else {
@@ -152,6 +178,44 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext })
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
+      {hevcWarning && (
+        <div style={{
+          position: "absolute",
+          top: "12px",
+          left: "12px",
+          right: "12px",
+          background: "rgba(220, 38, 38, 0.95)",
+          color: "white",
+          padding: "10px 16px",
+          borderRadius: "8px",
+          fontSize: "12.5px",
+          fontWeight: "600",
+          zIndex: 20,
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+          backdropFilter: "blur(4px)"
+        }}>
+          <span>⚠️</span>
+          <span style={{ flex: 1 }}>
+            This channel uses HEVC (H.265) encoding. If you see a black screen or experience issues, please use Edge, Safari, or enable Hardware Acceleration in Chrome.
+          </span>
+          <button 
+            onClick={() => setHevcWarning(false)}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "white",
+              fontSize: "14px",
+              cursor: "pointer",
+              padding: "0 4px"
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
       <video
         ref={videoRef}
         className="live-video"
