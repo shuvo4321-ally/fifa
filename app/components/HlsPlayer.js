@@ -47,12 +47,15 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
 
     (async () => {
       try {
+        const actualShaka = shaka.default || shaka;
+        const ActualHls = Hls.default || Hls;
+
         if (isDash) {
           // DASH stream
-          shaka.polyfill.installAll();
+          actualShaka.polyfill.installAll();
           
-          if (shaka.Player.isBrowserSupported()) {
-            const player = new shaka.Player(video);
+          if (actualShaka.Player.isBrowserSupported()) {
+            const player = new actualShaka.Player(video);
             shakaRef.current = player;
             
             // Configure DRM if keys are provided
@@ -75,7 +78,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
               await player.load(src);
             } catch (e) {
               // Ignore load interrupted errors when unmounting
-              if (e.code !== shaka.util.Error.Code.LOAD_INTERRUPTED) {
+              if (e.code !== actualShaka.util.Error.Code.LOAD_INTERRUPTED) {
                 throw e;
               }
             }
@@ -89,12 +92,12 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
             return;
           }
           if (cancelled) return;
-          if (Hls.isSupported()) {
-            const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+          if (ActualHls.isSupported()) {
+            const hls = new ActualHls({ enableWorker: true, lowLatencyMode: true });
             hlsRef.current = hls;
             hls.loadSource(src);
             hls.attachMedia(video);
-            hls.on(Hls.Events.ERROR, (_e, data) => {
+            hls.on(ActualHls.Events.ERROR, (_e, data) => {
               if (data?.fatal) {
                 console.error("Hls.js fatal error:", data);
                 if (data.details === "manifestParsingError" || data.details === "bufferAddCodecError" || data.reason?.includes("codec")) {
