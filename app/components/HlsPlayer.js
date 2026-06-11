@@ -83,43 +83,25 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
     };
 
     if (isDash) {
-      const loadShaka = () => {
+      // Shaka Player is loaded globally via layout.js <Script> tag.
+      // Poll for window.shaka availability (it uses strategy="lazyOnload").
+      const waitForShaka = () => {
         return new Promise((resolve, reject) => {
-          if (window.shaka) {
-            resolve(window.shaka);
-            return;
-          }
-          const scriptId = "shaka-player-script";
-          let script = document.getElementById(scriptId);
-          if (!script) {
-            script = document.createElement("script");
-            script.id = scriptId;
-            script.src = "https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.7/shaka-player.compiled.js";
-            script.addEventListener("load", () => resolve(window.shaka));
-            script.addEventListener("error", () => reject(new Error("CDN script failed to load")));
-            document.head.appendChild(script);
-          } else {
-            // Script tag exists but hasn't finished loading yet — poll briefly
-            const check = setInterval(() => {
-              if (window.shaka) {
-                clearInterval(check);
-                resolve(window.shaka);
-              }
-            }, 50);
-            // Give up after 10s
-            setTimeout(() => { clearInterval(check); reject(new Error("Shaka load timeout")); }, 10000);
-          }
+          if (window.shaka) { resolve(); return; }
+          let elapsed = 0;
+          const interval = setInterval(() => {
+            elapsed += 100;
+            if (window.shaka) { clearInterval(interval); resolve(); return; }
+            if (elapsed >= 15000) { clearInterval(interval); reject(new Error("Shaka Player did not load in time.")); }
+          }, 100);
         });
       };
 
-      loadShaka()
-        .then((shaka) => {
-          if (cancelled) return;
-          return initShaka();
-        })
+      waitForShaka()
+        .then(() => { if (!cancelled) return initShaka(); })
         .catch((err) => {
-          console.error("Shaka CDN load error:", err);
-          if (!cancelled) setError("Could not load the DASH player from CDN.");
+          console.error("Shaka load error:", err);
+          if (!cancelled) setError("Could not load the DASH player.");
         });
     } else {
       (async () => {
