@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { GROUPS_2026, FIXTURES_2026 } from "../data/schedule2026";
 const ScorecardModal = dynamic(() => import("../components/ScorecardModal"));
@@ -10,6 +10,16 @@ const STAGES = ["Group Stage", "Round of 32", "Round of 16", "Quarter-Final", "S
 export default function Calendar() {
   const [activeStage, setActiveStage] = useState("Group Stage");
   const [selectedFixture, setSelectedFixture] = useState(null);
+  const [standings, setStandings] = useState(null); // { "Group A": [{name, rank, gp, w, d, l, gd, pts}] }
+
+  useEffect(() => {
+    fetch("/api/standings")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d && d.groups) setStandings(d.groups);
+      })
+      .catch(() => {}); // keep the zero-filled table if standings are unavailable
+  }, []);
 
   const filteredFixtures = FIXTURES_2026.filter(f => f.stage === activeStage);
 
@@ -88,19 +98,19 @@ export default function Calendar() {
                             </tr>
                           </thead>
                           <tbody>
-                            {group.teams.map((team, tIdx) => (
-                              <tr key={tIdx} className="team-row">
+                            {(standings?.[group.name] || group.teams.map((t) => ({ name: t.name }))).map((row, tIdx) => (
+                              <tr key={row.name} className="team-row">
                                 <td className="col-team">
-                                  <span className="team-rank">{tIdx + 1}</span>
-                                  <img src={team.flag} alt={team.name} className="flag-icon-small" loading="lazy" decoding="async" />
-                                  <span className="team-name">{team.name}</span>
+                                  <span className="team-rank">{row.rank ?? tIdx + 1}</span>
+                                  <img src={getFlag(row.name) || ""} alt={row.name} className="flag-icon-small" loading="lazy" decoding="async" />
+                                  <span className="team-name">{row.name}</span>
                                 </td>
-                                <td>0</td>
-                                <td>0</td>
-                                <td>0</td>
-                                <td>0</td>
-                                <td>0</td>
-                                <td>0</td>
+                                <td>{row.gp ?? 0}</td>
+                                <td>{row.w ?? 0}</td>
+                                <td>{row.d ?? 0}</td>
+                                <td>{row.l ?? 0}</td>
+                                <td>{(row.gd ?? 0) > 0 ? `+${row.gd}` : row.gd ?? 0}</td>
+                                <td>{row.pts ?? 0}</td>
                               </tr>
                             ))}
                           </tbody>
