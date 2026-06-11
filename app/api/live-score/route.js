@@ -25,45 +25,42 @@ export async function GET(request) {
 
   try {
     const now = Date.now();
-    // Only fetch if cache is empty or expired
-    if (!cachedData || now - lastFetchTime > CACHE_TTL) {
-      let success = false;
-      let lastErrorStatus = null;
+    let apiData = null;
+    let success = false;
+    let lastErrorStatus = null;
 
-      for (let i = 0; i < apiKeys.length; i++) {
-        const key = apiKeys[i];
-        const res = await fetch('https://api.football-data.org/v4/competitions/WC/matches', {
-          headers: { 'X-Auth-Token': key },
-          cache: 'no-store'
-        });
-        
-        if (res.ok) {
-          cachedData = await res.json();
-          lastFetchTime = now;
-          success = true;
-          break; // Stop looping on success
-        } else {
-          lastErrorStatus = res.status;
-          // If rate limited, try next key
-          if (res.status === 429 || res.status === 403) {
-            continue;
-          }
-          break; // Stop looping on fatal error
+    for (let i = 0; i < apiKeys.length; i++) {
+      const key = apiKeys[i];
+      const res = await fetch('https://api.football-data.org/v4/competitions/WC/matches', {
+        headers: { 'X-Auth-Token': key },
+        next: { revalidate: 60 }
+      });
+      
+      if (res.ok) {
+        apiData = await res.json();
+        success = true;
+        break; // Stop looping on success
+      } else {
+        lastErrorStatus = res.status;
+        // If rate limited, try next key
+        if (res.status === 429 || res.status === 403) {
+          continue;
         }
-      }
-
-      if (!success && !cachedData) {
-         throw new Error(`API Error. Last status: ${lastErrorStatus}`);
+        break; // Stop looping on fatal error
       }
     }
 
-    if (!cachedData || !cachedData.matches) {
+    if (!success && !apiData) {
+       throw new Error(`API Error. Last status: ${lastErrorStatus}`);
+    }
+
+    if (!apiData || !apiData.matches) {
        return NextResponse.json({ error: 'No data available' }, { status: 404 });
     }
 
     // Try to find the specific match.
     // We use a loose includes match because API names might differ slightly (e.g. "Korea Republic" vs "South Korea").
-    const foundMatch = cachedData.matches.find(m => {
+    const foundMatch = apiData.matches.find(m => {
        const home = m.homeTeam?.name || '';
        const away = m.awayTeam?.name || '';
        
