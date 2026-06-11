@@ -14,6 +14,8 @@ export const metadata = {
   description: "One data model, three safe source types.",
 };
 
+import Script from "next/script";
+
 export default function RootLayout({ children }) {
   const flags = GROUPS_2026.flatMap(g => g.teams.map(t => t.flag)).filter(Boolean);
 
@@ -25,6 +27,8 @@ export default function RootLayout({ children }) {
         ))}
       </head>
       <body>
+        <Script src="https://cdn.jsdelivr.net/npm/hls.js@1" strategy="beforeInteractive" />
+        <Script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.7/shaka-player.compiled.js" strategy="beforeInteractive" />
         <Header />
         {children}
       </body>
