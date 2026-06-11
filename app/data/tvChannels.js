@@ -5,17 +5,6 @@
 
 export const TV_CHANNELS = [
   {
-    name: "FIFA+",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/FIFA%2B_(2025).svg/960px-FIFA%2B_(2025).svg.png",
-    group: "Sports",
-    url: "https://a62dad94.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWV1X0ZJRkFQbHVzRW5nbGlzaF9ITFM/playlist.m3u8",
-    tvg_id: "FIFAPlus.uk@English",
-    status: "live",
-    verified_at: "2026-06-04T15:14:38.748252",
-    status_code: 200,
-    content_type: "application/vnd.apple.mpegurl",
-  },
-  {
     name: "WORLD CUP TV (ENG)",
     logo: "https://upload.wikimedia.org/wikipedia/commons/4/4b/FIFA_WorldCup_logo.svg",
     group: "FIFA",
@@ -23,12 +12,6 @@ export const TV_CHANNELS = [
     type: "dash",
     kid: "549ab7cd35a64bb6bb479ecead04d69d",
     key: "829799ed534d11fcadeb4b192467e050"
-  },
-  {
-    name: "CAZE TV",
-    logo: "https://images.seeklogo.com/logo-png/61/1/cazetv-logo-png_seeklogo-619708.png",
-    group: "FIFA",
-    url: "https://dfr80qz435crc.cloudfront.net/MNOP/Amagi/Caze/Caze_TV_BR/Caze_TV.m3u8"
   },
   {
     name: "D Sports",
@@ -101,30 +84,6 @@ export const TV_CHANNELS = [
     type: "hls"
   },
   {
-    name: "T Sports HD",
-    logo: "https://s3.aynaott.com/storage/dbc585f70a60b9855b6e13a8ce4cb6f4",
-    group: "FIFA",
-    url: "https://tvsen7.aynaott.com/tsports-hd/index.m3u8?e=1779283784&u=78be6644-0a65-48ec-81a4-089ac65a2619&token=3b4c5a2cfa872fa7f91ffbfb4aa0f658",
-  },
-  {
-    name: "T Sports HD 2",
-    logo: "https://i.imgur.com/2JzlorD.png",
-    group: "FIFA",
-    url: "https://tvsen7.aynaott.com/tsportsfhd/index.m3u8",
-  },
-  {
-    name: "T Sports HD 3",
-    logo: "https://i.imgur.com/2JzlorD.png",
-    group: "FIFA",
-    url: "https://tvsen7.aynaott.com/tsports-hd/index.m3u8",
-  },
-  {
-    name: "Ptv Sports (Embed)",
-    logo: "https://wapka-img.zuna.id/785a58ff.png",
-    group: "Sports",
-    url: "https://cdn.dadocric.st/embed2.php?id=ptvsp"
-  },
-  {
     name: "P Tv Sports (Mono)",
     logo: "https://i.postimg.cc/sXpJqtm3/Ptv.png",
     group: "Sports",
@@ -139,49 +98,5 @@ export const TV_CHANNELS = [
     verified_at: "2026-06-04T15:05:55.820885",
     status_code: 200,
     content_type: "application/vnd.apple.mpegurl",
-  },
-  {
-    name: "BTV HD 1",
-    logo: "https://static.wikia.nocookie.net/logopedia/images/1/12/BTV_HD_Logo.svg",
-    group: "FIFA",
-    url: "https://tvsen6.aynaott.com/btvhd/index.m3u8?e=1780827046&u=3eb1295b-5452-470f-8568-18bbbf5b8b94&token=72ca034ee29969196e6da1592c3b5217",
-  },
-  {
-    name: "BTV HD 2",
-    logo: "https://static.wikia.nocookie.net/logopedia/images/1/12/BTV_HD_Logo.svg",
-    group: "FIFA",
-    url: "https://owrcovcrpy.gpcdn.net/bpk-tv/1709/output/index.m3u8",
-  },
-  {
-    name: "BTV HD 3",
-    logo: "https://static.wikia.nocookie.net/logopedia/images/1/12/BTV_HD_Logo.svg",
-    group: "FIFA",
-    url: "https://tvsen6.aynaott.com/btv_world/index.m3u8?e=1780827046&u=3eb1295b-5452-470f-8568-18bbbf5b8b94&token=51a77fcaea225e9d88e97e81ea9541a8",
-  },
-  {
-    name: "BTV CTG",
-    logo: "https://s3.aynaott.com/storage/00da8a07fb26b2fb79359ee535e4c7bc",
-    group: "FIFA",
-    url: "https://tvsen6.aynaott.com/btvctg/index.m3u8?e=1779283747&u=78be6644-0a65-48ec-81a4-089ac65a2619&token=9bca925fbdfe526b29d41ab7802348ec",
-  },
-  {
-    name: "TSN 4",
-    logo: "https://upload.wikimedia.org/wikipedia/en/thumb/8/87/TSN4_logo.svg/1200px-TSN4_logo.svg.png",
-    group: "Sports",
-    url: "",
-    tvg_id: "TSN4.ca"
-  },
-  {
-    name: "TSN 4K",
-    logo: "https://upload.wikimedia.org/wikipedia/en/thumb/e/e0/TSN_4K_logo.svg/1200px-TSN_4K_logo.svg.png",
-    group: "Sports",
-    url: "",
-    tvg_id: "TSN4K.ca"
-  },
-  {
-    name: "Somoy TV",
-    logo: "https://i.postimg.cc/Qxn4JFNV/20250529-071147.png",
-    group: "FIFA",
-    url: "https://sm-monirul.top/toffee/play/somoy_tv.m3u8",
   }
 ];

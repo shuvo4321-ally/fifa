@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import HlsPlayer from "../components/HlsPlayer";
+import dynamic from "next/dynamic";
 import { TV_CHANNELS } from "../data/tvChannels";
+
+const HlsPlayer = dynamic(() => import("../components/HlsPlayer"), { ssr: false });
 
 const AVAILABLE_CHANNELS = TV_CHANNELS;
 
