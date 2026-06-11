@@ -67,6 +67,8 @@ export async function GET(request) {
        const home = m.homeTeam?.name || '';
        const away = m.awayTeam?.name || '';
        
+       if (!home || !away) return false;
+       
        const matchForward = (home.includes(team1) || team1.includes(home)) && (away.includes(team2) || team2.includes(away));
        const matchReverse = (home.includes(team2) || team2.includes(home)) && (away.includes(team1) || team1.includes(away));
        
