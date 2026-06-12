@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { normTeam, isSameTeam } from "./teamNormalization";
+
+/**
  * One shared, deduped poll of /api/scores for the entire app. Every match row —
  * the calendar fixtures and the home hero — and the group tables all read from
  * this single snapshot instead of each fetching their own endpoint.
