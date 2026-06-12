@@ -71,7 +71,9 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
             });
           }
           player.addEventListener('error', (event) => {
-            console.error('Shaka Error:', event.detail);
+            // Expected for dead/geo-blocked DASH streams. Use warn, not error —
+            // Next dev promotes every console.error into a blocking overlay.
+            console.warn('DASH playback error:', event.detail?.code ?? event.detail);
             if (onErrorCallback) onErrorCallback(true);
           });
           try {
@@ -87,7 +89,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
           setError("Browser not supported for DASH playback.");
         }
       } catch (err) {
-        console.error("Player init error:", err);
+        console.warn("DASH channel failed to start:", err?.code ?? err?.message ?? err);
         if (!cancelled) setError("Could not start the player.");
         if (onErrorCallback) onErrorCallback(true);
       }
@@ -111,7 +113,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
       waitForShaka()
         .then(() => { if (!isStale()) return initShaka(); })
         .catch((err) => {
-          console.error("Shaka load error:", err);
+          console.warn("Shaka player failed to load:", err?.message ?? err);
           if (!cancelled) setError("Could not load the DASH player.");
         });
     } else {
@@ -130,7 +132,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
             hls.attachMedia(video);
             hls.on(Hls.Events.ERROR, (_e, data) => {
               if (data?.fatal) {
-                console.error("Hls.js fatal error:", data);
+                console.warn("HLS fatal error:", data?.details ?? data);
                 if (data.details === "manifestParsingError" || data.details === "bufferAddCodecError" || data.reason?.includes("codec")) {
                   setError("This channel uses HEVC (H.265) video encoding. Your browser or device does not support HEVC decoding.");
                 } else {
@@ -248,22 +250,22 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
     }
   };
 
-  if (error) {
-    return (
-      <div className="live-overlay live-cover">
-        <p className="live-overlay-title">Channel unavailable</p>
-        <p className="live-overlay-sub">{error}</p>
-      </div>
-    );
-  }
-
   return (
-    <div 
-      className="custom-player-wrapper" 
+    <div
+      className="custom-player-wrapper"
       ref={containerRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
+      {/* Error is an OVERLAY, not an early return. The <video> must stay mounted —
+          unmounting it nulled videoRef, so the load effect bailed on the next
+          channel and left every subsequent one "unavailable" until a refresh. */}
+      {error && (
+        <div className="live-overlay live-cover" style={{ position: "absolute", inset: 0, zIndex: 25 }}>
+          <p className="live-overlay-title">Channel unavailable</p>
+          <p className="live-overlay-sub">{error}</p>
+        </div>
+      )}
       {hevcWarning && (
         <div style={{
           position: "absolute",

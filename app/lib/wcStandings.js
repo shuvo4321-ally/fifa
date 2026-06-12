@@ -5,20 +5,11 @@
  * in actual tournament form. 5-minute in-memory cache + last-good fallback.
  */
 
+import { normTeam, isSameTeam } from "./teamNormalization";
+
 let cache = null;
 let fetchTime = 0;
 const TTL = 5 * 60 * 1000;
-
-function normTeam(s) {
-  return (s || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/&/g, "and")
-    .replace(/[^a-z ]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
 
 function statNum(stats, key) {
   const s = stats[key];
@@ -28,13 +19,7 @@ function statNum(stats, key) {
   return Number.isNaN(n) ? 0 : n;
 }
 
-// Our fixture name → ESPN name, for the few that don't substring-match.
-const ALIASES = {
-  "korea republic": "south korea",
-  "usa": "united states",
-  "turkiye": "turkey",
-  "ivory coast": "cote divoire",
-};
+
 
 export async function getWcStandings() {
   const now = Date.now();
@@ -72,15 +57,12 @@ export async function getWcStandings() {
   }
 }
 
-/** Fuzzy-lookup a team's WC record by name (handles partial + alias matches). */
 export function lookupWcRecord(map, teamName) {
   if (!map) return null;
   const n = normTeam(teamName);
   if (map[n]) return map[n];
   for (const key of Object.keys(map)) {
-    if (key.includes(n) || n.includes(key)) return map[key];
+    if (isSameTeam(key, teamName)) return map[key];
   }
-  const alias = ALIASES[n];
-  if (alias && map[normTeam(alias)]) return map[normTeam(alias)];
   return null;
 }

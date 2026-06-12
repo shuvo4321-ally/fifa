@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { GROUPS_2026, FIXTURES_2026 } from "../data/schedule2026";
 const ScorecardModal = dynamic(() => import("../components/ScorecardModal"));
 import LiveScoreInline from "../components/LiveScoreInline";
+import { useGroupStandings } from "../lib/liveScores";
 const STAGES = ["Group Stage", "Round of 32", "Round of 16", "Quarter-Final", "Semi-Final", "Final"];
 
 // "Group A" → "group-a" — anchor target for hero deep-links.
@@ -13,16 +14,9 @@ const groupSlug = (name) => (name || "").trim().toLowerCase().replace(/\s+/g, "-
 export default function Calendar() {
   const [activeStage, setActiveStage] = useState("Group Stage");
   const [selectedFixture, setSelectedFixture] = useState(null);
-  const [standings, setStandings] = useState(null); // { "Group A": [{name, rank, gp, w, d, l, gd, pts}] }
-
-  useEffect(() => {
-    fetch("/api/standings")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d && d.groups) setStandings(d.groups);
-      })
-      .catch(() => {}); // keep the zero-filled table if standings are unavailable
-  }, []);
+  // Group tables derived from the same match results the fixtures show — the two
+  // can't disagree, and it drops the separate /api/standings call.
+  const standings = useGroupStandings(GROUPS_2026, FIXTURES_2026);
 
   // Deep-link from the home hero: /calendar#group-a scrolls to that group's
   // table (the Group Stage view is the default, so the anchor exists on load).
