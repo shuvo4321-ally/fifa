@@ -83,8 +83,28 @@ export default function LiveTvPage() {
     setActive(AVAILABLE_CHANNELS[prevIdx]);
   };
 
+  const uniqueOrigins = Array.from(
+    new Set(
+      AVAILABLE_CHANNELS
+        .map(c => c.url)
+        .filter(Boolean)
+        .map(url => {
+          try {
+            return new URL(url).origin;
+          } catch {
+            return null;
+          }
+        })
+        .filter(Boolean)
+    )
+  );
+
   return (
     <>
+      {uniqueOrigins.map(origin => (
+        <link key={origin} rel="preconnect" href={origin} crossOrigin="anonymous" />
+      ))}
+
       {showPopup && (
         <div
           style={{ position: "fixed", inset: 0, zIndex: 9999, backgroundColor: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", alignItems: "center", padding: "20px" }}
