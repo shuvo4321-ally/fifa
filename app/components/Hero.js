@@ -153,8 +153,8 @@ export default function Hero({ hero, slides, today, pinned = false, onCta }) {
               {today.rows.map((m, i) => (
                 <HeroMatchRow key={i} m={m} />
               ))}
-              <Link href="/calendar" className="hero-today-cta">
-                {today.moreCount > 0 ? `+${today.moreCount} more · Full schedule →` : "Full schedule →"}
+              <Link href="/live-tv" className="hero-today-cta">
+                {today.moreCount > 0 ? `+${today.moreCount} more · Watch Now →` : "Watch Now →"}
               </Link>
             </div>
           </div>
