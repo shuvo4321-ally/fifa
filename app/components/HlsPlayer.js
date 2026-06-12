@@ -139,18 +139,22 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
 
     return () => {
       cancelled = true;
+      // Tear down whichever engine is active.
       if (hlsRef.current) {
         hlsRef.current.destroy();
         hlsRef.current = null;
-        if (video) {
-          video.pause();
-          video.removeAttribute("src");
-          video.load();
-        }
-      } else if (shakaRef.current) {
-        shakaRef.current.destroy();
+      }
+      if (shakaRef.current) {
+        // destroy() is async and we don't await it, but resetting the <video>
+        // below synchronously detaches its MediaSource.
+        shakaRef.current.destroy().catch(() => {});
         shakaRef.current = null;
-      } else if (video) {
+      }
+      // ALWAYS reset the media element. Previously the Shaka branch skipped
+      // this, so switching away from a DASH channel (e.g. World Cup TV) left
+      // its MediaSource attached and the next channel's hls.attachMedia() threw
+      // → "Could not start the player" for every channel until a full refresh.
+      if (video) {
         video.pause();
         video.removeAttribute("src");
         video.load();
@@ -297,7 +301,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
         onClick={togglePlay}
         onDoubleClick={onFullscreen}
       />
-      
+
       {onPrev && (
         <button 
           className={`custom-nav-btn custom-nav-left ${isHovering || !isPlaying ? "is-visible" : ""}`}
