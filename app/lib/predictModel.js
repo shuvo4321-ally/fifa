@@ -9,7 +9,11 @@
  */
 
 const BASE_TOTAL_GOALS = 2.6; // typical combined goals in an international match
-const GOALS_PER_RATING = 8; // rating points ≈ one goal of expected supremacy
+// Log-linear goal model (see computeBaseline): a rating edge scales expected
+// goals multiplicatively. RATING_SCALE = rating points per unit of supremacy on
+// the log scale; SUP_CAP caps a blowout around 5-0 instead of letting it run away.
+const RATING_SCALE = 15;
+const SUP_CAP = 1.4;
 const FORM_WEIGHT = 3; // rating nudge per point of form-per-game above/below average
 const GD_WEIGHT = 1.2; // rating nudge per goal of recent goal-difference-per-game
 const NEUTRAL_PPG = 1.5; // a .500 record (1W1L) averages 1.5 points per game
@@ -79,9 +83,14 @@ export function computeBaseline(signalA, signalB) {
   const ratingA = teamStrength(signalA);
   const ratingB = teamStrength(signalB);
 
-  const supremacy = clamp((ratingA - ratingB) / GOALS_PER_RATING, -3, 3);
-  const lambdaA = clamp(BASE_TOTAL_GOALS / 2 + supremacy / 2, 0.2, 4.5);
-  const lambdaB = clamp(BASE_TOTAL_GOALS / 2 - supremacy / 2, 0.2, 4.5);
+  // Log-linear (Poisson-regression style) goal model: a rating edge scales
+  // expected goals multiplicatively, so genuine mismatches open up to 3-1 / 4-0
+  // / 5-0 instead of being squashed under a fixed 2.6-goal ceiling, while evenly
+  // matched sides still sit around 1-1 / 2-1.
+  const supremacy = clamp((ratingA - ratingB) / RATING_SCALE, -SUP_CAP, SUP_CAP);
+  const half = BASE_TOTAL_GOALS / 2;
+  const lambdaA = clamp(half * Math.exp(supremacy), 0.15, 4.8);
+  const lambdaB = clamp(half * Math.exp(-supremacy), 0.15, 4.8);
 
   let winA = 0, draw = 0, winB = 0;
   for (let i = 0; i <= 8; i++) {

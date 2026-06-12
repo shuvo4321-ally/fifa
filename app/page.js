@@ -10,6 +10,7 @@ import MatchCard from "./components/MatchCard";
 
 gsap.registerPlugin(ScrollTrigger);
 import { TOURNAMENTS, HERO_SLIDES } from "./data/tournaments";
+import { buildTodaySlide } from "./lib/todayMatches";
 
 const LEGENDS = [
   {
@@ -89,6 +90,15 @@ export default function Home() {
   const legendsSectionRef = useRef(null);
   const legendsBgRef = useRef(null);
   const isDraggingRef = useRef(false);
+
+  // Build the "today's matches" hero slide after mount (keeps the server render
+  // and first client paint identical — no hydration mismatch).
+  const [todaySlide, setTodaySlide] = useState(null);
+  useEffect(() => {
+    setTodaySlide(buildTodaySlide(Date.now()));
+    const id = setInterval(() => setTodaySlide(buildTodaySlide(Date.now())), 60000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     const hash = window.location.hash.replace('#', '');
@@ -264,6 +274,7 @@ export default function Home() {
         <main className="home">
         <Hero
           slides={HERO_SLIDES}
+          today={todaySlide}
           pinned={true}
           onCta={() =>
             document

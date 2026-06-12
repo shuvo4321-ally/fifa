@@ -8,6 +8,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
   const hlsRef = useRef(null);
   const shakaRef = useRef(null);
   const hoverTimeoutRef = useRef(null);
+  const loadIdRef = useRef(0);
   
   const [error, setError] = useState("");
   const [hevcWarning, setHevcWarning] = useState(false);
@@ -41,11 +42,19 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
     if (!video || !src) return;
     setError("");
     let cancelled = false;
+    // Each load gets a unique id; switching channels bumps it, so any in-flight
+    // async work from the previous channel bails instead of attaching a second
+    // stream over the new one (the "both play at once" bug).
+    const myId = ++loadIdRef.current;
+    const isStale = () => cancelled || myId !== loadIdRef.current;
+
+    // Silence the previous stream immediately on switch.
+    try { video.pause(); } catch {}
 
     const isDash = streamType === "dash" || src.toLowerCase().includes(".mpd");
 
     const initShaka = async () => {
-      if (cancelled) return;
+      if (isStale()) return;
       try {
         const shaka = window.shaka;
         if (!shaka) {
@@ -67,6 +76,8 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
           });
           try {
             await player.load(src);
+            // Switched away mid-load → tear this one down, don't let it play.
+            if (isStale()) { player.destroy().catch(() => {}); return; }
           } catch (e) {
             if (e.code !== shaka.util.Error.Code.LOAD_INTERRUPTED) {
               throw e;
@@ -98,7 +109,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
       };
 
       waitForShaka()
-        .then(() => { if (!cancelled) return initShaka(); })
+        .then(() => { if (!isStale()) return initShaka(); })
         .catch((err) => {
           console.error("Shaka load error:", err);
           if (!cancelled) setError("Could not load the DASH player.");
@@ -111,7 +122,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
         }
         try {
           const { default: Hls } = await import("hls.js");
-          if (cancelled) return;
+          if (isStale()) return;
           if (Hls.isSupported()) {
             const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
             hlsRef.current = hls;

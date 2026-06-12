@@ -9,6 +9,32 @@ for (const g of GROUPS_2026) for (const t of g.teams) FLAGS[t.name.trim()] = t.f
 const getFlag = (name) => FLAGS[(name || "").trim()] || null;
 const splitMatch = (m) => (m || "").split(" vs ").map((s) => s.trim());
 
+// Fixture date/time strings are in Bangladesh time (UTC+6) — see the predict
+// route. Resolve one to an absolute kickoff instant so "is it over?" is correct
+// regardless of where the viewer is.
+const MONTHS = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
+const BDT_OFFSET_MS = 6 * 60 * 60 * 1000;
+const MATCH_OVER_MS = 2.5 * 60 * 60 * 1000; // full time + halftime + stoppage, with margin
+
+function fixtureKickoffMs(f) {
+  const dm = /([A-Za-z]{3})[a-z]*\s+(\d{1,2}),\s*(\d{4})/.exec(f?.date || "");
+  const tm = /(\d{1,2}):(\d{2})\s*(AM|PM)/i.exec(f?.time || "");
+  if (!dm || !tm) return NaN;
+  const month = MONTHS[dm[1]];
+  if (month == null) return NaN;
+  let hour = Number(tm[1]) % 12;
+  if (/PM/i.test(tm[3])) hour += 12;
+  // Treat the wall-clock value as BDT, then shift to the true UTC instant.
+  return Date.UTC(Number(dm[3]), month, Number(dm[2]), hour, Number(tm[2])) - BDT_OFFSET_MS;
+}
+
+// A match is "over" once enough time has passed since kickoff. Unparseable
+// dates count as upcoming so a data hiccup never silently hides a fixture.
+function isFixtureOver(f, now) {
+  const k = fixtureKickoffMs(f);
+  return !Number.isNaN(k) && now > k + MATCH_OVER_MS;
+}
+
 export default function PredictionHub() {
   const [activeMatch, setActiveMatch] = useState(null);
   const [activeMeta, setActiveMeta] = useState(null);
@@ -17,7 +43,19 @@ export default function PredictionHub() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const upcomingFixtures = FIXTURES_2026.filter((f) => f.stage === "Group Stage");
+  // `now` stays 0 until mounted so the server render and first client paint
+  // agree (no hydration mismatch); then it ticks each minute so matches drop
+  // off the moment they finish, without a manual refresh.
+  const [now, setNow] = useState(0);
+  useEffect(() => {
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(id);
+  }, []);
+
+  const upcomingFixtures = FIXTURES_2026.filter(
+    (f) => f.stage === "Group Stage" && !isFixtureOver(f, now)
+  );
 
   const closeModal = useCallback(() => {
     setActiveMatch(null);
@@ -99,6 +137,11 @@ export default function PredictionHub() {
           );
         })}
       </div>
+      {now > 0 && upcomingFixtures.length === 0 && (
+        <p className="predict-sub" style={{ textAlign: "center", padding: "3rem 1rem" }}>
+          No upcoming matches — every fixture has kicked off. Check back for the next round.
+        </p>
+      )}
 
       {activeMatch && (
         <PredictionModal

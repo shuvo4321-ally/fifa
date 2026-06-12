@@ -5,6 +5,7 @@
  */
 import { findRapidTeam, getRapidSquad, getRapidRecentStats } from "./apiFootball.js";
 import { supabase } from "./supabase.js";
+import { getWcStandings, lookupWcRecord } from "./wcStandings.js";
 
 
 const API_BASE = "https://api.football-data.org/v4";
@@ -140,13 +141,14 @@ export async function getRecentMatches(teamId, limit = 8) {
  * Fetches squads, coaches, and recent results from football-data.org.
  */
 export async function buildMatchAnalysis(team1Name, team2Name) {
-  const [team1, team2, rapidTeam1, rapidTeam2, supaTeam1, supaTeam2] = await Promise.all([
+  const [team1, team2, rapidTeam1, rapidTeam2, supaTeam1, supaTeam2, wcStandings] = await Promise.all([
     findTeam(team1Name),
     findTeam(team2Name),
     findRapidTeam(team1Name),
     findRapidTeam(team2Name),
     getSupabaseTeam(team1Name),
-    getSupabaseTeam(team2Name)
+    getSupabaseTeam(team2Name),
+    getWcStandings()
   ]);
 
   const parts = [];
@@ -308,6 +310,66 @@ export async function buildMatchAnalysis(team1Name, team2Name) {
       signal.gf = gf;
       signal.ga = ga;
       section += `\n**Form (last ${matches.length}):** ${w}W ${d}D ${l}L — ${gf} goals scored, ${ga} conceded\n`;
+    }
+
+    // ── Vercel fallback for recent form ──
+    // football-data.org 403-blocks the deploy's server IPs, so on Vercel the
+    // block above produces no form (→ coverage caps at 0.5, "High" confidence
+    // becomes impossible, baseline ungrounded). API-Football IS reachable from
+    // Vercel and we already fetched its last-5 fixtures as `rapidStats` above —
+    // build the same Recent Results + form signal from it when football-data is
+    // dark, so predictions are grounded identically on localhost and the deploy.
+    if (!signal.form && rapidTeam?.id && rapidStats?.length) {
+      const ordered = [...rapidStats]
+        .filter((f) => f?.goals?.home != null && f?.goals?.away != null)
+        .sort((a, b) => new Date(b.fixture?.date || 0) - new Date(a.fixture?.date || 0));
+
+      if (ordered.length) {
+        section += "\n### Recent Results\n";
+        let w = 0, d = 0, l = 0, gf = 0, ga = 0;
+        for (const f of ordered) {
+          const isHome = f.teams?.home?.id === rapidTeam.id;
+          const homeG = f.goals.home ?? 0;
+          const awayG = f.goals.away ?? 0;
+          const home = f.teams?.home?.name || "?";
+          const away = f.teams?.away?.name || "?";
+          const date = (f.fixture?.date || "").slice(0, 10);
+          const comp = f.league?.name || "";
+          section += `${date} | ${home} ${homeG}-${awayG} ${away}${comp ? ` (${comp})` : ""}\n`;
+
+          const myG = isHome ? homeG : awayG;
+          const oppG = isHome ? awayG : homeG;
+          gf += myG;
+          ga += oppG;
+          let r;
+          if (myG === oppG) { d++; r = "D"; }
+          else if (myG > oppG) { w++; r = "W"; }
+          else { l++; r = "L"; }
+          signal.outcomes.push(r);
+        }
+        signal.form = { w, d, l, played: ordered.length };
+        signal.gf = gf;
+        signal.ga = ga;
+        section += `\n**Form (last ${ordered.length}):** ${w}W ${d}D ${l}L — ${gf} goals scored, ${ga} conceded\n`;
+      }
+    }
+
+    // ── Actual World Cup form (highest priority) ──
+    // Once a team has played a group game, its real tournament record is the most
+    // predictive recent form — and ESPN standings reach Vercel — so it overrides
+    // the pre-tournament form above. Falls back to that form before kickoff (gp 0).
+    const wcRec = lookupWcRecord(wcStandings, name);
+    if (wcRec && wcRec.gp > 0) {
+      signal.form = { w: wcRec.w, d: wcRec.d, l: wcRec.l, played: wcRec.gp };
+      // Standings expose GD only; encode it so (gf - ga) / played === gd / gp.
+      signal.gf = wcRec.gd > 0 ? wcRec.gd : 0;
+      signal.ga = wcRec.gd < 0 ? -wcRec.gd : 0;
+      signal.outcomes = [
+        ...Array(wcRec.w).fill("W"),
+        ...Array(wcRec.d).fill("D"),
+        ...Array(wcRec.l).fill("L"),
+      ];
+      section += `\n**World Cup group form:** ${wcRec.w}W ${wcRec.d}D ${wcRec.l}L — GD ${wcRec.gd > 0 ? "+" : ""}${wcRec.gd}, ${wcRec.pts} pts\n`;
     }
 
     parts.push(section);

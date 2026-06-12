@@ -1,13 +1,15 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import Link from "next/link";
+import HeroMatchRow from "./HeroMatchRow";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 
 gsap.registerPlugin(ScrollTrigger);
 
-export default function Hero({ hero, slides, pinned = false, onCta }) {
+export default function Hero({ hero, slides, today, pinned = false, onCta }) {
   const heroRef = useRef(null);
   const bgRef = useRef(null);
   const contentRef = useRef(null);
@@ -143,7 +145,22 @@ export default function Hero({ hero, slides, pinned = false, onCta }) {
           </div>
         )}
         <h1 className="hero-title">{current.title}</h1>
-        {current.description && <p className="hero-desc">{current.description}</p>}
+        {/* Today's fixtures — fixed across all slides so it's always visible. */}
+        {today && today.rows && today.rows.length > 0 ? (
+          <div className="hero-fixtures">
+            <span className="hero-fixtures-head">{today.heading}</span>
+            <div className="hero-today">
+              {today.rows.map((m, i) => (
+                <HeroMatchRow key={i} m={m} />
+              ))}
+              <Link href="/calendar" className="hero-today-cta">
+                {today.moreCount > 0 ? `+${today.moreCount} more · Full schedule →` : "Full schedule →"}
+              </Link>
+            </div>
+          </div>
+        ) : (
+          current.description && <p className="hero-desc">{current.description}</p>
+        )}
         {isCarousel && (
           <div className="hero-dots">
             {Array.from({ length: dotCount }).map((_, i) => (

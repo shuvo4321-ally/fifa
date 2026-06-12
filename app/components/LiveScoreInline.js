@@ -1,55 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useLiveScore } from "../lib/liveScores";
 
 export default function LiveScoreInline({ matchStr }) {
-  const [score, setScore] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const valid = typeof matchStr === "string" && matchStr.includes(" vs ");
+  const [t1, t2] = valid ? matchStr.split(" vs ").map((s) => s.trim()) : ["", ""];
+  // Reads from the shared /api/scores snapshot — no per-fixture network call.
+  const live = useLiveScore(t1, t2);
 
-  useEffect(() => {
-    if (!matchStr.includes(" vs ")) {
-      setLoading(false);
-      return;
-    }
+  if (!valid) return null;
 
-    let isMounted = true;
-    const fetchScore = async () => {
-      try {
-        const res = await fetch(`/api/live-score?match=${encodeURIComponent(matchStr)}`);
-        const data = await res.json();
-        if (!isMounted) return;
-        
-        if (data && data.score && data.score.fullTime && data.score.fullTime.home !== null) {
-          setScore(`${data.score.fullTime.home} - ${data.score.fullTime.away}`);
-        } else {
-          setScore("VS");
-        }
-      } catch (err) {
-        if (isMounted) setScore("VS");
-      }
-      if (isMounted) setLoading(false);
-    };
-
-    fetchScore();
-    
-    return () => { isMounted = false; };
-  }, [matchStr]);
-
-  if (!matchStr.includes(" vs ")) return null;
-
-  if (loading) {
-    return <span className="fixture-vs">...</span>;
+  const hasScore = live && live.s1 != null && live.s2 != null;
+  if (!hasScore) {
+    return <span className="fixture-vs">VS</span>;
   }
 
-  const isScore = score !== "VS";
-
   return (
-    <span className="fixture-vs" style={{ 
-      color: isScore ? "white" : "inherit", 
-      fontSize: isScore ? "18px" : "inherit",
-      fontWeight: isScore ? "900" : "800"
-    }}>
-      {score}
+    <span
+      className="fixture-vs"
+      style={{ color: "white", fontSize: "18px", fontWeight: 900 }}
+    >
+      {live.s1} - {live.s2}
     </span>
   );
 }

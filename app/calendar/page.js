@@ -7,6 +7,9 @@ const ScorecardModal = dynamic(() => import("../components/ScorecardModal"));
 import LiveScoreInline from "../components/LiveScoreInline";
 const STAGES = ["Group Stage", "Round of 32", "Round of 16", "Quarter-Final", "Semi-Final", "Final"];
 
+// "Group A" → "group-a" — anchor target for hero deep-links.
+const groupSlug = (name) => (name || "").trim().toLowerCase().replace(/\s+/g, "-");
+
 export default function Calendar() {
   const [activeStage, setActiveStage] = useState("Group Stage");
   const [selectedFixture, setSelectedFixture] = useState(null);
@@ -19,6 +22,17 @@ export default function Calendar() {
         if (d && d.groups) setStandings(d.groups);
       })
       .catch(() => {}); // keep the zero-filled table if standings are unavailable
+  }, []);
+
+  // Deep-link from the home hero: /calendar#group-a scrolls to that group's
+  // table (the Group Stage view is the default, so the anchor exists on load).
+  useEffect(() => {
+    const id = decodeURIComponent((window.location.hash || "").replace("#", ""));
+    if (!id) return;
+    const t = setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 350);
+    return () => clearTimeout(t);
   }, []);
 
   const filteredFixtures = FIXTURES_2026.filter(f => f.stage === activeStage);
@@ -81,7 +95,7 @@ export default function Calendar() {
                 const groupFixtures = FIXTURES_2026.filter(f => f.group === group.name);
                 
                 return (
-                  <div key={idx} className="unified-group-card">
+                  <div key={idx} id={groupSlug(group.name)} className="unified-group-card">
                     <h3 className="group-title">{group.name}</h3>
                     <div className="unified-group-content">
                       <div className="group-table-wrapper">
