@@ -91,5 +91,18 @@ export const TV_CHANNELS = [
     url: "https://cdn.yallashooot.pp.ua/hls/ch1.m3u8",
     type: "hls"
   },
-
+  {
+    name: "BEIN Sports 1",
+    logo: "https://images.seeklogo.com/logo-png/48/1/bein-sports-1-logo-png_seeklogo-481583.png",
+    group: "FIFA",
+    url: "https://1nyaler.streamhostingcdn.top/stream/23/index.m3u8",
+    type: "hls"
+  },
+  {
+    name: "Win Sports",
+    logo: "https://images.seeklogo.com/logo-png/25/1/win-sports-logo-png_seeklogo-259337.png",
+    group: "FIFA",
+    url: "https://1nyaler.streamhostingcdn.top/stream/32/index.m3u8",
+    type: "hls"
+  }
 ];
