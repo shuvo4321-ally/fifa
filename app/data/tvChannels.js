@@ -75,12 +75,6 @@ export const TV_CHANNELS = [
     type: "hls"
   },
   {
-    name: "Ptv Sports (Embed)",
-    logo: "https://wapka-img.zuna.id/785a58ff.png",
-    group: "Sports",
-    url: "https://cdn.dadocric.st/embed2.php?id=ptvsp"
-  },
-  {
     name: "P Tv Sports (Mono)",
     logo: "https://i.postimg.cc/sXpJqtm3/Ptv.png",
     group: "Sports",
@@ -95,11 +89,5 @@ export const TV_CHANNELS = [
     verified_at: "2026-06-04T15:05:55.820885",
     status_code: 200,
     content_type: "application/vnd.apple.mpegurl",
-  },
-  {
-    name: "BTV HD 1",
-    logo: "https://static.wikia.nocookie.net/logopedia/images/1/12/BTV_HD_Logo.svg",
-    group: "FIFA",
-    url: "https://tvsen6.aynaott.com/btvhd/index.m3u8?e=1780827046&u=3eb1295b-5452-470f-8568-18bbbf5b8b94&token=72ca034ee29969196e6da1592c3b5217",
   },
 ];
