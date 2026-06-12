@@ -14,22 +14,29 @@ export const TV_CHANNELS = [
     key: "68f96d618b0b956b008c445896a25a79"
   },
   {
-    name: "TUDN",
-    logo: "https://i.imgur.com/oT5CAvd.png",
+    name: "Zee5 Bangla",
+    logo: "",
     group: "FIFA",
-    url: "https://otte.live.fly.ww.aiv-cdn.net/gru-nitro/live/clients/dash/enc/8u9cregwlt/out/v1/687f6b2a559943549be271504a948ffd/cenc.mpd",
+    url: "https://d1g8wgjurz8via.cloudfront.net/bpk-tv/Zeebanglacinema/default/manifest.mpd",
     type: "dash",
-    kid: "1710ac2bbfcd3032d0f6533850968f47",
-    key: "d2548dacc8efcd1cd0af0373060c82dc"
+    kid: "fbbfd9ce4bbe4d818b16df7dfe89f05b",
+    key: "1e96d0f88ef740e982d6f6105721c8bc"
   },
   {
-    name: "SporTV",
-    logo: "https://i.postimg.cc/gr9x3z71/Spor-TV-2021.png",
-    group: "FIFA",
-    url: "https://a151aivottlinear-a.akamaihd.net/OTTB/sin-nitro/live/dash/enc/m7duvnk2bu/out/v1/d1ad69118b5647309b1eb7213affdb3d/cenc.mpd",
-    type: "dash",
-    kid: "4bbcff3289d457b4dd5dbdd21221de9a",
-    key: "c4906b9a9f8dda3c0725bddb8c497733"
+    name: "P Tv Sports (Mono)",
+    logo: "https://i.postimg.cc/sXpJqtm3/Ptv.png",
+    group: "Sports",
+    url: "https://tvsen5.aynaott.com/PtvSports/tracks-v1a1/mono.ts.m3u8"
+  },
+  {
+    name: "PTV Sports",
+    logo: "https://s3.aynaott.com/storage/9d9d7cbfba5a8ceea648bbd963ad1014",
+    group: "Sports",
+    url: "https://tvsen5.aynaott.com/PtvSports/index.m3u8?e=1779283784&u=78be6644-0a65-48ec-81a4-089ac65a2619&token=db1789e36c278bf538489fac263e0ffb",
+    status: "live",
+    verified_at: "2026-06-04T15:05:55.820885",
+    status_code: 200,
+    content_type: "application/vnd.apple.mpegurl",
   },
   {
     name: "TSN Sports 1",
@@ -50,6 +57,24 @@ export const TV_CHANNELS = [
     key: "72d631a66e635c60829a0fe7705516c1"
   },
   {
+    name: "TUDN",
+    logo: "https://i.imgur.com/oT5CAvd.png",
+    group: "FIFA",
+    url: "https://otte.live.fly.ww.aiv-cdn.net/gru-nitro/live/clients/dash/enc/8u9cregwlt/out/v1/687f6b2a559943549be271504a948ffd/cenc.mpd",
+    type: "dash",
+    kid: "1710ac2bbfcd3032d0f6533850968f47",
+    key: "d2548dacc8efcd1cd0af0373060c82dc"
+  },
+  {
+    name: "SporTV",
+    logo: "https://i.postimg.cc/gr9x3z71/Spor-TV-2021.png",
+    group: "FIFA",
+    url: "https://a151aivottlinear-a.akamaihd.net/OTTB/sin-nitro/live/dash/enc/m7duvnk2bu/out/v1/d1ad69118b5647309b1eb7213affdb3d/cenc.mpd",
+    type: "dash",
+    kid: "4bbcff3289d457b4dd5dbdd21221de9a",
+    key: "c4906b9a9f8dda3c0725bddb8c497733"
+  },
+  {
     name: "M6 Direct TV",
     logo: "https://i.imgur.com/7GVp3fW.png",
     group: "FIFA",
@@ -58,15 +83,7 @@ export const TV_CHANNELS = [
     kid: "433ffba670963e70857859a9dff4be04",
     key: "51ede3a821229fe81e71282c8eff80e3"
   },
-  {
-    name: "Zee5 Bangla",
-    logo: "",
-    group: "FIFA",
-    url: "https://d1g8wgjurz8via.cloudfront.net/bpk-tv/Zeebanglacinema/default/manifest.mpd",
-    type: "dash",
-    kid: "fbbfd9ce4bbe4d818b16df7dfe89f05b",
-    key: "1e96d0f88ef740e982d6f6105721c8bc"
-  },
+
   {
     name: "beIN Sports 1 MAX (Arabic)",
     logo: "https://i.imgur.com/FjWQjdy.png",
@@ -74,20 +91,5 @@ export const TV_CHANNELS = [
     url: "https://cdn.yallashooot.pp.ua/hls/ch1.m3u8",
     type: "hls"
   },
-  {
-    name: "P Tv Sports (Mono)",
-    logo: "https://i.postimg.cc/sXpJqtm3/Ptv.png",
-    group: "Sports",
-    url: "https://tvsen5.aynaott.com/PtvSports/tracks-v1a1/mono.ts.m3u8"
-  },
-  {
-    name: "PTV Sports",
-    logo: "https://s3.aynaott.com/storage/9d9d7cbfba5a8ceea648bbd963ad1014",
-    group: "Sports",
-    url: "https://tvsen5.aynaott.com/PtvSports/index.m3u8?e=1779283784&u=78be6644-0a65-48ec-81a4-089ac65a2619&token=db1789e36c278bf538489fac263e0ffb",
-    status: "live",
-    verified_at: "2026-06-04T15:05:55.820885",
-    status_code: 200,
-    content_type: "application/vnd.apple.mpegurl",
-  },
+
 ];
