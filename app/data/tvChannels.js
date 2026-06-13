@@ -30,15 +30,6 @@ export const TV_CHANNELS = [
     type: "hls"
   },
   {
-    name: "TSN Sports 1",
-    logo: "https://i.imgur.com/eRFE0jZ.png",
-    group: "FIFA",
-    url: "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/7janu55dwc/out/v1/69a2a7041395406b970598f61680e7cf/cenc.mpd",
-    type: "dash",
-    kid: "e51aa21f2a0fef9aabc120dfb655b52f",
-    key: "a12a987fe725a40b6be95cd84b15f689"
-  },
-  {
     name: "Telemundo",
     logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Telemundo_logo_2018.svg/960px-Telemundo_logo_2018.svg.png",
     group: "FIFA",
