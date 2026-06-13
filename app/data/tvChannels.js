@@ -23,20 +23,11 @@ export const TV_CHANNELS = [
     key: "1e96d0f88ef740e982d6f6105721c8bc"
   },
   {
-    name: "P Tv Sports (Mono)",
-    logo: "https://i.postimg.cc/sXpJqtm3/Ptv.png",
-    group: "Sports",
-    url: "https://tvsen5.aynaott.com/PtvSports/tracks-v1a1/mono.ts.m3u8"
-  },
-  {
-    name: "PTV Sports",
-    logo: "https://s3.aynaott.com/storage/9d9d7cbfba5a8ceea648bbd963ad1014",
-    group: "Sports",
-    url: "https://tvsen5.aynaott.com/PtvSports/index.m3u8?e=1779283784&u=78be6644-0a65-48ec-81a4-089ac65a2619&token=db1789e36c278bf538489fac263e0ffb",
-    status: "live",
-    verified_at: "2026-06-04T15:05:55.820885",
-    status_code: 200,
-    content_type: "application/vnd.apple.mpegurl",
+    name: "Win Sports",
+    logo: "https://images.seeklogo.com/logo-png/25/1/win-sports-logo-png_seeklogo-259337.png",
+    group: "FIFA",
+    url: "https://1nyaler.streamhostingcdn.top/stream/32/index.m3u8",
+    type: "hls"
   },
   {
     name: "TSN Sports 1",
@@ -83,7 +74,6 @@ export const TV_CHANNELS = [
     kid: "433ffba670963e70857859a9dff4be04",
     key: "51ede3a821229fe81e71282c8eff80e3"
   },
-
   {
     name: "beIN Sports 1 MAX (Arabic)",
     logo: "https://i.imgur.com/FjWQjdy.png",
@@ -96,13 +86,6 @@ export const TV_CHANNELS = [
     logo: "https://images.seeklogo.com/logo-png/48/1/bein-sports-1-logo-png_seeklogo-481583.png",
     group: "FIFA",
     url: "https://1nyaler.streamhostingcdn.top/stream/23/index.m3u8",
-    type: "hls"
-  },
-  {
-    name: "Win Sports",
-    logo: "https://images.seeklogo.com/logo-png/25/1/win-sports-logo-png_seeklogo-259337.png",
-    group: "FIFA",
-    url: "https://1nyaler.streamhostingcdn.top/stream/32/index.m3u8",
     type: "hls"
   }
 ];

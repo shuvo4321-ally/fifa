@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { normTeam, isSameTeam } from "./teamNormalization";
+import { isSameTeam, canonicalTeam } from "./teamNormalization";
 
 /**
  * One shared, deduped poll of /api/scores for the entire app. Every match row —
@@ -33,7 +33,9 @@ let store = new Map(); // key → match
 let hydrated = false;
 
 function keyOf(m) {
-  return `${normTeam(m.home)}|${normTeam(m.away)}`;
+  // Canonical key so a match can't be stored twice under two feed spellings
+  // (e.g. "South Korea" vs "Korea Republic" for the same fixture).
+  return `${canonicalTeam(m.home)}|${canonicalTeam(m.away)}`;
 }
 
 function hydrate() {
