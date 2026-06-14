@@ -14,15 +14,6 @@ export const TV_CHANNELS = [
     key: "68f96d618b0b956b008c445896a25a79"
   },
   {
-    name: "WORLD CUP TV (ENG)",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/4/4b/FIFA_WorldCup_logo.svg",
-    group: "FIFA",
-    url: "https://qp-pldt-live-bpk-ucd-prod.akamaized.net/bpk-tv/ch299/default/index.mpd",
-    type: "dash",
-    kid: "549ab7cd35a64bb6bb479ecead04d69d",
-    key: "829799ed534d11fcadeb4b192467e050"
-  },
-  {
     name: "Win Sports",
     logo: "https://images.seeklogo.com/logo-png/25/1/win-sports-logo-png_seeklogo-259337.png",
     group: "FIFA",
