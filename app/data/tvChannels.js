@@ -13,13 +13,17 @@ export const TV_CHANNELS = [
     kid: "a7d11d37a1f7611ee88d4db880171f32",
     key: "68f96d618b0b956b008c445896a25a79"
   },
+
   {
-    name: "Win Sports",
-    logo: "https://images.seeklogo.com/logo-png/25/1/win-sports-logo-png_seeklogo-259337.png",
+    name: "FUSSBALL TV",
+    logo: "https://github.com/user-attachments/assets/8ccc2603-16a1-47a6-bd16-2f783da7f28d",
     group: "FIFA",
-    url: "https://1nyaler.streamhostingcdn.top/stream/32/index.m3u8",
-    type: "hls"
+    url: "https://svc45.main.sl.t-online.de/bpk-tv/KID01037_FUSSBALLTV1_hd/DASH/index.mpd",
+    type: "dash",
+    kid: "1cb20afcd9d979c833cfd208c7d3eeb2",
+    key: "fef0c15b4a523370892edd5e4133c269"
   },
+
   {
     name: "Telemundo",
     logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Telemundo_logo_2018.svg/960px-Telemundo_logo_2018.svg.png",
@@ -74,5 +78,32 @@ export const TV_CHANNELS = [
     group: "FIFA",
     url: "https://stream8.cinerama.uz/1004/tracks-v1a1/mono.m3u8",
     type: "hls"
+  },
+  {
+    name: "FOX ONE (ENG)",
+    logo: "https://cdn.broadbandtvnews.com/wp-content/uploads/2025/05/13115423/Fox-One-Logo.jpg",
+    group: "Sports",
+    url: "https://otte-tim.live.pv-cdn.net/pdx-nitro/live/clients/dash/enc/ajfoeddkbz/out/v1/b78800b9b2304879b15843f455836829/cenc.mpd",
+    type: "dash",
+    kid: "f6564ec2aee819046328a0e153be574d",
+    key: "ff46a8a1031eb27ef22576a077c98ab7"
+  },
+
+  {
+    name: "Win Sports",
+    logo: "https://images.seeklogo.com/logo-png/25/1/win-sports-logo-png_seeklogo-259337.png",
+    group: "FIFA",
+    url: "https://1nyaler.streamhostingcdn.top/stream/32/index.m3u8",
+    type: "hls"
+  },
+
+  {
+    name: "FIFA CTV - English (1080p)",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/CTV_logo_2018.svg/3840px-CTV_logo_2018.svg.png",
+    group: "Sports",
+    url: "https://otte-qw.live.pv-cdn.net/lhr-nitro/live/clients/dash/enc/72sjo8hygl/out/v1/3079be34d72a4985852d299a02406a0c/cenc.mpd",
+    type: "dash",
+    kid: "d185684e2330de5bea436daa094a5e86",
+    key: "014f0116154f5bf0050e03a6b0a23157"
   }
 ];
