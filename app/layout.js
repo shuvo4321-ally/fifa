@@ -28,7 +28,7 @@ export default function RootLayout({ children }) {
       <body>
         <Script
           src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.7/shaka-player.compiled.js"
-          strategy="lazyOnload"
+          strategy="beforeInteractive"
         />
         <Header />
         {children}

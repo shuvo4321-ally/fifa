@@ -141,7 +141,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
             const hls = new Hls({ 
               enableWorker: true, 
               lowLatencyMode: true,
-              startLevel: -1,
+              startLevel: 0, // Force lowest level immediately, skip bandwidth test
               capLevelToPlayerSize: true,
               maxBufferLength: 10,
               maxMaxBufferLength: 30,
