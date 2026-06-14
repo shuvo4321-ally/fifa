@@ -65,11 +65,23 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
         if (shaka.Player.isBrowserSupported()) {
           const player = new shaka.Player(video);
           shakaRef.current = player;
+          const shakaConfig = {
+            streaming: {
+              bufferingGoal: 10,
+              rebufferingGoal: 2,
+              lowLatencyMode: true,
+              jumpLargeGaps: true
+            },
+            abr: {
+              defaultBandwidthEstimate: 500000 // Force low initial bitrate for instant start
+            }
+          };
+
           if (drmKid && drmKey) {
-            player.configure({
-              drm: { clearKeys: { [drmKid]: drmKey } }
-            });
+            shakaConfig.drm = { clearKeys: { [drmKid]: drmKey } };
           }
+          
+          player.configure(shakaConfig);
           player.addEventListener('error', (event) => {
             // Expected for dead/geo-blocked DASH streams. Use warn, not error —
             // Next dev promotes every console.error into a blocking overlay.
@@ -126,7 +138,18 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
           const { default: Hls } = await import("hls.js");
           if (isStale()) return;
           if (Hls.isSupported()) {
-            const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+            const hls = new Hls({ 
+              enableWorker: true, 
+              lowLatencyMode: true,
+              startLevel: -1,
+              capLevelToPlayerSize: true,
+              maxBufferLength: 10,
+              maxMaxBufferLength: 30,
+              liveSyncDurationCount: 2,
+              liveMaxLatencyDurationCount: 5,
+              manifestLoadingTimeOut: 5000,
+              manifestLoadingMaxRetry: 3
+            });
             hlsRef.current = hls;
             hls.loadSource(src);
             hls.attachMedia(video);
