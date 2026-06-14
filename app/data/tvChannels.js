@@ -14,13 +14,13 @@ export const TV_CHANNELS = [
     key: "68f96d618b0b956b008c445896a25a79"
   },
   {
-    name: "Zee5 Bangla",
-    logo: "",
+    name: "WORLD CUP TV (ENG)",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/4/4b/FIFA_WorldCup_logo.svg",
     group: "FIFA",
-    url: "https://d1g8wgjurz8via.cloudfront.net/bpk-tv/Zeebanglacinema/default/manifest.mpd",
+    url: "https://qp-pldt-live-bpk-ucd-prod.akamaized.net/bpk-tv/ch299/default/index.mpd",
     type: "dash",
-    kid: "fbbfd9ce4bbe4d818b16df7dfe89f05b",
-    key: "1e96d0f88ef740e982d6f6105721c8bc"
+    kid: "549ab7cd35a64bb6bb479ecead04d69d",
+    key: "829799ed534d11fcadeb4b192467e050"
   },
   {
     name: "Win Sports",
@@ -48,15 +48,6 @@ export const TV_CHANNELS = [
     key: "d2548dacc8efcd1cd0af0373060c82dc"
   },
   {
-    name: "SporTV",
-    logo: "https://i.postimg.cc/gr9x3z71/Spor-TV-2021.png",
-    group: "FIFA",
-    url: "https://a151aivottlinear-a.akamaihd.net/OTTB/sin-nitro/live/dash/enc/m7duvnk2bu/out/v1/d1ad69118b5647309b1eb7213affdb3d/cenc.mpd",
-    type: "dash",
-    kid: "4bbcff3289d457b4dd5dbdd21221de9a",
-    key: "c4906b9a9f8dda3c0725bddb8c497733"
-  },
-  {
     name: "M6 Direct TV",
     logo: "https://i.imgur.com/7GVp3fW.png",
     group: "FIFA",
@@ -66,17 +57,31 @@ export const TV_CHANNELS = [
     key: "51ede3a821229fe81e71282c8eff80e3"
   },
   {
-    name: "beIN Sports 1 MAX (Arabic)",
-    logo: "https://i.imgur.com/FjWQjdy.png",
-    group: "FIFA",
-    url: "https://cdn.yallashooot.pp.ua/hls/ch1.m3u8",
-    type: "hls"
-  },
-  {
     name: "BEIN Sports 1",
     logo: "https://images.seeklogo.com/logo-png/48/1/bein-sports-1-logo-png_seeklogo-481583.png",
     group: "FIFA",
     url: "https://1nyaler.streamhostingcdn.top/stream/23/index.m3u8",
+    type: "hls"
+  },
+  {
+    name: "Tapmad (FIFA)",
+    logo: "https://tapmad-tv-tapmad-tv.en.aptoide.com/_next/image?url=https%3A%2F%2Fcdn.aptoide.com%2Fimgs%2F1%2F6%2F0%2F1600fc18ab2b5109bfe2cb72fb7af2f5_fgraphic.png&w=3840&q=60",
+    group: "FIFA",
+    url: "https://premierleagpl23.akamaized.net/hls/live/2107108/tapmad-P2s6L_FiN@L-UrU/level_0.m3u8",
+    type: "hls"
+  },
+  {
+    name: "TVRI",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/TVRILogo2019.svg/1280px-TVRILogo2019.svg.png",
+    group: "FIFA",
+    url: "https://ott-balancer.tvri.go.id/live/eds/SportHD/hls/SportHD.m3u8",
+    type: "hls"
+  },
+  {
+    name: "Sport UZ",
+    logo: "https://play-lh.googleusercontent.com/fX31aCtiuNIFEhRrF0rqZ3tj38cn8KQrrMmF5YZHULzm8qH7Dhr_RAOhg5gQhCJQcsAQ",
+    group: "FIFA",
+    url: "https://stream8.cinerama.uz/1004/tracks-v1a1/mono.m3u8",
     type: "hls"
   }
 ];
