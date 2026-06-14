@@ -31,9 +31,12 @@ export function isSameTeam(a, b) {
   const x = normTeam(a);
   const y = normTeam(b);
   if (!x || !y) return false;
-  if (x === y || x.includes(y) || y.includes(x)) return true;
-
+  if (x === y) return true;
   if (ALIASES[x] === y || ALIASES[y] === x) return true;
+  // Substring match ONLY between real, full-length names. Group/knockout
+  // placeholders like "A1"/"C2" normalize to a single letter ("a"/"c") and would
+  // otherwise substring-match dozens of real teams, showing bogus scorelines.
+  if (x.length >= 4 && y.length >= 4 && (x.includes(y) || y.includes(x))) return true;
   return false;
 }
 

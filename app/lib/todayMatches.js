@@ -1,4 +1,4 @@
-import { FIXTURES_2026, GROUPS_2026 } from "../data/schedule2026";
+import { FIXTURES_2026, GROUPS_2026 } from "../data/schedule2026.js";
 
 // name → flag lookup, built once.
 const FLAGS = {};
@@ -11,8 +11,10 @@ const groupSlug = (g) => (/^group\s+/i.test(g || "") ? g.trim().toLowerCase().re
 // Fixture date/time strings are Bangladesh time (UTC+6) — see the predict route.
 const MONTHS = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
 const BDT_OFFSET_MS = 6 * 60 * 60 * 1000;
-const MATCH_OVER_MS = 2.5 * 60 * 60 * 1000; // full time + halftime + stoppage, with margin
-const MAX_ROWS = 4;
+const MATCH_OVER_MS = 2.5 * 60 * 60 * 1000; // full time + halftime + stoppage → "FT"
+const HIDE_AFTER_FINISH_MS = 60 * 60 * 1000; // keep a finished match shown for 1h, then drop it
+const EXPIRE_MS = MATCH_OVER_MS + HIDE_AFTER_FINISH_MS; // a match disappears 1h after full time
+const MAX_ROWS = 6; // a match day has at most 6 fixtures — show them all (no "+N more")
 
 function kickoffMs(f) {
   const dm = /([A-Za-z]{3})[a-z]*\s+(\d{1,2}),\s*(\d{4})/.exec(f?.date || "");
@@ -50,13 +52,18 @@ export function buildTodaySlide(now) {
     .filter((f) => !Number.isNaN(f.k) && f.dayKey);
   if (fixtures.length === 0) return null;
 
-  // The next not-yet-finished match decides which day we show.
-  const upcoming = fixtures.filter((f) => f.k + MATCH_OVER_MS > now).sort((a, b) => a.k - b.k);
+  // A match stays on the panel until 1h after full time (EXPIRE_MS); the next
+  // not-yet-expired match decides which day we show. So finished games drop off
+  // one hour after they end, and once the last of today's games clears, the
+  // panel rolls to the next match day.
+  const upcoming = fixtures.filter((f) => f.k + EXPIRE_MS > now).sort((a, b) => a.k - b.k);
   if (upcoming.length === 0) return null; // tournament finished
 
   const targetKey = upcoming[0].dayKey;
   const isToday = targetKey === dayKeyFromMs(now);
-  const dayFixtures = fixtures.filter((f) => f.dayKey === targetKey).sort((a, b) => a.k - b.k);
+  const dayFixtures = fixtures
+    .filter((f) => f.dayKey === targetKey && f.k + EXPIRE_MS > now) // drop matches that ended >1h ago
+    .sort((a, b) => a.k - b.k);
 
   const rows = dayFixtures.slice(0, MAX_ROWS).map((f) => {
     const [t1, t2] = f.match.split(" vs ").map((s) => s.trim());
