@@ -69,8 +69,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
             streaming: {
               bufferingGoal: 10,
               rebufferingGoal: 2,
-              lowLatencyMode: true,
-              jumpLargeGaps: true
+              lowLatencyMode: true
             },
             abr: {
               defaultBandwidthEstimate: 500000 // Force low initial bitrate for instant start
