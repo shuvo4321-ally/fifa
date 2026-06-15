@@ -15,16 +15,6 @@ export const TV_CHANNELS = [
   },
 
   {
-    name: "FUSSBALL TV",
-    logo: "https://github.com/user-attachments/assets/8ccc2603-16a1-47a6-bd16-2f783da7f28d",
-    group: "FIFA",
-    url: "https://svc45.main.sl.t-online.de/bpk-tv/KID01037_FUSSBALLTV1_hd/DASH/index.mpd",
-    type: "dash",
-    kid: "1cb20afcd9d979c833cfd208c7d3eeb2",
-    key: "fef0c15b4a523370892edd5e4133c269"
-  },
-
-  {
     name: "Telemundo",
     logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Telemundo_logo_2018.svg/960px-Telemundo_logo_2018.svg.png",
     group: "FIFA",
@@ -98,6 +88,17 @@ export const TV_CHANNELS = [
   },
 
   {
+    name: "FUSSBALL TV",
+    logo: "https://github.com/user-attachments/assets/8ccc2603-16a1-47a6-bd16-2f783da7f28d",
+    group: "FIFA",
+    url: "https://svc45.main.sl.t-online.de/bpk-tv/KID01037_FUSSBALLTV1_hd/DASH/index.mpd",
+    type: "dash",
+    kid: "1cb20afcd9d979c833cfd208c7d3eeb2",
+    key: "fef0c15b4a523370892edd5e4133c269"
+  },
+
+
+  {
     name: "FIFA CTV - English (1080p)",
     logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/CTV_logo_2018.svg/3840px-CTV_logo_2018.svg.png",
     group: "Sports",
@@ -106,4 +107,5 @@ export const TV_CHANNELS = [
     kid: "d185684e2330de5bea436daa094a5e86",
     key: "014f0116154f5bf0050e03a6b0a23157"
   }
+
 ];
