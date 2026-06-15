@@ -111,7 +111,7 @@ export default function LiveTvPage() {
           onClick={() => setShowPopup(false)}
         >
           <div style={{ position: "relative", maxWidth: "100%", maxHeight: "100%", display: "flex", justifyContent: "center" }} onClick={(e) => e.stopPropagation()}>
-            <img src="/images/live-tv-popup.png" alt="Live TV Popup" style={{ maxWidth: "100%", maxHeight: "90vh", objectFit: "contain", borderRadius: "12px", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)" }} />
+            <img src="/images/live-tv-popup.webp" alt="Live TV Popup" style={{ maxWidth: "100%", maxHeight: "90vh", objectFit: "contain", borderRadius: "12px", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)" }} />
             <button onClick={() => setShowPopup(false)} style={{ position: "absolute", top: "10px", right: "10px", background: "rgba(0,0,0,0.6)", color: "white", border: "none", borderRadius: "50%", width: "36px", height: "36px", cursor: "pointer", fontSize: "18px", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
           </div>
         </div>

@@ -8,7 +8,7 @@ export const MATCHES = [
     description: "Watch the legendary 1998 World Cup final where Zinedine Zidane scored twice to secure France's first-ever world title on home soil.",
     date: "12 JUL 1998",
     type: "Full Replay",
-    thumbnail: "/images/hero-1998.png",
+    thumbnail: "/images/hero-1998.webp",
     badges: [
       "https://upload.wikimedia.org/wikipedia/en/2/23/1998_FIFA_World_Cup_logo.png",
       "https://flagcdn.com/br.png",
@@ -24,7 +24,7 @@ export const MATCHES = [
     description: "Watch the thrilling 1998 World Cup semi-final where France staged a historic comeback against Croatia.",
     date: "08 JUL 1998",
     type: "Full Replay",
-    thumbnail: "/images/fra-cro-1998.jpg",
+    thumbnail: "/images/fra-cro-1998.webp",
     badges: [
       "https://upload.wikimedia.org/wikipedia/en/2/23/1998_FIFA_World_Cup_logo.png",
       "https://flagcdn.com/fr.png",
@@ -56,7 +56,7 @@ export const MATCHES = [
     description: "Watch the thrilling extra time of the 1998 FIFA World Cup semi-final between Brazil and the Netherlands.",
     date: "07 JUL 1998",
     type: "Full Replay",
-    thumbnail: "/images/bra-ned-extratime-1998.png",
+    thumbnail: "/images/bra-ned-extratime-1998.webp",
     badges: [
       "https://upload.wikimedia.org/wikipedia/en/2/23/1998_FIFA_World_Cup_logo.png",
       "https://flagcdn.com/br.png",
@@ -70,5 +70,5 @@ export const HERO = {
   title: "1998 FIFA World Cup France™",
   description: "Relive France's glorious first World Cup triumph on home soil. From Zinedine Zidane's final heroics to Michael Owen's wonder goal and the drama of penalties, experience the magic of France '98.",
   cta: "Discover more",
-  image: "/images/hero-1998.png",
+  image: "/images/hero-1998.webp",
 };

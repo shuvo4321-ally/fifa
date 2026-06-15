@@ -8,7 +8,7 @@ export const MATCHES = [
     description: "Watch the full match replay of the 2002 FIFA World Cup Final between Germany and Brazil.",
     date: "30 JUN 2002",
     type: "Full Replay",
-    thumbnail: "/germany_brazil_2002.png",
+    thumbnail: "/germany_brazil_2002.webp",
     badges: [
       "https://flagcdn.com/de.png",
       "https://flagcdn.com/br.png"
@@ -23,7 +23,7 @@ export const MATCHES = [
     description: "Watch the match highlights of South Korea vs. Italy.",
     date: "18 JUN 2002",
     type: "Highlights",
-    thumbnail: "/korea_italy_card.jpg",
+    thumbnail: "/korea_italy_card.webp",
     badges: [
       "https://flagcdn.com/kr.png",
       "https://flagcdn.com/it.png"
@@ -38,7 +38,7 @@ export const MATCHES = [
     description: "Watch the full match replay of USA vs. Portugal.",
     date: "05 JUN 2002",
     type: "Full Replay",
-    thumbnail: "/usa_portugal_card.jpg",
+    thumbnail: "/usa_portugal_card.webp",
     badges: [
       "https://flagcdn.com/us.png",
       "https://flagcdn.com/pt.png"
@@ -53,7 +53,7 @@ export const MATCHES = [
     description: "Watch the full match replay of France vs. Senegal.",
     date: "31 MAY 2002",
     type: "Full Replay",
-    thumbnail: "/senegal_card.png",
+    thumbnail: "/senegal_card.webp",
     badges: [
       "https://flagcdn.com/fr.png",
       "https://flagcdn.com/sn.png"
@@ -66,5 +66,5 @@ export const HERO = {
   title: "2002 FIFA World Cup Korea/Japan™",
   description: "Relive the historic 2002 FIFA World Cup Korea/Japan™, the first-ever tournament co-hosted in Asia. Witness Brazil's 'Three Rs' lead the Seleção to an unprecedented fifth title, South Korea's miraculous semi-final run, and Ronaldo's ultimate redemption story.",
   cta: "Discover more",
-  image: "/germany_brazil_2002.png",
+  image: "/germany_brazil_2002.webp",
 };

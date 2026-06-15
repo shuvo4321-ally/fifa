@@ -8,7 +8,7 @@ export const MATCHES = [
     description: "Watch the full match replay of the iconic 1990 FIFA World Cup final between West Germany and Argentina.",
     date: "08 JUL 1990",
     type: "Full Replay",
-    thumbnail: "/hq720.jpg",
+    thumbnail: "/hq720.webp",
     badges: [
       "https://upload.wikimedia.org/wikipedia/en/9/90/1990_FIFA_World_Cup_logo.png",
       "https://flagcdn.com/de.png",
@@ -25,7 +25,7 @@ export const MATCHES = [
     description: "Watch every goal and the best moments from Salvatore Schillaci and the Italian national team during the 1990 FIFA World Cup.",
     date: "1990",
     type: "Highlights",
-    thumbnail: "/hq720_1.jpg",
+    thumbnail: "/hq720_1.webp",
     badges: [
       "https://upload.wikimedia.org/wikipedia/en/9/90/1990_FIFA_World_Cup_logo.png",
       "https://flagcdn.com/it.png"
@@ -41,7 +41,7 @@ export const MATCHES = [
     description: "Relive the greatest and most memorable goals from the entire 1990 FIFA World Cup tournament.",
     date: "1990",
     type: "Highlights",
-    thumbnail: "/1990_last_card_new.png",
+    thumbnail: "/1990_last_card_new.webp",
     badges: [
       "https://upload.wikimedia.org/wikipedia/en/9/90/1990_FIFA_World_Cup_logo.png"
     ],
@@ -53,5 +53,5 @@ export const HERO = {
   title: "1990 FIFA World Cup Italy™",
   description: "From Roger Milla's corner-flag dance and Gazza's tears to Toto Schillaci's Golden Boot and West Germany's dramatic triumph, relive the defining moments of Italia '90.",
   cta: "Discover more",
-  image: "/1990_hero_new_2.png",
+  image: "/1990_hero_new_2.webp",
 };

@@ -20,7 +20,7 @@ const LEGENDS = [
     title: "Classic Players: Lionel Messi",
     subtitle: "Legend",
     description: "Witness the magic of Lionel Messi in action.",
-    image: "/images/messi.jpg",
+    image: "/images/messi.webp",
     source: "dailymotion",
     videoId: "x8qdamr"
   },
@@ -42,7 +42,7 @@ const LEGENDS = [
     title: "Classic Players: Ronaldo Nazário",
     subtitle: "Legend",
     description: "O Fenômeno. One of the greatest strikers to ever play the game.",
-    image: "/images/ronaldo.jpg",
+    image: "/images/ronaldo.webp",
     source: "dailymotion",
     videoId: "x9qfdc8"
   },
@@ -53,7 +53,7 @@ const LEGENDS = [
     title: "Classic Players: Diego Maradona",
     subtitle: "Legend",
     description: "El Pibe de Oro. One of the greatest players in the history of football.",
-    image: "/images/maradona.jpg",
+    image: "/images/maradona.webp",
     source: "dailymotion",
     videoId: "x982suy"
   }
@@ -344,7 +344,7 @@ export default function Home() {
 
         <section className="legends-section" ref={legendsSectionRef}>
           <div className="legends-bg">
-            <img ref={legendsBgRef} src="/images/legends-bg.png" alt="Legends Background" className="legends-bg-img" />
+            <img ref={legendsBgRef} src="/images/legends-bg.webp" alt="Legends Background" className="legends-bg-img" />
             <div className="legends-bg-scrim"></div>
           </div>
 
