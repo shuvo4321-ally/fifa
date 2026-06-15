@@ -665,7 +665,7 @@ a.search-result:hover {
 .calendar-hero {
   position: relative;
   padding: var(--space-8) var(--space-8) 0 var(--space-8);
-  background: url('/calendar-hero.png') center/cover no-repeat;
+  background: url('/calendar-hero.webp') center/cover no-repeat;
   border-bottom: 1px solid rgba(255,255,255,0.05);
   text-align: center;
 }

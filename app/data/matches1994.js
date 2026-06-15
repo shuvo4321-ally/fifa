@@ -8,7 +8,7 @@ export const MATCHES = [
     description: "Watch the highlights of the dramatic final where Brazil stops Italy and Roberto Baggio to claim the 1994 FIFA World Cup.",
     date: "17 JUL 1994",
     type: "Highlights",
-    thumbnail: "/1994_hero_new.png",
+    thumbnail: "/1994_hero_new.webp",
     badges: [
       "https://upload.wikimedia.org/wikipedia/en/9/9c/1994_FIFA_World_Cup_logo.png",
       "https://flagcdn.com/br.png",
@@ -24,7 +24,7 @@ export const MATCHES = [
     description: "Watch the full match replay of the 1994 FIFA World Cup final between Brazil and Italy, famously decided by a penalty shootout.",
     date: "17 JUL 1994",
     type: "Full Replay",
-    thumbnail: "/1994_final_fulltime.jpg",
+    thumbnail: "/1994_final_fulltime.webp",
     badges: [
       "https://upload.wikimedia.org/wikipedia/en/9/9c/1994_FIFA_World_Cup_logo.png",
       "https://flagcdn.com/br.png",
@@ -40,7 +40,7 @@ export const MATCHES = [
     description: "Watch the thrilling conclusion and extra time of the 1994 FIFA World Cup final between Brazil and Italy.",
     date: "17 JUL 1994",
     type: "Full Replay",
-    thumbnail: "/1994_extratime.jpg",
+    thumbnail: "/1994_extratime.webp",
     badges: [
       "https://upload.wikimedia.org/wikipedia/en/9/9c/1994_FIFA_World_Cup_logo.png",
       "https://flagcdn.com/br.png",
@@ -56,7 +56,7 @@ export const MATCHES = [
     description: "Watch the full match replay of the 1994 FIFA World Cup semi-final between Bulgaria and Italy.",
     date: "13 JUL 1994",
     type: "Full Replay",
-    thumbnail: "/1994_bul_ita.png",
+    thumbnail: "/1994_bul_ita.webp",
     badges: [
       "https://upload.wikimedia.org/wikipedia/en/9/9c/1994_FIFA_World_Cup_logo.png",
       "https://flagcdn.com/bg.png",
@@ -86,5 +86,5 @@ export const HERO = {
   title: "1994 FIFA World Cup USA™",
   description: "From Roberto Baggio's heartbreak to Bebeto's baby celebration and Brazil's record fourth title, relive the defining moments of USA '94.",
   cta: "Discover more",
-  image: "/1994_hero_new.png",
+  image: "/1994_hero_new.webp",
 };

@@ -9,7 +9,7 @@ export const MATCHES = [
       "Watch the highlights from the 1986 FIFA World Cup final between Argentina and West Germany.",
     date: "29 JUN 1986",
     type: "Full Replay",
-    thumbnail: "/imgi_205_hq720.jpeg",
+    thumbnail: "/imgi_205_hq720.webp",
     badges: [
       "https://upload.wikimedia.org/wikipedia/en/3/3a/1986_FIFA_World_Cup.png",
       "https://upload.wikimedia.org/wikipedia/commons/1/1a/Flag_of_Argentina.png",
@@ -27,7 +27,7 @@ export const MATCHES = [
       "Diego Maradona scores twice as Argentina beat Belgium to reach the 1986 World Cup final.",
     date: "29 JUN 1986",
     type: "Highlights",
-    thumbnail: "/ffff.jpeg",
+    thumbnail: "/ffff.webp",
     badges: [
       "https://upload.wikimedia.org/wikipedia/en/3/3a/1986_FIFA_World_Cup.png",
       "https://upload.wikimedia.org/wikipedia/commons/1/1a/Flag_of_Argentina.png"
@@ -42,5 +42,5 @@ export const HERO = {
   description:
     "Maradona at his peak — the Hand of God, the Goal of the Century and a tournament that became legend.",
   cta: "Discover more",
-  image: "/imgi_205_hq720.jpeg",
+  image: "/imgi_205_hq720.webp",
 };

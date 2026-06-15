@@ -8,7 +8,7 @@ export const MATCHES = [
     description: "Watch the full match replay of the 2006 FIFA World Cup Final between Italy and France.",
     date: "09 JUL 2006",
     type: "Full Replay",
-    thumbnail: "/italy_france_final_2006.png",
+    thumbnail: "/italy_france_final_2006.webp",
     badges: [
       "https://flagcdn.com/it.png",
       "https://flagcdn.com/fr.png"
@@ -23,7 +23,7 @@ export const MATCHES = [
     description: "Watch the extra time replay of the 2006 FIFA World Cup Final between Italy and France.",
     date: "09 JUL 2006",
     type: "Full Replay",
-    thumbnail: "/italy_france_final_extra_2006.jpg",
+    thumbnail: "/italy_france_final_extra_2006.webp",
     badges: [
       "https://flagcdn.com/it.png",
       "https://flagcdn.com/fr.png"
@@ -53,7 +53,7 @@ export const MATCHES = [
     description: "Watch the extra time replay of Germany vs. Italy.",
     date: "04 JUL 2006",
     type: "Full Replay",
-    thumbnail: "/germany_italy_extra_2006.png",
+    thumbnail: "/germany_italy_extra_2006.webp",
     badges: [
       "https://flagcdn.com/de.png",
       "https://flagcdn.com/it.png"
@@ -68,7 +68,7 @@ export const MATCHES = [
     description: "Watch the full match replay of Brazil vs. France.",
     date: "01 JUL 2006",
     type: "Full Replay",
-    thumbnail: "/brazil_france_2006.png",
+    thumbnail: "/brazil_france_2006.webp",
     badges: [
       "https://flagcdn.com/br.png",
       "https://flagcdn.com/fr.png"
@@ -83,7 +83,7 @@ export const MATCHES = [
     description: "Watch the full match replay of England vs. Portugal.",
     date: "01 JUL 2006",
     type: "Full Replay",
-    thumbnail: "/england_portugal_2006.jpg",
+    thumbnail: "/england_portugal_2006.webp",
     badges: [
       "https://flagcdn.com/gb-eng.png",
       "https://flagcdn.com/pt.png"
@@ -98,7 +98,7 @@ export const MATCHES = [
     description: "Watch the extra time replay of England vs. Portugal.",
     date: "01 JUL 2006",
     type: "Full Replay",
-    thumbnail: "/england_portugal_extra_2006.jpg",
+    thumbnail: "/england_portugal_extra_2006.webp",
     badges: [
       "https://flagcdn.com/gb-eng.png",
       "https://flagcdn.com/pt.png"
@@ -113,7 +113,7 @@ export const MATCHES = [
     description: "Watch the full match replay of Portugal vs. Netherlands.",
     date: "25 JUN 2006",
     type: "Full Replay",
-    thumbnail: "/portugal_netherlands_2006.png",
+    thumbnail: "/portugal_netherlands_2006.webp",
     badges: [
       "https://flagcdn.com/pt.png",
       "https://flagcdn.com/nl.png"
@@ -143,7 +143,7 @@ export const MATCHES = [
     description: "Watch the full match replay of Japan vs. Brazil.",
     date: "22 JUN 2006",
     type: "Full Replay",
-    thumbnail: "/japan_brazil_2006.png",
+    thumbnail: "/japan_brazil_2006.webp",
     badges: [
       "https://flagcdn.com/jp.png",
       "https://flagcdn.com/br.png"
@@ -156,5 +156,5 @@ export const HERO = {
   title: "2006 FIFA World Cup Germany™",
   description: "Relive the intense drama of the 2006 FIFA World Cup Germany™. Revisit a tournament defined by golden generations, iconic clashes, and an unforgettable final that saw Italy claim their fourth world title after a dramatic penalty shootout.",
   cta: "Discover more",
-  image: "/italy_france_hero_2006.jpg",
+  image: "/italy_france_hero_2006.webp",
 };

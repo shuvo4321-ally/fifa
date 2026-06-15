@@ -14,38 +14,43 @@ export function normTeam(s) {
     .trim();
 }
 
-const ALIASES = {
-  "korea republic": "south korea",
-  "usa": "united states",
-  "turkiye": "turkey",
-  "ivory coast": "cote d ivoire",
-  "cabo verde": "cape verde",
-  "czechia": "czech republic",
-  "iran": "ir iran",
-  "congo dr": "congo",
-  "dr congo": "congo"
-};
+// Each row lists EVERY spelling (normalized) that a feed or our schedule uses
+// for ONE team — across ESPN, football-data and the fixtures. They all resolve
+// to the first entry (the canonical key). Add a new spelling to its row once and
+// it's recognized everywhere (table, fixtures, modal, hero, predictions).
+const TEAM_GROUPS = [
+  ["korea republic", "south korea", "korea"],
+  ["usa", "united states", "united states of america", "us"],
+  ["turkiye", "turkey"],
+  ["ivory coast", "cote d ivoire"],
+  ["cabo verde", "cape verde", "cape verde islands"],
+  ["czechia", "czech republic"],
+  ["iran", "ir iran"],
+  ["congo", "congo dr", "dr congo", "democratic republic of congo", "congo republic"],
+  ["bosnia herzegovina", "bosnia"],
+];
 
-/** Fuzzy-lookup a team's name to see if it matches another. */
-export function isSameTeam(a, b) {
-  const x = normTeam(a);
-  const y = normTeam(b);
-  if (!x || !y) return false;
-  if (x === y) return true;
-  if (ALIASES[x] === y || ALIASES[y] === x) return true;
-  // Substring match ONLY between real, full-length names. Group/knockout
-  // placeholders like "A1"/"C2" normalize to a single letter ("a"/"c") and would
-  // otherwise substring-match dozens of real teams, showing bogus scorelines.
-  if (x.length >= 4 && y.length >= 4 && (x.includes(y) || y.includes(x))) return true;
-  return false;
-}
+// every known spelling → its canonical key (the first entry of its group)
+const CANON = {};
+for (const group of TEAM_GROUPS) for (const name of group) CANON[name] = group[0];
 
 /**
  * Stable canonical key for a team — the SAME value for every known spelling
- * (e.g. "Korea Republic" and "South Korea" both → "south korea"). Use it to key
- * results so the same match can't be stored twice under two feed spellings.
+ * ("Cabo Verde", "Cape Verde", "Cape Verde Islands" all → "cabo verde").
  */
 export function canonicalTeam(s) {
   const n = normTeam(s);
-  return ALIASES[n] || n;
+  return CANON[n] || n;
+}
+
+/** True if two names refer to the same team, across any provider's spelling. */
+export function isSameTeam(a, b) {
+  const ka = canonicalTeam(a);
+  const kb = canonicalTeam(b);
+  if (!ka || !kb) return false;
+  if (ka === kb) return true;
+  // Fallback for a full-length spelling no group lists yet (e.g. a feed sending
+  // just "Bosnia"). Length-gated so knockout placeholders like "A1"/"C2" — which
+  // normalize to a single letter — can never substring-match a real team.
+  return ka.length >= 4 && kb.length >= 4 && (ka.includes(kb) || kb.includes(ka));
 }
