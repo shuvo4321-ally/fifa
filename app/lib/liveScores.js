@@ -163,6 +163,11 @@ export function useLiveScore(team1, team2) {
   return lookupScore(snapshot.matches, team1, team2);
 }
 
+export function getLiveScoreSync(team1, team2) {
+  hydrate();
+  return lookupScore(snapshot.matches, team1, team2);
+}
+
 // Build group tables purely from FINISHED match results — same source as the
 // fixture scorelines, so the two can never disagree.
 function deriveStandings(matches, groups, fixtures) {

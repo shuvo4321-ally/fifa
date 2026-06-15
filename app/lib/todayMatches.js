@@ -1,4 +1,5 @@
 import { FIXTURES_2026, GROUPS_2026 } from "../data/schedule2026.js";
+import { getLiveScoreSync } from "./liveScores.js";
 
 // name → flag lookup, built once.
 const FLAGS = {};
@@ -12,8 +13,8 @@ const groupSlug = (g) => (/^group\s+/i.test(g || "") ? g.trim().toLowerCase().re
 const MONTHS = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
 const BDT_OFFSET_MS = 6 * 60 * 60 * 1000;
 const MATCH_OVER_MS = 2.5 * 60 * 60 * 1000; // full time + halftime + stoppage → "FT"
-const HIDE_AFTER_FINISH_MS = 60 * 60 * 1000; // keep a finished match shown for 1h, then drop it
-const EXPIRE_MS = MATCH_OVER_MS + HIDE_AFTER_FINISH_MS; // a match disappears 1h after full time
+const HIDE_AFTER_FINISH_MS = 0; // do not wait, roll immediately
+const EXPIRE_MS = MATCH_OVER_MS + HIDE_AFTER_FINISH_MS; // a match expires immediately after full time
 const MAX_ROWS = 6; // a match day has at most 6 fixtures — show them all (no "+N more")
 
 function kickoffMs(f) {
@@ -48,21 +49,26 @@ function fixtureDayKey(f) {
 export function buildTodaySlide(now) {
   const fixtures = FIXTURES_2026
     .filter((f) => f.match.includes(" vs "))
-    .map((f) => ({ ...f, k: kickoffMs(f), dayKey: fixtureDayKey(f) }))
+    .map((f) => {
+      const k = kickoffMs(f);
+      const [t1, t2] = f.match.split(" vs ").map((s) => s.trim());
+      const live = getLiveScoreSync(t1, t2);
+      const isFinished = live && live.status === "FINISHED";
+      return { ...f, k, dayKey: fixtureDayKey(f), t1, t2, isFinished };
+    })
     .filter((f) => !Number.isNaN(f.k) && f.dayKey);
   if (fixtures.length === 0) return null;
 
-  // A match stays on the panel until 1h after full time (EXPIRE_MS); the next
-  // not-yet-expired match decides which day we show. So finished games drop off
-  // one hour after they end, and once the last of today's games clears, the
-  // panel rolls to the next match day.
-  const upcoming = fixtures.filter((f) => f.k + EXPIRE_MS > now).sort((a, b) => a.k - b.k);
+  // A match expires immediately after full time; the next
+  // not-yet-expired match decides which day we show. Once the last of
+  // today's games clears, the panel rolls to the next match day immediately.
+  const upcoming = fixtures.filter((f) => !f.isFinished && f.k + EXPIRE_MS > now).sort((a, b) => a.k - b.k);
   if (upcoming.length === 0) return null; // tournament finished
 
   const targetKey = upcoming[0].dayKey;
   const isToday = targetKey === dayKeyFromMs(now);
   const dayFixtures = fixtures
-    .filter((f) => f.dayKey === targetKey && f.k + EXPIRE_MS > now) // drop matches that ended >1h ago
+    .filter((f) => f.dayKey === targetKey && !f.isFinished && f.k + EXPIRE_MS > now) // drop matches immediately after they finish
     .sort((a, b) => a.k - b.k);
 
   const rows = dayFixtures.slice(0, MAX_ROWS).map((f) => {
