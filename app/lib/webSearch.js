@@ -1,61 +1,46 @@
-export async function fetchWebSearch(query) {
-  // 1. Try Tavily first
-  const tavilyKeysStr = process.env.TAVILY_API_KEY;
-  if (tavilyKeysStr) {
-    const tavilyKeys = tavilyKeysStr.split(",").map(k => k.trim()).filter(Boolean);
-    let tavilyLastError = null;
+async function tryTavily(query) {
+  const keysStr = process.env.TAVILY_API_KEY;
+  if (!keysStr) return null;
+  const keys = keysStr.split(",").map(k => k.trim()).filter(Boolean);
 
-    for (let i = 0; i < tavilyKeys.length; i++) {
-      const key = tavilyKeys[i];
-      try {
-        const res = await fetch("https://api.tavily.com/search", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            api_key: key,
-            query: query,
-            search_depth: "basic",
-            include_answer: false,
-            max_results: 3
-          }),
-          next: { revalidate: 3600 }
-        });
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
+    try {
+      const res = await fetch("https://api.tavily.com/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          api_key: key,
+          query: query,
+          search_depth: "basic",
+          include_answer: false,
+          max_results: 3
+        }),
+      });
 
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.results) {
-            return data.results.map(r => r.content).join("\n");
-          }
-          return null; // Empty results but successful call
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.results && data.results.length > 0) {
+          const content = data.results.map(r => r.content).filter(Boolean).join("\n");
+          if (content.trim()) return content;
         }
-
-        tavilyLastError = res.status;
-        if (res.status === 429 || res.status === 401 || res.status === 403) {
-          console.warn(`Tavily key ${i+1}/${tavilyKeys.length} failed (${res.status}). Trying next...`);
-          continue;
-        }
-        break; // Stop Tavily loop on other fatal errors
-      } catch (err) {
-        console.warn(`Tavily network error on key ${i+1}/${tavilyKeys.length}:`, err.message);
-        tavilyLastError = err.message;
+      } else {
+        console.warn(`Tavily key ${i+1}/${keys.length} returned status ${res.status}`);
       }
+    } catch (err) {
+      console.warn(`Tavily error on key ${i+1}/${keys.length}:`, err.message);
     }
-    console.warn("All Tavily keys exhausted or failed. Last error:", tavilyLastError);
   }
+  return null;
+}
 
-  // 2. Fallback to Serper API
-  console.log("Falling back to Serper API...");
-  const serperKeysStr = process.env.SERPER_API_KEY;
-  if (!serperKeysStr) {
-    console.error("No SERPER_API_KEY found for fallback.");
-    return null;
-  }
+async function trySerper(query) {
+  const keysStr = process.env.SERPER_API_KEY;
+  if (!keysStr) return null;
+  const keys = keysStr.split(",").map(k => k.trim()).filter(Boolean);
 
-  const serperKeys = serperKeysStr.split(",").map(k => k.trim()).filter(Boolean);
-  let serperLastError = null;
-
-  for (let i = 0; i < serperKeys.length; i++) {
-    const key = serperKeys[i];
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
     try {
       const res = await fetch("https://google.serper.dev/search", {
         method: "POST",
@@ -63,31 +48,38 @@ export async function fetchWebSearch(query) {
           "X-API-KEY": key,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ q: query }),
-        next: { revalidate: 3600 }
+        body: JSON.stringify({ q: query })
       });
 
       if (res.ok) {
         const data = await res.json();
-        // Extract top 3 organic snippets from Google search
-        if (data && data.organic) {
-          return data.organic.slice(0, 3).map(r => r.snippet).join("\n");
+        if (data && data.organic && data.organic.length > 0) {
+          const content = data.organic.slice(0, 3).map(r => r.snippet).filter(Boolean).join("\n");
+          if (content.trim()) return content;
         }
-        return null;
+      } else {
+        console.warn(`Serper key ${i+1}/${keys.length} returned status ${res.status}`);
       }
-
-      serperLastError = res.status;
-      if (res.status === 429 || res.status === 403) {
-         console.warn(`Serper key ${i+1}/${serperKeys.length} failed (${res.status}). Trying next...`);
-         continue;
-      }
-      break;
     } catch (err) {
-      console.warn(`Serper network error on key ${i+1}/${serperKeys.length}:`, err.message);
-      serperLastError = err.message;
+      console.warn(`Serper error on key ${i+1}/${keys.length}:`, err.message);
     }
   }
+  return null;
+}
 
-  console.error("All Serper API keys exhausted. Last error:", serperLastError);
+export async function fetchWebSearch(query) {
+  // Try Tavily first
+  let results = await tryTavily(query);
+  if (results && results.trim()) {
+    return results;
+  }
+
+  // If Tavily is exhausted, empty, or fails, fallback to Serper
+  console.log(`Tavily exhausted or returned no results for query: "${query}". Trying Serper...`);
+  results = await trySerper(query);
+  if (results && results.trim()) {
+    return results;
+  }
+
   return null;
 }
