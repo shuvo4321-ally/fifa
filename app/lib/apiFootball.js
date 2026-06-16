@@ -102,8 +102,23 @@ export async function getRapidSquad(teamId) {
   return [];
 }
 
-export async function getRapidRecentStats(teamId, season = 2026) {
-  // Try to fetch last 5 fixtures
-  const data = await fetchRapidApi(`/fixtures?team=${teamId}&last=5`);
+export async function getRapidRecentStats(teamId) {
+  // Fetch last 10 fixtures for richer form data
+  const data = await fetchRapidApi(`/fixtures?team=${teamId}&last=10`);
   return data?.response || [];
+}
+
+/** Fetch detailed team statistics for the current season (goals, clean sheets, form string, etc.). */
+export async function getRapidTeamStatistics(teamId, leagueId = null) {
+  // Try World Cup first (league=1), then international friendlies (league=10)
+  const leaguesToTry = leagueId ? [leagueId] : [1, 10, 5, 4];
+  const currentYear = new Date().getFullYear();
+
+  for (const lid of leaguesToTry) {
+    const data = await fetchRapidApi(`/teams/statistics?team=${teamId}&league=${lid}&season=${currentYear}`);
+    if (data?.response?.fixtures) {
+      return data.response;
+    }
+  }
+  return null;
 }
