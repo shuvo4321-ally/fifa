@@ -5,7 +5,7 @@
  * in actual tournament form. 5-minute in-memory cache + last-good fallback.
  */
 
-import { normTeam, isSameTeam } from "./teamNormalization";
+import { normTeam, isSameTeam } from "./teamNormalization.js";
 
 let cache = null;
 let fetchTime = 0;
@@ -48,6 +48,8 @@ async function fetchFromApiFootball() {
             w: entry.all?.win || 0,
             d: entry.all?.draw || 0,
             l: entry.all?.lose || 0,
+            gf: entry.all?.goals?.for || 0,
+            ga: entry.all?.goals?.against || 0,
             gd: entry.goalsDiff || 0,
             pts: entry.points || 0,
           };
@@ -90,6 +92,8 @@ async function fetchFromFootballData() {
             w: entry.won || 0,
             d: entry.draw || 0,
             l: entry.lost || 0,
+            gf: entry.goalsFor || 0,
+            ga: entry.goalsAgainst || 0,
             gd: entry.goalDifference || 0,
             pts: entry.points || 0,
           };
