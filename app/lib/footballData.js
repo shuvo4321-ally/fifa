@@ -203,6 +203,11 @@ export async function buildMatchAnalysis(team1Name, team2Name) {
       if (!Number.isNaN(sa)) signal.squadRating = sa;
       if (!Number.isNaN(t11)) signal.top11 = t11;
       if (supaTeam.metrics.elo) signal.elo = Number(supaTeam.metrics.elo);
+      // Pass positional metrics to the model for matchup-specific scoring
+      if (supaTeam.metrics.attack) signal.attack = supaTeam.metrics.attack;
+      if (supaTeam.metrics.defense) signal.defense = supaTeam.metrics.defense;
+      if (supaTeam.metrics.midfield) signal.midfield = supaTeam.metrics.midfield;
+      if (supaTeam.metrics.goalkeeper) signal.goalkeeper = supaTeam.metrics.goalkeeper;
       section += "\n### Current Squad & EA FC 26 Metrics (Database)\n";
       section += `**Overall Squad Rating:** ${supaTeam.metrics.squadAvg} | **Top 11 Average:** ${supaTeam.metrics.top11Avg} | **World Football Elo Rating:** ${supaTeam.metrics.elo || "N/A"}\n`;
       if (supaTeam.metrics.attack) {
