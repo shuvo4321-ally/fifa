@@ -95,6 +95,7 @@ export default function Home() {
   // and first client paint identical — no hydration mismatch).
   const [todaySlide, setTodaySlide] = useState(null);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTodaySlide(buildTodaySlide(Date.now()));
     const id = setInterval(() => setTodaySlide(buildTodaySlide(Date.now())), 60000);
     return () => clearInterval(id);
@@ -104,6 +105,7 @@ export default function Home() {
     const hash = window.location.hash.replace('#', '');
     if (hash) {
       const legend = LEGENDS.find(l => l.id === hash);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (legend && legend.source) setActiveLegend(legend);
     }
     const handleHashChange = () => {
@@ -121,7 +123,7 @@ export default function Home() {
 
   const openLegend = (legend) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
-    window.location.hash = legend.id;
+    window.history.pushState(null, '', '#' + legend.id);
   };
 
   const backToHome = () => {
@@ -354,7 +356,7 @@ export default function Home() {
                 <span className="films-eyebrow">LEGENDS</span>
                 <h2 className="films-main-title">Icons of the game</h2>
                 <p className="films-description">
-                  From Pelé to Cristiano Ronaldo, witness the magic of football's all-time greats in action.
+                  From Pelé to Cristiano Ronaldo, witness the magic of football&apos;s all-time greats in action.
                 </p>
               </div>
               <div className="carousel-nav films-nav">
