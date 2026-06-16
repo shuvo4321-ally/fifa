@@ -34,6 +34,9 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
+  // True from the moment a channel starts loading until it actually plays — so
+  // the user always sees a "please wait" spinner instead of a blank/frozen frame.
+  const [loading, setLoading] = useState(true);
   // >0 while we're auto-reloading this channel (holds the attempt number).
   const [reconnecting, setReconnecting] = useState(0);
   // Bumping this re-runs the load effect on the SAME src — i.e. it reloads the
@@ -86,6 +89,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
     const video = videoRef.current;
     if (!video || !src) return;
     setError("");
+    setLoading(true);
     let cancelled = false;
     // Each load gets a unique id; switching channels bumps it, so any in-flight
     // async work from the previous channel bails instead of attaching a second
@@ -130,6 +134,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
       clearTimeout(startTimerRef.current);
       retryRef.current = 0;     // it's alive — forget the failures
       setReconnecting(0);
+      setLoading(false);        // stream is open → hide the "please wait" loader
     };
     // Some dead/geo-blocked streams never error AND never fire `waiting` — they
     // just hang at readyState 0 forever (manifest or first segment never lands).
@@ -397,6 +402,10 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
+      {/* One keyframe + spinner class shared by every overlay below. */}
+      <style>{`@keyframes hlsSpin{to{transform:rotate(360deg)}}
+        .hls-spin{width:36px;height:36px;border-radius:50%;border:3px solid rgba(255,255,255,0.25);border-top-color:#fff;animation:hlsSpin .8s linear infinite;margin-bottom:14px}`}</style>
+
       {/* Error is an OVERLAY, not an early return. The <video> must stay mounted —
           unmounting it nulled videoRef, so the load effect bailed on the next
           channel and left every subsequent one "unavailable" until a refresh. */}
@@ -410,19 +419,18 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
           Lower z-index than the permanent error so a real codec failure wins. */}
       {reconnecting > 0 && !error && (
         <div className="live-overlay live-cover" style={{ position: "absolute", inset: 0, zIndex: 24 }}>
-          <span
-            aria-hidden
-            style={{
-              width: 34, height: 34, borderRadius: "50%",
-              border: "3px solid rgba(255,255,255,0.25)",
-              borderTopColor: "#fff",
-              animation: "hlsSpin 0.8s linear infinite",
-              marginBottom: 14
-            }}
-          />
+          <span className="hls-spin" aria-hidden />
           <p className="live-overlay-title">Reconnecting…</p>
           <p className="live-overlay-sub">This channel is taking a moment — retrying automatically (attempt {reconnecting}).</p>
-          <style>{`@keyframes hlsSpin{to{transform:rotate(360deg)}}`}</style>
+        </div>
+      )}
+      {/* Initial "please wait" loader — shown until the stream actually opens so
+          the screen never just sits blank/frozen while a channel is connecting. */}
+      {loading && !error && reconnecting === 0 && (
+        <div className="live-overlay live-cover" style={{ position: "absolute", inset: 0, zIndex: 23 }}>
+          <span className="hls-spin" aria-hidden />
+          <p className="live-overlay-title">Please wait…</p>
+          <p className="live-overlay-sub">Opening the channel — this can take a few seconds.</p>
         </div>
       )}
       {hevcWarning && (
