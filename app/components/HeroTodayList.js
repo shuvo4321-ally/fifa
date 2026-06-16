@@ -60,25 +60,27 @@ export default function HeroTodayList({ rows }) {
         fit();
       }
 
-      // If paused or not overflowing, just sync our float tracker to reality
-      if (Date.now() < pauseUntil.current || !overflows() || wrapPoint <= 0) {
+      // Few enough matches that they all fit (e.g. the last 3) → no looping and
+      // no duplicate copy is shown; just stay pinned at the top.
+      if (!overflows() || wrapPoint <= 0) {
         currentY = el.scrollTop;
         return;
       }
 
-      // If user manually scrolled, el.scrollTop will diverge from currentY.
-      // Browsers truncate scrollTop, so tolerate up to 2px of difference.
-      if (Math.abs(el.scrollTop - currentY) > 2) {
+      // While the user is hand-scrolling, keep them within the REAL matches only.
+      // Clamping just before the duplicated copy means the repeat is never visible.
+      if (Date.now() < pauseUntil.current) {
+        const maxReal = Math.max(0, wrapPoint - el.clientHeight);
+        if (el.scrollTop > maxReal) el.scrollTop = maxReal;
         currentY = el.scrollTop;
+        return;
       }
 
+      // Auto-scroll: glide down and seamlessly wrap through the duplicate copy
+      // (it's identical, so the wrap is invisible).
+      if (Math.abs(el.scrollTop - currentY) > 2) currentY = el.scrollTop;
       currentY += SPEED * dt;
-      
-      if (currentY >= wrapPoint) { 
-        currentY -= wrapPoint; // Seamless wrap
-      }
-      
-      // Only write to DOM, never read from it in the hot loop
+      if (currentY >= wrapPoint) currentY -= wrapPoint;
       el.scrollTop = currentY;
     };
     raf = requestAnimationFrame(loop);
