@@ -8,38 +8,6 @@
 let cache = null; // { matches, source, ts }
 const TTL = 30000;
 
-async function fromFootballData() {
-  const keysStr = process.env.FOOTBALL_DATA_SCHEDULE_KEY || process.env.FOOTBALL_DATA_API_KEY;
-  if (!keysStr) return null;
-  const keys = keysStr.split(",").map((k) => k.trim()).filter(Boolean);
-  for (const key of keys) {
-    let res;
-    try {
-      res = await fetch("https://api.football-data.org/v4/competitions/WC/matches", {
-        headers: { "X-Auth-Token": key },
-        cache: "no-store",
-      });
-    } catch {
-      continue;
-    }
-    if (res.ok) {
-      const d = await res.json();
-      const matches = (d.matches || []).map((m) => ({
-        home: m.homeTeam?.name || m.homeTeam?.shortName || "",
-        away: m.awayTeam?.name || m.awayTeam?.shortName || "",
-        status: m.status,
-        score: { home: m.score?.fullTime?.home ?? null, away: m.score?.fullTime?.away ?? null },
-        minute: null,
-        utcDate: m.utcDate || null,
-      }));
-      return { matches, source: "football-data" };
-    }
-    if (res.status === 429 || res.status === 403) continue; // try next key / fall through
-    break;
-  }
-  return null;
-}
-
 async function fromEspn() {
   let res;
   try {
@@ -81,7 +49,7 @@ async function fromEspn() {
 
 export async function getAllWcMatches() {
   if (cache && Date.now() - cache.ts < TTL) return cache;
-  const result = (await fromFootballData()) || (await fromEspn());
+  const result = await fromEspn();
   if (result) {
     cache = { ...result, ts: Date.now() };
     return cache;
