@@ -14,7 +14,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const MODEL = "gemini-2.5-flash";
+const MODEL = "gemini-3.5-flash";
 
 // Structured shape Gemini must return for a prediction (JSON mode). Rendering a
 // real card from this is what makes the output readable instead of a text blob.
