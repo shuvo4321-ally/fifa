@@ -1,32 +1,103 @@
 /**
- * World Cup group standings derived from our own live scores — the same source
- * the calendar page uses. No ESPN API call needed, zero cost, and always in sync
- * with the scoreboards shown on the site.
- *
- * Returns a normalized-name → { gp, w, d, l, gd, pts } map so predictions can
- * be grounded in actual tournament form. 5-minute in-memory cache.
+ * Live World Cup group standings from API-Football (primary) with
+ * football-data.org as fallback. Returns a normalized-name →
+ * { gp, w, d, l, gd, pts } map so predictions can be grounded
+ * in actual tournament form. 5-minute in-memory cache + last-good fallback.
  */
 
 import { normTeam, isSameTeam } from "./teamNormalization";
-import { GROUPS_2026, FIXTURES_2026 } from "../data/schedule2026";
-import { getAllWcMatches } from "./wcMatches";
 
 let cache = null;
 let fetchTime = 0;
 const TTL = 5 * 60 * 1000;
 
-function matchScore(matches, team1, team2) {
-  for (const m of matches) {
-    const fwd =
-      isSameTeam(m.home, team1) && isSameTeam(m.away, team2);
-    const rev =
-      !fwd && isSameTeam(m.home, team2) && isSameTeam(m.away, team1);
-    if (fwd || rev) {
-      if (m.status !== "FINISHED") continue;
-      const h = m.score?.home;
-      const a = m.score?.away;
-      if (h == null || a == null) continue;
-      return { s1: rev ? a : h, s2: rev ? h : a };
+/** Try API-Football first (reachable from Vercel, uses existing API_FOOTBALL_KEY). */
+async function fetchFromApiFootball() {
+  const keysStr = process.env.API_FOOTBALL_KEY;
+  if (!keysStr) return null;
+  const apiKeys = keysStr.split(",").map(k => k.trim()).filter(Boolean);
+
+  // FIFA World Cup 2026 — league ID = 1, season = 2026
+  const currentYear = new Date().getFullYear();
+
+  for (const key of apiKeys) {
+    try {
+      const res = await fetch(
+        `https://v3.football.api-sports.io/standings?league=1&season=${currentYear}`,
+        {
+          headers: { "x-apisports-key": key },
+          cache: "no-store",
+        }
+      );
+      if (!res.ok) continue;
+      const data = await res.json();
+
+      // API-Football returns errors in body when quota exceeded
+      if (data.errors && data.errors.requests) continue;
+
+      const groups = data?.response?.[0]?.league?.standings;
+      if (!groups || !Array.isArray(groups)) return null;
+
+      const map = {};
+      for (const group of groups) {
+        for (const entry of group) {
+          const name = normTeam(entry?.team?.name || "");
+          if (!name) continue;
+          map[name] = {
+            gp: entry.all?.played || 0,
+            w: entry.all?.win || 0,
+            d: entry.all?.draw || 0,
+            l: entry.all?.lose || 0,
+            gd: entry.goalsDiff || 0,
+            pts: entry.points || 0,
+          };
+        }
+      }
+      if (Object.keys(map).length > 0) return map;
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+/** Fallback: football-data.org (may be blocked on Vercel but works locally). */
+async function fetchFromFootballData() {
+  const keysStr = process.env.FOOTBALL_DATA_API_KEY;
+  if (!keysStr) return null;
+  const apiKeys = keysStr.split(",").map(k => k.trim()).filter(Boolean);
+
+  for (const key of apiKeys) {
+    try {
+      const res = await fetch(
+        "https://api.football-data.org/v4/competitions/WC/standings",
+        {
+          headers: { "X-Auth-Token": key },
+          cache: "no-store",
+        }
+      );
+      if (!res.ok) continue;
+      const data = await res.json();
+
+      const map = {};
+      for (const standing of data?.standings || []) {
+        if (standing.type !== "TOTAL") continue;
+        for (const entry of standing.table || []) {
+          const name = normTeam(entry?.team?.name || "");
+          if (!name) continue;
+          map[name] = {
+            gp: entry.playedGames || 0,
+            w: entry.won || 0,
+            d: entry.draw || 0,
+            l: entry.lost || 0,
+            gd: entry.goalDifference || 0,
+            pts: entry.points || 0,
+          };
+        }
+      }
+      if (Object.keys(map).length > 0) return map;
+    } catch {
+      continue;
     }
   }
   return null;
@@ -36,68 +107,14 @@ export async function getWcStandings() {
   const now = Date.now();
   if (cache && now - fetchTime < TTL) return cache;
 
-  try {
-    // Fetch from our own scores endpoint (same source as the calendar)
-    const { matches } = await getAllWcMatches();
-    if (!matches || matches.length === 0) return cache;
+  // Try API-Football first (works on Vercel), then football-data.org as fallback
+  const result = await fetchFromApiFootball() || await fetchFromFootballData();
 
-    const map = {};
-
-    for (const g of GROUPS_2026) {
-      for (const t of g.teams) {
-        map[normTeam(t.name)] = { gp: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0 };
-      }
-
-      // Compute standings from finished group fixtures
-      const groupFixtures = FIXTURES_2026.filter(
-        (f) => f.group === g.name && f.match.includes(" vs ")
-      );
-
-      for (const fx of groupFixtures) {
-        const [t1, t2] = fx.match.split(" vs ").map((s) => s.trim());
-        const r1 = map[normTeam(t1)];
-        const r2 = map[normTeam(t2)];
-        if (!r1 || !r2) continue;
-
-        const sc = matchScore(matches, t1, t2);
-        if (!sc) continue;
-
-        r1.gp++;
-        r2.gp++;
-        r1.gf += sc.s1;
-        r1.ga += sc.s2;
-        r2.gf += sc.s2;
-        r2.ga += sc.s1;
-
-        if (sc.s1 > sc.s2) {
-          r1.w++;
-          r1.pts += 3;
-          r2.l++;
-        } else if (sc.s1 < sc.s2) {
-          r2.w++;
-          r2.pts += 3;
-          r1.l++;
-        } else {
-          r1.d++;
-          r2.d++;
-          r1.pts++;
-          r2.pts++;
-        }
-      }
-    }
-
-    // Compute GD for each team
-    for (const rec of Object.values(map)) {
-      rec.gd = rec.gf - rec.ga;
-    }
-
-    cache = map;
+  if (result) {
+    cache = result;
     fetchTime = now;
-    return map;
-  } catch (err) {
-    console.warn("wcStandings: failed to compute standings:", err.message);
-    return cache; // last good snapshot, or null on first failure
   }
+  return cache; // last good snapshot, or null on first failure
 }
 
 export function lookupWcRecord(map, teamName) {
