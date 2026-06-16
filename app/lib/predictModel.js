@@ -93,12 +93,19 @@ export function computeBaseline(signalA, signalB) {
   const lambdaB = clamp(half * Math.exp(-supremacy), 0.15, 4.8);
 
   let winA = 0, draw = 0, winB = 0;
+  let bestScore = "1-0";
+  let bestProb = 0;
   for (let i = 0; i <= 8; i++) {
     for (let j = 0; j <= 8; j++) {
       const p = poisson(i, lambdaA) * poisson(j, lambdaB);
       if (i > j) winA += p;
       else if (i === j) draw += p;
       else winB += p;
+      // Track the single most probable scoreline from the grid
+      if (p > bestProb) {
+        bestProb = p;
+        bestScore = `${i}-${j}`;
+      }
     }
   }
   const total = winA + draw + winB || 1;
@@ -110,7 +117,7 @@ export function computeBaseline(signalA, signalB) {
     winA: a,
     draw: d,
     winB: b,
-    score: `${Math.round(lambdaA)}-${Math.round(lambdaB)}`,
+    score: bestScore,
     ratingA: round1(ratingA),
     ratingB: round1(ratingB),
     coverage: dataCoverage(signalA, signalB),
