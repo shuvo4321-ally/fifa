@@ -395,6 +395,11 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
     setReloadNonce((n) => n + 1);
   };
 
+  // Keep the controls + channel nav reachable while an overlay (please-wait,
+  // reconnecting, or error) is covering the video — otherwise the user is stuck
+  // unable to mute, go fullscreen, reload or switch channels until it plays.
+  const showControls = isHovering || !isPlaying || loading || reconnecting > 0 || !!error;
+
   return (
     <div
       className="custom-player-wrapper"
@@ -410,7 +415,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
           unmounting it nulled videoRef, so the load effect bailed on the next
           channel and left every subsequent one "unavailable" until a refresh. */}
       {error && (
-        <div className="live-overlay live-cover" style={{ position: "absolute", inset: 0, zIndex: 25 }}>
+        <div className="live-overlay live-cover" style={{ position: "absolute", inset: 0, zIndex: 25, pointerEvents: "none" }}>
           <p className="live-overlay-title">Channel unavailable</p>
           <p className="live-overlay-sub">{error}</p>
         </div>
@@ -418,7 +423,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
       {/* Auto-reconnect overlay — shown while we keep reloading THIS channel.
           Lower z-index than the permanent error so a real codec failure wins. */}
       {reconnecting > 0 && !error && (
-        <div className="live-overlay live-cover" style={{ position: "absolute", inset: 0, zIndex: 24 }}>
+        <div className="live-overlay live-cover" style={{ position: "absolute", inset: 0, zIndex: 24, pointerEvents: "none" }}>
           <span className="hls-spin" aria-hidden />
           <p className="live-overlay-title">Reconnecting…</p>
           <p className="live-overlay-sub">This channel is taking a moment — retrying automatically (attempt {reconnecting}).</p>
@@ -427,7 +432,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
       {/* Initial "please wait" loader — shown until the stream actually opens so
           the screen never just sits blank/frozen while a channel is connecting. */}
       {loading && !error && reconnecting === 0 && (
-        <div className="live-overlay live-cover" style={{ position: "absolute", inset: 0, zIndex: 23 }}>
+        <div className="live-overlay live-cover" style={{ position: "absolute", inset: 0, zIndex: 23, pointerEvents: "none" }}>
           <span className="hls-spin" aria-hidden />
           <p className="live-overlay-title">Please wait…</p>
           <p className="live-overlay-sub">Opening the channel — this can take a few seconds.</p>
@@ -484,7 +489,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
 
       {onPrev && (
         <button 
-          className={`custom-nav-btn custom-nav-left ${isHovering || !isPlaying ? "is-visible" : ""}`}
+          className={`custom-nav-btn custom-nav-left ${showControls ? "is-visible" : ""}`}
           onClick={(e) => { e.stopPropagation(); onPrev(); }}
         >
           <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="11 17 6 12 11 7"></polyline><polyline points="18 17 13 12 18 7"></polyline></svg>
@@ -493,14 +498,14 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
 
       {onNext && (
         <button 
-          className={`custom-nav-btn custom-nav-right ${isHovering || !isPlaying ? "is-visible" : ""}`}
+          className={`custom-nav-btn custom-nav-right ${showControls ? "is-visible" : ""}`}
           onClick={(e) => { e.stopPropagation(); onNext(); }}
         >
           <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg>
         </button>
       )}
 
-      <div className={`custom-controls-bar ${isHovering || !isPlaying ? "is-visible" : ""}`}>
+      <div className={`custom-controls-bar ${showControls ? "is-visible" : ""}`}>
         <div className="custom-controls-left">
           <button className="control-btn" onClick={togglePlay}>
             {isPlaying ? (
