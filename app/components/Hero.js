@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
-import HeroMatchRow from "./HeroMatchRow";
+import HeroTodayList from "./HeroTodayList";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -150,9 +150,7 @@ export default function Hero({ hero, slides, today, pinned = false, onCta }) {
           <div className="hero-fixtures">
             <span className="hero-fixtures-head">{today.heading}</span>
             <div className="hero-today">
-              {today.rows.map((m, i) => (
-                <HeroMatchRow key={i} m={m} />
-              ))}
+              <HeroTodayList rows={today.rows} />
               <Link href="/live-tv" className="hero-today-cta">
                 {today.moreCount > 0 ? `+${today.moreCount} more · Watch Now →` : "Watch Now →"}
               </Link>
