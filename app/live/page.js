@@ -55,7 +55,13 @@ export default function PredictionHub() {
 
   const upcomingFixtures = FIXTURES_2026.filter(
     (f) => f.stage === "Group Stage" && !isFixtureOver(f, now)
-  );
+  ).sort((a, b) => {
+    const ka = fixtureKickoffMs(a);
+    const kb = fixtureKickoffMs(b);
+    if (Number.isNaN(ka)) return 1;
+    if (Number.isNaN(kb)) return -1;
+    return kb - ka; // Descending: latest date first
+  });
 
   const closeModal = useCallback(() => {
     setActiveMatch(null);
