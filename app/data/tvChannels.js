@@ -42,6 +42,27 @@ export const TV_CHANNELS = [
     key: "51ede3a821229fe81e71282c8eff80e3"
   },
   {
+    name: "DAZN FIFA",
+    logo: "https://i.postimg.cc/Kc3mP7Qt/cbimage.png",
+    group: "FIFA",
+    url: "https://1nyaler.streamhostingcdn.top/stream/94/index.m3u8",
+    type: "hls"
+  },
+  {
+    name: "Somoy TV",
+    logo: "https://s3.aynaott.com/storage/ece71c1163a377fbe2d93f9d28c34f60",
+    group: "FIFA",
+    url: "https://live.thebosstv.com:30443/dwlive/Somoy-TV/chunks.m3u8",
+    type: "hls"
+  },
+  {
+    name: "LOL",
+    logo: "https://i.ibb.co.com/S7tZS6cg/Bein-Sports-1-Direct.png",
+    group: "FIFA",
+    url: "https://1nyaler.streamhostingcdn.top/stream/23/index.m3u8",
+    type: "hls"
+  },
+  {
     name: "BEIN Sports 1",
     logo: "https://images.seeklogo.com/logo-png/48/1/bein-sports-1-logo-png_seeklogo-481583.png",
     group: "FIFA",
@@ -74,6 +95,13 @@ export const TV_CHANNELS = [
     type: "dash",
     kid: "d185684e2330de5bea436daa094a5e86",
     key: "014f0116154f5bf0050e03a6b0a23157"
-  }
+  },
 
+  {
+    name: "GOLIVE - English",
+    logo: "https://rtb-images.glueapi.io/320x0/live/GoLiveNew.png",
+    group: "FIFA",
+    url: "https://d1211whpimeups.cloudfront.net/smil:rtbgo/chunklist.m3u8",
+    type: "hls"
+  }
 ];
