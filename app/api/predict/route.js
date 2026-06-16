@@ -224,21 +224,27 @@ export async function POST(request) {
       }
     }
 
-    // RAG: real squads + form from football-data / API-Football + web news.
+    // RAG: real squads + form from API-Football + parallel web news search
     teams = match.split("vs").map((t) => t.trim());
     let webNewsStr = "";
 
     if (teams.length === 2) {
-      const [analysis, news] = await Promise.all([
+      const [analysis, h2hNews, teamANews, teamBNews] = await Promise.all([
         buildMatchAnalysis(teams[0], teams[1]),
-        fetchWebSearch(
-          `${teams[0]} and ${teams[1]} recent football match form results last 5 matches breaking news`
-        ),
+        fetchWebSearch(`${teams[0]} vs ${teams[1]} head to head football match records history`),
+        fetchWebSearch(`${teams[0]} national football team latest news injuries suspensions squad`),
+        fetchWebSearch(`${teams[1]} national football team latest news injuries suspensions squad`),
       ]);
       liveDataStr = analysis.context;
       signalA = analysis.signalA;
       signalB = analysis.signalB;
-      webNewsStr = news || "";
+
+      const newsParts = [];
+      if (h2hNews) newsParts.push(`### Head-to-Head Records & History:\n${h2hNews}`);
+      if (teamANews) newsParts.push(`### ${teams[0]} Latest News & Injury Updates:\n${teamANews}`);
+      if (teamBNews) newsParts.push(`### ${teams[1]} Latest News & Injury Updates:\n${teamBNews}`);
+      webNewsStr = newsParts.join("\n\n");
+
       baseline = computeBaseline(signalA, signalB);
     }
 
