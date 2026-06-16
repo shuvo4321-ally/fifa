@@ -36,15 +36,25 @@ function round1(x) {
   return Math.round(x * 10) / 10;
 }
 
-/** Collapse a team's signals into one composite rating (~60–90). */
+/**
+ * Collapse a team's signals into one composite rating (~60–90) AND
+ * separate attack / defense sub-ratings used to shape the goal model.
+ */
 function teamStrength(s) {
   const played = s?.form?.played || 0;
   const formPpg = played ? (3 * s.form.w + s.form.d) / played : null; // 0..3
   const gdpg = played ? (s.gf - s.ga) / played : null;
+  const gpg = played ? s.gf / played : null;   // goals per game scored
+  const gapg = played ? s.ga / played : null;   // goals per game conceded
 
   let rating = typeof s?.squadRating === "number" && !Number.isNaN(s.squadRating)
     ? s.squadRating
     : null;
+
+  // Blend in top-11 average if available (weights star quality)
+  if (typeof s?.top11 === "number" && !Number.isNaN(s.top11) && rating != null) {
+    rating = 0.7 * rating + 0.3 * s.top11;
+  }
 
   if (s?.elo) {
     const eloRating = 65 + ((s.elo - 1400) / 750) * 27;
@@ -66,7 +76,26 @@ function teamStrength(s) {
     rating += (formPpg - NEUTRAL_PPG) * FORM_WEIGHT + (gdpg != null ? gdpg * GD_WEIGHT : 0);
   }
 
-  return clamp(rating, 50, 95);
+  // Win/loss streak bonus: consecutive recent wins boost confidence, losses dampen it.
+  const outcomes = s?.outcomes || [];
+  let streak = 0;
+  if (outcomes.length > 0) {
+    const first = outcomes[0];
+    for (const o of outcomes) {
+      if (o === first) streak++;
+      else break;
+    }
+    if (first === "W") rating += Math.min(streak, 4) * 0.8;
+    else if (first === "L") rating -= Math.min(streak, 4) * 0.8;
+  }
+
+  return {
+    overall: clamp(rating, 50, 95),
+    attack: s?.attack || null,    // { overall, sho, pac } from Supabase
+    defense: s?.defense || null,  // { overall, def, phy } from Supabase
+    gpg: gpg,                      // goals per game
+    gapg: gapg,                    // goals conceded per game
+  };
 }
 
 /** Fraction of the four key inputs we actually have (0..1). */
@@ -78,34 +107,61 @@ export function dataCoverage(signalA, signalB) {
   return (Number(hasRA) + Number(hasRB) + Number(hasFA) + Number(hasFB)) / 4;
 }
 
+/** Simple string hash → 0..1 (deterministic, varies per matchup). */
+function hashSeed(rA, rB) {
+  // Use the decimal parts of the ratings as a seed so different matchups
+  // with similar gaps still pick different scorelines.
+  const x = (rA * 137.3 + rB * 251.7) % 1;
+  return Math.abs(x);
+}
+
 /** Win/Draw/Loss baseline + expected scoreline from two team signals. */
 export function computeBaseline(signalA, signalB) {
-  const ratingA = teamStrength(signalA);
-  const ratingB = teamStrength(signalB);
+  const strA = teamStrength(signalA);
+  const strB = teamStrength(signalB);
+  const ratingA = strA.overall;
+  const ratingB = strB.overall;
 
   // Log-linear (Poisson-regression style) goal model: a rating edge scales
-  // expected goals multiplicatively, so genuine mismatches open up to 3-1 / 4-0
-  // / 5-0 instead of being squashed under a fixed 2.6-goal ceiling, while evenly
-  // matched sides still sit around 1-1 / 2-1.
+  // expected goals multiplicatively.
   const supremacy = clamp((ratingA - ratingB) / RATING_SCALE, -SUP_CAP, SUP_CAP);
   const half = BASE_TOTAL_GOALS / 2;
-  const lambdaA = clamp(half * Math.exp(supremacy), 0.15, 4.8);
-  const lambdaB = clamp(half * Math.exp(-supremacy), 0.15, 4.8);
+  let lambdaA = clamp(half * Math.exp(supremacy), 0.15, 4.8);
+  let lambdaB = clamp(half * Math.exp(-supremacy), 0.15, 4.8);
+
+  // ── Matchup-specific adjustments from real data ──
+
+  // 1. Attack vs Defense: if team A has strong attack and team B has weak defense,
+  //    A should score more than the generic model predicts (and vice versa).
+  if (strA.attack?.overall && strB.defense?.overall) {
+    const atkEdge = (Number(strA.attack.overall) - Number(strB.defense.overall)) / 100;
+    lambdaA = clamp(lambdaA * (1 + atkEdge * 0.5), 0.15, 5.5);
+  }
+  if (strB.attack?.overall && strA.defense?.overall) {
+    const atkEdge = (Number(strB.attack.overall) - Number(strA.defense.overall)) / 100;
+    lambdaB = clamp(lambdaB * (1 + atkEdge * 0.5), 0.15, 5.5);
+  }
+
+  // 2. Actual goals-per-game from recent matches: if a team scores 2.5 goals/game
+  //    on average, they should be predicted higher than a team scoring 0.8.
+  if (strA.gpg != null && strB.gapg != null) {
+    const realGoalSignal = (strA.gpg + strB.gapg) / 2;  // avg of A's scoring + B's conceding
+    lambdaA = clamp(0.6 * lambdaA + 0.4 * realGoalSignal, 0.15, 5.5);
+  }
+  if (strB.gpg != null && strA.gapg != null) {
+    const realGoalSignal = (strB.gpg + strA.gapg) / 2;
+    lambdaB = clamp(0.6 * lambdaB + 0.4 * realGoalSignal, 0.15, 5.5);
+  }
 
   let winA = 0, draw = 0, winB = 0;
-  let bestScore = "1-0";
-  let bestProb = 0;
+  const scorelines = []; // { score, prob }
   for (let i = 0; i <= 8; i++) {
     for (let j = 0; j <= 8; j++) {
       const p = poisson(i, lambdaA) * poisson(j, lambdaB);
       if (i > j) winA += p;
       else if (i === j) draw += p;
       else winB += p;
-      // Track the single most probable scoreline from the grid
-      if (p > bestProb) {
-        bestProb = p;
-        bestScore = `${i}-${j}`;
-      }
+      scorelines.push({ score: `${i}-${j}`, prob: p });
     }
   }
   const total = winA + draw + winB || 1;
@@ -113,11 +169,29 @@ export function computeBaseline(signalA, signalB) {
   const d = Math.round((draw / total) * 100);
   const b = 100 - a - d;
 
+  // Pick from the top likely scorelines using team-specific data as a seed,
+  // so different matchups produce different scores even with similar gaps.
+  scorelines.sort((x, y) => y.prob - x.prob);
+  const topN = scorelines.slice(0, 5);
+  const seed = hashSeed(ratingA, ratingB);
+  const totalTopProb = topN.reduce((s, x) => s + x.prob, 0);
+  let cumulative = 0;
+  let pickedScore = topN[0].score;
+  for (const sl of topN) {
+    cumulative += sl.prob / totalTopProb;
+    if (seed < cumulative) {
+      pickedScore = sl.score;
+      break;
+    }
+  }
+
   return {
     winA: a,
     draw: d,
     winB: b,
-    score: bestScore,
+    score: pickedScore,
+    lambdaA: round1(lambdaA),
+    lambdaB: round1(lambdaB),
     ratingA: round1(ratingA),
     ratingB: round1(ratingB),
     coverage: dataCoverage(signalA, signalB),

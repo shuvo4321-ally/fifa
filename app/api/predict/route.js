@@ -143,9 +143,23 @@ function groundPrediction(parsed, baseline, signalA, signalB, teams) {
   parsed.favorite = favoriteFrom(blended, parsed.teamA, parsed.teamB);
   parsed.confidence = confidenceFrom(baseline.coverage, marginOf(blended));
 
-  // Keep the model's scoreline only if it agrees with the favourite.
-  if (!scoreMatchesFavorite(parsed.predictedScore, parsed.favorite, parsed.teamA, parsed.teamB)) {
+  // Keep the LLM's scoreline if it's reasonable (matches the favourite direction).
+  // Only fall back to the baseline score when the LLM's score contradicts the data.
+  const llmScoreOk = scoreMatchesFavorite(parsed.predictedScore, parsed.favorite, parsed.teamA, parsed.teamB);
+  if (!llmScoreOk) {
+    // LLM got the winner wrong — use the calculated score instead.
     parsed.predictedScore = baseline.score;
+  } else if (baseline.lambdaA != null) {
+    // LLM has the right winner — but sanity-check total goals are within a
+    // reasonable range of the expected total (±3 goals).
+    const sm = /^(\d+)\s*-\s*(\d+)$/.exec((parsed.predictedScore || "").trim());
+    if (sm) {
+      const llmTotal = Number(sm[1]) + Number(sm[2]);
+      const expectedTotal = baseline.lambdaA + baseline.lambdaB;
+      if (Math.abs(llmTotal - expectedTotal) > 3) {
+        parsed.predictedScore = baseline.score;
+      }
+    }
   }
 
   // Trust signals for the UI.
