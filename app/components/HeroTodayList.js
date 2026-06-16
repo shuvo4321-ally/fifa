@@ -4,13 +4,14 @@ import { useEffect, useRef } from "react";
 import HeroMatchRow from "./HeroMatchRow";
 
 /**
- * The hero's fixtures list. It caps itself to ~4 rows and quietly auto-rotates
- * through the rest, so on a full 6-match day every game cycles into view — with
- * NO visible scrollbar. The user can still scroll it by hand, which pauses the
- * rotation for a few seconds.
+ * The hero's fixtures list. It caps itself to ~4 rows and continuously
+ * auto-scrolls through the rest in an infinite loop, so every game glides
+ * into view — with NO visible scrollbar. The user can still scroll it by
+ * hand, which pauses the auto-scroll for a few seconds.
  */
 const VISIBLE_ROWS = 4;
-const PEEK = 14; // show a sliver of the next row so it reads as "there's more"
+const PEEK = 14;        // show a sliver of the next row → reads as "there's more"
+const SPEED = 26;       // px per second
 
 export default function HeroTodayList({ rows }) {
   const scrollRef = useRef(null);
@@ -21,37 +22,48 @@ export default function HeroTodayList({ rows }) {
     if (!el) return;
 
     // Cap the height to ~VISIBLE_ROWS, measured from the real rows (their height
-    // differs desktop vs mobile), so anything beyond that has to rotate in.
+    // differs desktop vs mobile), so anything beyond that has to scroll in.
     const fit = () => {
       const items = [...el.children];
-      el.style.maxHeight =
-        items.length > VISIBLE_ROWS ? `${items[VISIBLE_ROWS].offsetTop + PEEK}px` : "";
+      if (rows.length > VISIBLE_ROWS && items.length > VISIBLE_ROWS) {
+        el.style.maxHeight = `${items[VISIBLE_ROWS].offsetTop + PEEK}px`;
+      } else {
+        el.style.maxHeight = "";
+      }
     };
     fit();
     el.scrollTop = 0;
 
-    const overflows = () => el.scrollHeight - el.clientHeight > 8;
-    const step = () => {
-      if (Date.now() < pauseUntil.current || !overflows()) return;
-      // Reached the bottom → loop back to the top.
-      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 6) {
-        el.scrollTo({ top: 0, behavior: "smooth" });
-        return;
-      }
-      // Otherwise advance so the next row aligns to the top.
-      const next = [...el.children].find((r) => r.offsetTop > el.scrollTop + 6);
-      el.scrollTo({ top: next ? next.offsetTop : 0, behavior: "smooth" });
-    };
+    let raf = 0;
+    let last = performance.now();
+    const overflows = () => rows.length > VISIBLE_ROWS;
 
-    const id = setInterval(step, 3000);
+    const loop = (now) => {
+      raf = requestAnimationFrame(loop);
+      const dt = Math.min((now - last) / 1000, 0.05); // clamp tab-switch jumps
+      last = now;
+      if (Date.now() < pauseUntil.current || !overflows()) return;
+
+      const items = [...el.children];
+      // The point where the duplicate items start is the offsetTop of the first duplicate.
+      const wrapPoint = items[rows.length] ? items[rows.length].offsetTop : el.scrollHeight / 2;
+      
+      let next = el.scrollTop + SPEED * dt;
+      if (next >= wrapPoint) { 
+        next -= wrapPoint; // Seamless wrap
+      }
+      el.scrollTop = next;
+    };
+    raf = requestAnimationFrame(loop);
+
     window.addEventListener("resize", fit);
     return () => {
-      clearInterval(id);
+      cancelAnimationFrame(raf);
       window.removeEventListener("resize", fit);
     };
   }, [rows.length]);
 
-  // Any manual scroll / touch pauses the auto-rotate briefly.
+  // Any manual scroll / touch pauses the auto-scroll briefly.
   const pause = () => { pauseUntil.current = Date.now() + 6000; };
 
   return (
@@ -64,6 +76,10 @@ export default function HeroTodayList({ rows }) {
     >
       {rows.map((m, i) => (
         <HeroMatchRow key={i} m={m} />
+      ))}
+      {/* Duplicate rows for infinite scroll if there's an overflow */}
+      {rows.length > VISIBLE_ROWS && rows.map((m, i) => (
+        <HeroMatchRow key={`dup-${i}`} m={m} />
       ))}
     </div>
   );
