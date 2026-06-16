@@ -1,6 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Hls from "hls.js";
+
+// Route an HLS manifest through our same-origin Edge proxy. This is what makes
+// channels start fast: the browser reuses the page's warm connection instead of
+// a cold DNS+TLS handshake to a distant CDN, and CORS / mixed-content / geo
+// blocks disappear. The proxy rewrites the manifest so segments come through it
+// too. DASH (.mpd) is left direct — only plain HLS is proxied.
+function proxify(u) {
+  if (!u || !/^https?:\/\//i.test(u)) return u;
+  return `/api/proxy?url=${encodeURIComponent(u)}`;
+}
 
 export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, streamType, drmKid, drmKey, onErrorCallback }) {
   const videoRef = useRef(null);
@@ -9,13 +20,47 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
   const shakaRef = useRef(null);
   const hoverTimeoutRef = useRef(null);
   const loadIdRef = useRef(0);
-  
+  // Auto-reconnect bookkeeping: how many retries so far, the queued retry timer,
+  // a stall watchdog, and the last src we actually switched to.
+  const retryRef = useRef(0);
+  const retryTimerRef = useRef(null);
+  const stallTimerRef = useRef(null);
+  const startTimerRef = useRef(null);
+  const lastSrcRef = useRef(null);
+
   const [error, setError] = useState("");
   const [hevcWarning, setHevcWarning] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
+  // >0 while we're auto-reloading this channel (holds the attempt number).
+  const [reconnecting, setReconnecting] = useState(0);
+  // Bumping this re-runs the load effect on the SAME src — i.e. it reloads the
+  // current channel without ever switching to another one.
+  const [reloadNonce, setReloadNonce] = useState(0);
+
+  // Re-load the CURRENT channel after a short, growing delay. We never change
+  // `src` here, so a stream that drops, expires, or freezes keeps trying to come
+  // back on its own and stays pointed at exactly the channel the user picked.
+  const scheduleReconnect = () => {
+    if (retryTimerRef.current) return; // a reload is already queued
+    retryRef.current += 1;
+    setReconnecting(retryRef.current);
+    setError("");
+    const delay = Math.min(1500 + (retryRef.current - 1) * 1500, 8000); // 1.5s → 8s cap
+    retryTimerRef.current = setTimeout(() => {
+      retryTimerRef.current = null;
+      setReloadNonce((n) => n + 1);
+    }, delay);
+  };
+
+  // Clear any pending timers if the player unmounts mid-retry.
+  useEffect(() => () => {
+    if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    if (stallTimerRef.current) clearTimeout(stallTimerRef.current);
+    if (startTimerRef.current) clearTimeout(startTimerRef.current);
+  }, []);
 
   useEffect(() => {
     if (!src) return;
@@ -48,8 +93,58 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
     const myId = ++loadIdRef.current;
     const isStale = () => cancelled || myId !== loadIdRef.current;
 
+    // Reset the retry counter only when the user actually changes channel. A
+    // reconnect re-run (reloadNonce bump) keeps the same src, so we DON'T reset —
+    // that's how the backoff grows while we keep retrying the one channel.
+    if (lastSrcRef.current !== src) {
+      lastSrcRef.current = src;
+      retryRef.current = 0;
+      setReconnecting(0);
+    }
+
     // Silence the previous stream immediately on switch.
     try { video.pause(); } catch {}
+
+    // ── Auto-recovery on the media element ──────────────────────────────────
+    // A failed or frozen channel reloads ITSELF (same src) until it plays, so a
+    // flaky stream comes back without the user touching anything.
+    const onMediaError = () => {
+      if (isStale()) return;
+      const code = video.error?.code;
+      if (code === 3 || code === 4) { // DECODE / SRC_NOT_SUPPORTED → codec issue, retrying won't help
+        setError("This channel uses a video codec your browser can't decode.");
+        return;
+      }
+      scheduleReconnect();
+    };
+    const armStallWatchdog = () => {
+      if (isStale()) return;
+      clearTimeout(stallTimerRef.current);
+      // Frozen this long on a live stream isn't buffering — reload it.
+      stallTimerRef.current = setTimeout(() => {
+        if (!isStale() && !video.paused && video.readyState < 3) scheduleReconnect();
+      }, 15000);
+    };
+    const onPlaying = () => {
+      clearTimeout(stallTimerRef.current);
+      clearTimeout(startTimerRef.current);
+      retryRef.current = 0;     // it's alive — forget the failures
+      setReconnecting(0);
+    };
+    // Some dead/geo-blocked streams never error AND never fire `waiting` — they
+    // just hang at readyState 0 forever (manifest or first segment never lands).
+    // A hard deadline catches that silent case: if the channel hasn't reached a
+    // playable state in time, reload it. Cleared the moment real data arrives.
+    const clearStartDeadline = () => clearTimeout(startTimerRef.current);
+    startTimerRef.current = setTimeout(() => {
+      if (!isStale() && video.readyState < 3) scheduleReconnect();
+    }, 15000);
+    video.addEventListener("error", onMediaError);
+    video.addEventListener("waiting", armStallWatchdog);
+    video.addEventListener("stalled", armStallWatchdog);
+    video.addEventListener("playing", onPlaying);
+    video.addEventListener("loadeddata", clearStartDeadline);
+    video.addEventListener("canplay", clearStartDeadline);
 
     const isDash = streamType === "dash" || src.toLowerCase().includes(".mpd");
 
@@ -79,13 +174,14 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
           if (drmKid && drmKey) {
             shakaConfig.drm = { clearKeys: { [drmKid]: drmKey } };
           }
-          
+
           player.configure(shakaConfig);
           player.addEventListener('error', (event) => {
             // Expected for dead/geo-blocked DASH streams. Use warn, not error —
             // Next dev promotes every console.error into a blocking overlay.
             console.warn('DASH playback error:', event.detail?.code ?? event.detail);
             if (onErrorCallback) onErrorCallback(true);
+            if (!isStale()) scheduleReconnect();
           });
           try {
             await player.load(src);
@@ -101,8 +197,8 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
         }
       } catch (err) {
         console.warn("DASH channel failed to start:", err?.code ?? err?.message ?? err);
-        if (!cancelled) setError("Could not start the player.");
         if (onErrorCallback) onErrorCallback(true);
+        if (!isStale()) scheduleReconnect(); // transient load failure → keep trying this channel
       }
     };
 
@@ -125,55 +221,76 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
         .then(() => { if (!isStale()) return initShaka(); })
         .catch((err) => {
           console.warn("Shaka player failed to load:", err?.message ?? err);
-          if (!cancelled) setError("Could not load the DASH player.");
+          if (!isStale()) scheduleReconnect();
         });
     } else {
-      (async () => {
-        if (video.canPlayType("application/vnd.apple.mpegurl")) {
-          video.src = src;
-          return;
-        }
-        try {
-          const { default: Hls } = await import("hls.js");
-          if (isStale()) return;
-          if (Hls.isSupported()) {
-            const hls = new Hls({ 
-              enableWorker: true, 
-              lowLatencyMode: true,
-              startLevel: 0, // Force lowest level immediately, skip bandwidth test
-              capLevelToPlayerSize: true,
-              maxBufferLength: 10,
-              maxMaxBufferLength: 30,
-              liveSyncDurationCount: 2,
-              liveMaxLatencyDurationCount: 5,
-              manifestLoadingTimeOut: 5000,
-              manifestLoadingMaxRetry: 3
-            });
-            hlsRef.current = hls;
-            hls.loadSource(src);
-            hls.attachMedia(video);
-            hls.on(Hls.Events.ERROR, (_e, data) => {
-              if (data?.fatal) {
-                console.warn("HLS fatal error:", data?.details ?? data);
-                if (data.details === "manifestParsingError" || data.details === "bufferAddCodecError" || data.reason?.includes("codec")) {
-                  setError("This channel uses HEVC (H.265) video encoding. Your browser or device does not support HEVC decoding.");
-                } else {
-                  setError("This channel couldn't load — the token may have expired, or it's geo-blocked.");
-                  if (onErrorCallback) onErrorCallback(true);
-                }
-              }
-            });
-          } else {
-            video.src = src;
+      // hls.js is statically imported (bundled with this route), so there's no
+      // lazy chunk to fetch on play — the channel starts as fast as possible.
+      // The manifest goes through our same-origin proxy for a warm, CORS-free,
+      // geo-unblocked fetch.
+      const streamSrc = proxify(src);
+      // Prefer hls.js wherever MSE exists (Chrome/Edge/Firefox/Electron). Only
+      // fall back to NATIVE HLS when hls.js can't run (iOS Safari) — Chromium
+      // reports canPlayType("…mpegurl")="maybe" but can't actually play it, so
+      // checking native first wrongly sent it down a dead path.
+      if (Hls.isSupported()) {
+        const hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: true,
+          startLevel: 0, // Force lowest level immediately, skip bandwidth test
+          capLevelToPlayerSize: true,
+          maxBufferLength: 10,
+          maxMaxBufferLength: 30,
+          liveSyncDurationCount: 2,
+          liveMaxLatencyDurationCount: 5,
+          manifestLoadingTimeOut: 10000, // tolerate the extra proxy hop
+          manifestLoadingMaxRetry: 4,
+          levelLoadingTimeOut: 10000,
+          fragLoadingTimeOut: 30000
+        });
+        hlsRef.current = hls;
+        hls.loadSource(streamSrc);
+        hls.attachMedia(video);
+        let softRecoveries = 0;
+        hls.on(Hls.Events.ERROR, (_e, data) => {
+          if (!data?.fatal) return;
+          console.warn("HLS fatal error:", data?.details ?? data);
+          if (data.details === "manifestParsingError" || data.details === "bufferAddCodecError" || data.reason?.includes("codec")) {
+            setError("This channel uses HEVC (H.265) video encoding. Your browser or device does not support HEVC decoding.");
+            return;
           }
-        } catch {
-          if (!cancelled) setError("Could not start the player.");
-        }
-      })();
+          // Try hls.js's own in-place recovery first — it keeps the warm
+          // connection and whatever buffer exists, so a slow-but-alive stream
+          // isn't thrown away. Only escalate to a full teardown-reconnect once
+          // in-place recovery is exhausted.
+          if (softRecoveries < 3) {
+            softRecoveries++;
+            try {
+              if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
+              else hls.startLoad();
+              return;
+            } catch {}
+          }
+          // Token expired / geo-block / dead stream: keep reloading the SAME
+          // channel on a backoff until it comes back.
+          scheduleReconnect();
+        });
+      } else {
+        // Native HLS (iOS Safari) — also through the proxy.
+        video.src = streamSrc;
+      }
     }
 
     return () => {
       cancelled = true;
+      clearTimeout(stallTimerRef.current);
+      clearTimeout(startTimerRef.current);
+      video.removeEventListener("error", onMediaError);
+      video.removeEventListener("waiting", armStallWatchdog);
+      video.removeEventListener("stalled", armStallWatchdog);
+      video.removeEventListener("playing", onPlaying);
+      video.removeEventListener("loadeddata", clearStartDeadline);
+      video.removeEventListener("canplay", clearStartDeadline);
       // Tear down whichever engine is active.
       if (hlsRef.current) {
         hlsRef.current.destroy();
@@ -195,7 +312,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
         video.load();
       }
     };
-  }, [src, streamType, drmKid, drmKey]);
+  }, [src, streamType, drmKid, drmKey, reloadNonce]);
 
   // Sync state with video
   useEffect(() => {
@@ -262,14 +379,15 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
   };
 
   const reloadStream = () => {
-    if (hlsRef.current && videoRef.current) {
-      hlsRef.current.stopLoad();
-      hlsRef.current.startLoad();
-      videoRef.current.play();
-    } else if (videoRef.current) {
-      videoRef.current.load();
-      videoRef.current.play();
-    }
+    // Manual reload = a clean, full re-init of the CURRENT channel. Reset the
+    // auto-retry state so the user's tap starts fresh rather than fighting a
+    // queued reconnect.
+    if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); retryTimerRef.current = null; }
+    clearTimeout(stallTimerRef.current);
+    retryRef.current = 0;
+    setReconnecting(0);
+    setError("");
+    setReloadNonce((n) => n + 1);
   };
 
   return (
@@ -286,6 +404,25 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
         <div className="live-overlay live-cover" style={{ position: "absolute", inset: 0, zIndex: 25 }}>
           <p className="live-overlay-title">Channel unavailable</p>
           <p className="live-overlay-sub">{error}</p>
+        </div>
+      )}
+      {/* Auto-reconnect overlay — shown while we keep reloading THIS channel.
+          Lower z-index than the permanent error so a real codec failure wins. */}
+      {reconnecting > 0 && !error && (
+        <div className="live-overlay live-cover" style={{ position: "absolute", inset: 0, zIndex: 24 }}>
+          <span
+            aria-hidden
+            style={{
+              width: 34, height: 34, borderRadius: "50%",
+              border: "3px solid rgba(255,255,255,0.25)",
+              borderTopColor: "#fff",
+              animation: "hlsSpin 0.8s linear infinite",
+              marginBottom: 14
+            }}
+          />
+          <p className="live-overlay-title">Reconnecting…</p>
+          <p className="live-overlay-sub">This channel is taking a moment — retrying automatically (attempt {reconnecting}).</p>
+          <style>{`@keyframes hlsSpin{to{transform:rotate(360deg)}}`}</style>
         </div>
       )}
       {hevcWarning && (

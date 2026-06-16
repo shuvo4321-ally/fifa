@@ -165,7 +165,7 @@ export default function LiveTvPage() {
               lineHeight: "1.4"
             }}>
               <span style={{ fontSize: "16px" }}>⚠️</span>
-              <span>Seeing a stuck screen? Use the <strong>Reload</strong> button in the player controls to reconnect or check next channel.</span>
+              <span>A channel that isn&apos;t live yet <strong>retries on its own</strong> until it plays. Still stuck? Hit <strong>Reload</strong> or skip to the next channel.</span>
             </div>
           </div>
         )}
