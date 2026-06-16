@@ -150,23 +150,6 @@ export default function LiveTvPage() {
               <h2 className="livetv-now-name">{active.name}</h2>
               <p className="livetv-now-meta">{active.group}</p>
             </div>
-            <div style={{ 
-              marginLeft: "auto", 
-              fontSize: "13px", 
-              color: "#fff", 
-              backgroundColor: "rgba(255, 255, 255, 0.1)", 
-              border: "1px solid rgba(255, 255, 255, 0.2)", 
-              padding: "8px 12px", 
-              borderRadius: "8px", 
-              display: "flex", 
-              alignItems: "center", 
-              gap: "8px",
-              maxWidth: "320px",
-              lineHeight: "1.4"
-            }}>
-              <span style={{ fontSize: "16px" }}>⚠️</span>
-              <span>A channel that isn&apos;t live yet <strong>retries on its own</strong> until it plays. Still stuck? Hit <strong>Reload</strong> or skip to the next channel.</span>
-            </div>
           </div>
         )}
 
