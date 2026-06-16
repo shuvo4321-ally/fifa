@@ -8,12 +8,12 @@
  * — leaning on the math when we have real data, on the LLM when we don't.
  */
 
-const BASE_TOTAL_GOALS = 2.6; // typical combined goals in an international match
+const BASE_TOTAL_GOALS = 2.9; // combined expected goals — slightly above the 2.6 international average for WC attacking play
 // Log-linear goal model (see computeBaseline): a rating edge scales expected
 // goals multiplicatively. RATING_SCALE = rating points per unit of supremacy on
 // the log scale; SUP_CAP caps a blowout around 5-0 instead of letting it run away.
-const RATING_SCALE = 15;
-const SUP_CAP = 1.4;
+const RATING_SCALE = 10;  // lower = rating gaps produce bigger goal differences
+const SUP_CAP = 1.8;      // allow genuine mismatches to open up to 4-0 / 5-0
 const FORM_WEIGHT = 3; // rating nudge per point of form-per-game above/below average
 const GD_WEIGHT = 1.2; // rating nudge per goal of recent goal-difference-per-game
 const NEUTRAL_PPG = 1.5; // a .500 record (1W1L) averages 1.5 points per game
