@@ -4063,7 +4063,7 @@ a.search-result:hover {
   padding: 0 var(--space-5);
   opacity: 0;
   transition: opacity 0.3s ease;
-  z-index: 10;
+  z-index: 30; /* above the please-wait / reconnecting / error overlays */
 }
 .custom-controls-bar.is-visible {
   opacity: 1;
@@ -4131,7 +4131,7 @@ a.search-result:hover {
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.3s ease, background 0.2s ease, transform 0.2s ease;
-  z-index: 10;
+  z-index: 30; /* above the please-wait / reconnecting / error overlays */
   pointer-events: none;
 }
 .custom-nav-btn.is-visible {
