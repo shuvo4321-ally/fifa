@@ -35,6 +35,8 @@ export default function HeroTodayList({ rows }) {
       }
     };
     fit();
+    // Disable CSS smooth scrolling so our instantaneous wrap to 0 isn't animated backwards
+    el.style.scrollBehavior = 'auto';
     el.scrollTop = 0;
 
     let raf = 0;
