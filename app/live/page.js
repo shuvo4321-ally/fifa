@@ -60,7 +60,7 @@ export default function PredictionHub() {
     const kb = fixtureKickoffMs(b);
     if (Number.isNaN(ka)) return 1;
     if (Number.isNaN(kb)) return -1;
-    return kb - ka; // Descending: latest date first
+    return ka - kb; // Ascending: earliest date first
   });
 
   const closeModal = useCallback(() => {
