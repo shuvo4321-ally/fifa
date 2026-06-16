@@ -3,7 +3,7 @@
  * Used to fetch real squad data, coaches, and recent results
  * before passing them as RAG context to Gemini.
  */
-import { findRapidTeam, getRapidSquad, getRapidRecentStats } from "./apiFootball.js";
+import { findRapidTeam, getRapidSquad, getRapidRecentStats, getRapidTeamStatistics } from "./apiFootball.js";
 import { supabase } from "./supabase.js";
 import { getWcStandings, lookupWcRecord } from "./wcStandings.js";
 
@@ -179,12 +179,13 @@ export async function buildMatchAnalysis(team1Name, team2Name) {
 
     signal.hasData = true;
 
-    // Fetch squad + recent matches in parallel from both APIs
-    const [details, matches, rapidSquad, rapidStats] = await Promise.all([
+    // Fetch squad + recent matches + team statistics in parallel from both APIs
+    const [details, matches, rapidSquad, rapidStats, rapidTeamStats] = await Promise.all([
       team ? getTeamSquad(team.id) : null,
-      team ? getRecentMatches(team.id, 8) : [],
+      team ? getRecentMatches(team.id, 10) : [],
       rapidTeam ? getRapidSquad(rapidTeam.id) : [],
-      rapidTeam ? getRapidRecentStats(rapidTeam.id) : []
+      rapidTeam ? getRapidRecentStats(rapidTeam.id) : [],
+      rapidTeam ? getRapidTeamStatistics(rapidTeam.id) : null
     ]);
 
     let section = `\n## ${name}`;
@@ -356,6 +357,49 @@ export async function buildMatchAnalysis(team1Name, team2Name) {
         signal.gf = gf;
         signal.ga = ga;
         section += `\n**Form (last ${ordered.length}):** ${w}W ${d}D ${l}L — ${gf} goals scored, ${ga} conceded\n`;
+      }
+    }
+
+    // ── API-Football team statistics (goals, clean sheets, form) ──
+    // Enriches the signal with detailed season-level stats from API-Football.
+    if (rapidTeamStats) {
+      const goals = rapidTeamStats.goals;
+      const fixtures = rapidTeamStats.fixtures;
+      const cleanSheets = rapidTeamStats.clean_sheet;
+
+      if (goals?.for?.total?.total && goals?.against?.total?.total && fixtures?.played?.total) {
+        const played = fixtures.played.total;
+        const goalsFor = goals.for.total.total;
+        const goalsAgainst = goals.against.total.total;
+        const avgFor = goals.for.average?.total || (goalsFor / played).toFixed(1);
+        const avgAgainst = goals.against.average?.total || (goalsAgainst / played).toFixed(1);
+        const csTotal = cleanSheets?.total || 0;
+
+        section += `\n### Season Statistics (API-Football)\n`;
+        section += `**Played:** ${played} | **Goals For:** ${goalsFor} (avg ${avgFor}/game) | **Goals Against:** ${goalsAgainst} (avg ${avgAgainst}/game)\n`;
+        section += `**Clean Sheets:** ${csTotal} | **Failed to Score:** ${rapidTeamStats.failed_to_score?.total || 0}\n`;
+
+        if (fixtures.wins?.total != null) {
+          section += `**Record:** ${fixtures.wins.total}W ${fixtures.draws?.total || 0}D ${fixtures.loses?.total || 0}L\n`;
+        }
+        if (rapidTeamStats.form) {
+          section += `**Form String:** ${rapidTeamStats.form}\n`;
+        }
+
+        // Use these stats to enhance the signal's goals data if we don't have
+        // enough from recent fixtures alone
+        if (!signal.form || signal.form.played < 3) {
+          signal.gf = goalsFor;
+          signal.ga = goalsAgainst;
+          if (fixtures.wins?.total != null) {
+            signal.form = {
+              w: fixtures.wins.total,
+              d: fixtures.draws?.total || 0,
+              l: fixtures.loses?.total || 0,
+              played: played
+            };
+          }
+        }
       }
     }
 
