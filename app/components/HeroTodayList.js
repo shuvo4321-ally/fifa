@@ -25,10 +25,16 @@ export default function HeroTodayList({ rows }) {
     // Cap the height to ~VISIBLE_ROWS, measured from the real rows (their height
     // differs desktop vs mobile), so anything beyond that has to scroll in.
     const fit = () => {
-      const items = [...el.children];
-      if (rows.length > VISIBLE_ROWS && items.length > VISIBLE_ROWS) {
-        el.style.maxHeight = `${items[VISIBLE_ROWS].offsetTop + PEEK}px`;
-        wrapPoint = items[rows.length]?.offsetTop || el.scrollHeight / 2;
+      if (rows.length > VISIBLE_ROWS && el.children.length > VISIBLE_ROWS) {
+        const visibleItemTop = el.children[VISIBLE_ROWS].offsetTop;
+        const wrapItemTop = el.children[rows.length] ? el.children[rows.length].offsetTop : (el.scrollHeight / 2);
+        
+        if (visibleItemTop > 0) {
+          el.style.maxHeight = `${visibleItemTop + PEEK}px`;
+        }
+        if (wrapItemTop > 0) {
+          wrapPoint = wrapItemTop;
+        }
       } else {
         el.style.maxHeight = "";
         wrapPoint = 0;
@@ -48,6 +54,11 @@ export default function HeroTodayList({ rows }) {
       raf = requestAnimationFrame(loop);
       const dt = Math.min((now - last) / 1000, 0.05); // clamp tab-switch jumps
       last = now;
+
+      // If the layout wasn't ready on mount, keep trying until we get a valid wrapPoint
+      if (wrapPoint <= 0 && overflows()) {
+        fit();
+      }
 
       // If paused or not overflowing, just sync our float tracker to reality
       if (Date.now() < pauseUntil.current || !overflows() || wrapPoint <= 0) {
