@@ -21,14 +21,17 @@ export default function HeroTodayList({ rows }) {
     const el = scrollRef.current;
     if (!el) return;
 
+    let wrapPoint = 0;
     // Cap the height to ~VISIBLE_ROWS, measured from the real rows (their height
     // differs desktop vs mobile), so anything beyond that has to scroll in.
     const fit = () => {
       const items = [...el.children];
       if (rows.length > VISIBLE_ROWS && items.length > VISIBLE_ROWS) {
         el.style.maxHeight = `${items[VISIBLE_ROWS].offsetTop + PEEK}px`;
+        wrapPoint = items[rows.length]?.offsetTop || el.scrollHeight / 2;
       } else {
         el.style.maxHeight = "";
+        wrapPoint = 0;
       }
     };
     fit();
@@ -36,23 +39,34 @@ export default function HeroTodayList({ rows }) {
 
     let raf = 0;
     let last = performance.now();
+    let currentY = 0;
     const overflows = () => rows.length > VISIBLE_ROWS;
 
     const loop = (now) => {
       raf = requestAnimationFrame(loop);
       const dt = Math.min((now - last) / 1000, 0.05); // clamp tab-switch jumps
       last = now;
-      if (Date.now() < pauseUntil.current || !overflows()) return;
 
-      const items = [...el.children];
-      // The point where the duplicate items start is the offsetTop of the first duplicate.
-      const wrapPoint = items[rows.length] ? items[rows.length].offsetTop : el.scrollHeight / 2;
-      
-      let next = el.scrollTop + SPEED * dt;
-      if (next >= wrapPoint) { 
-        next -= wrapPoint; // Seamless wrap
+      // If paused or not overflowing, just sync our float tracker to reality
+      if (Date.now() < pauseUntil.current || !overflows() || wrapPoint <= 0) {
+        currentY = el.scrollTop;
+        return;
       }
-      el.scrollTop = next;
+
+      // If user manually scrolled, el.scrollTop will diverge from currentY.
+      // Browsers truncate scrollTop, so tolerate up to 2px of difference.
+      if (Math.abs(el.scrollTop - currentY) > 2) {
+        currentY = el.scrollTop;
+      }
+
+      currentY += SPEED * dt;
+      
+      if (currentY >= wrapPoint) { 
+        currentY -= wrapPoint; // Seamless wrap
+      }
+      
+      // Only write to DOM, never read from it in the hot loop
+      el.scrollTop = currentY;
     };
     raf = requestAnimationFrame(loop);
 
