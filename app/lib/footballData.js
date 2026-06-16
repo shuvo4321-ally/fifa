@@ -405,20 +405,20 @@ export async function buildMatchAnalysis(team1Name, team2Name) {
 
     // ── Actual World Cup form (highest priority) ──
     // Once a team has played a group game, its real tournament record is the most
-    // predictive recent form — and ESPN standings reach Vercel — so it overrides
-    // the pre-tournament form above. Falls back to that form before kickoff (gp 0).
+    // predictive recent form — computed locally from our own live scores, no ESPN
+    // API needed. Falls back to pre-tournament form before kickoff (gp 0).
     const wcRec = lookupWcRecord(wcStandings, name);
     if (wcRec && wcRec.gp > 0) {
       signal.form = { w: wcRec.w, d: wcRec.d, l: wcRec.l, played: wcRec.gp };
-      // Standings expose GD only; encode it so (gf - ga) / played === gd / gp.
-      signal.gf = wcRec.gd > 0 ? wcRec.gd : 0;
-      signal.ga = wcRec.gd < 0 ? -wcRec.gd : 0;
+      // Now we have actual gf/ga from our local standings computation
+      signal.gf = wcRec.gf;
+      signal.ga = wcRec.ga;
       signal.outcomes = [
         ...Array(wcRec.w).fill("W"),
         ...Array(wcRec.d).fill("D"),
         ...Array(wcRec.l).fill("L"),
       ];
-      section += `\n**World Cup group form:** ${wcRec.w}W ${wcRec.d}D ${wcRec.l}L — GD ${wcRec.gd > 0 ? "+" : ""}${wcRec.gd}, ${wcRec.pts} pts\n`;
+      section += `\n**World Cup group form:** ${wcRec.w}W ${wcRec.d}D ${wcRec.l}L — GF ${wcRec.gf}, GA ${wcRec.ga}, GD ${wcRec.gd > 0 ? "+" : ""}${wcRec.gd}, ${wcRec.pts} pts\n`;
     }
 
     parts.push(section);
