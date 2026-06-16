@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
 
-// Route an HLS manifest through our same-origin Edge proxy. This is what makes
+// Route an HLS manifest through our same-origin proxy. This is what makes
 // channels start fast: the browser reuses the page's warm connection instead of
 // a cold DNS+TLS handshake to a distant CDN, and CORS / mixed-content / geo
 // blocks disappear. The proxy rewrites the manifest so segments come through it
