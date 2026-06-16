@@ -884,9 +884,12 @@ a.search-result:hover {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 178px;            /* ~4 rows; JS refines this precisely */
+  max-height: 178px;            /* JS refines this to ~3 rows precisely */
+  /* Hand-scroll ON, plus a smooth rAF infinite auto-scroll. The seamless wrap
+     fires only at the loop boundary (not every frame), so the user's scroll
+     momentum is never fought — that constant fight was the stutter. */
   overflow-y: auto;
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   scrollbar-width: none;        /* Firefox */
   -ms-overflow-style: none;     /* legacy Edge */
   /* soft fade top & bottom so a clipped row reads as "there's more" */

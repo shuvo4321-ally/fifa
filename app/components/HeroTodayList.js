@@ -4,45 +4,42 @@ import { useEffect, useRef } from "react";
 import HeroMatchRow from "./HeroMatchRow";
 
 /**
- * The hero's fixtures list. It caps itself to ~4 rows and continuously
- * auto-scrolls through the rest in an infinite loop, so every game glides
- * into view — with NO visible scrollbar. The user can still scroll it by
- * hand, which pauses the auto-scroll for a few seconds.
+ * The hero's fixtures list: a continuous, seamless INFINITE auto-scroll. The
+ * rows are duplicated once so the loop wraps back to the top invisibly. It caps
+ * to ~3 rows and keeps looping until only the last 3 matches remain (then it's
+ * static). Hovering (desktop) or touching (mobile) pauses it so you can read —
+ * we never write scrollTop while paused, so the browser is never fought and it
+ * can't stutter.
  */
-const VISIBLE_ROWS = 4;
+const VISIBLE_ROWS = 3; // show 3; keep looping until only the last 3 remain
 const PEEK = 14;        // show a sliver of the next row → reads as "there's more"
 const SPEED = 26;       // px per second
 
 export default function HeroTodayList({ rows }) {
   const scrollRef = useRef(null);
   const pauseUntil = useRef(0);
+  const hovering = useRef(false);
 
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
 
     let wrapPoint = 0;
-    // Cap the height to ~VISIBLE_ROWS, measured from the real rows (their height
-    // differs desktop vs mobile), so anything beyond that has to scroll in.
+    // Cap the visible height to ~VISIBLE_ROWS, and find the wrap point (one full
+    // set of rows) — both measured from the real DOM since row height differs
+    // desktop vs mobile.
     const fit = () => {
-      if (rows.length > VISIBLE_ROWS && el.children.length > VISIBLE_ROWS) {
-        const visibleItemTop = el.children[VISIBLE_ROWS].offsetTop;
-        const wrapItemTop = el.children[rows.length] ? el.children[rows.length].offsetTop : (el.scrollHeight / 2);
-        
-        if (visibleItemTop > 0) {
-          el.style.maxHeight = `${visibleItemTop + PEEK}px`;
-        }
-        if (wrapItemTop > 0) {
-          wrapPoint = wrapItemTop;
-        }
+      if (rows.length > VISIBLE_ROWS && el.children.length > rows.length) {
+        const capTop = el.children[VISIBLE_ROWS].offsetTop;    // top of the 4th row
+        const setHeight = el.children[rows.length].offsetTop;  // top of the 1st duplicate = one full set
+        if (capTop > 0) el.style.maxHeight = `${capTop + PEEK}px`;
+        if (setHeight > 0) wrapPoint = setHeight;
       } else {
         el.style.maxHeight = "";
         wrapPoint = 0;
       }
     };
     fit();
-    // Disable CSS smooth scrolling so our instantaneous wrap to 0 isn't animated backwards
-    el.style.scrollBehavior = 'auto';
     el.scrollTop = 0;
 
     let raf = 0;
@@ -55,30 +52,28 @@ export default function HeroTodayList({ rows }) {
       const dt = Math.min((now - last) / 1000, 0.05); // clamp tab-switch jumps
       last = now;
 
-      // If the layout wasn't ready on mount, keep trying until we get a valid wrapPoint
-      if (wrapPoint <= 0 && overflows()) {
-        fit();
-      }
+      if (wrapPoint <= 0 && overflows()) fit(); // layout settled late
 
-      // Few enough matches that they all fit (e.g. the last 3) → no looping and
-      // no duplicate copy is shown; just stay pinned at the top.
-      if (!overflows() || wrapPoint <= 0) {
-        currentY = el.scrollTop;
+      // Static (≤3 matches) → freeze.
+      if (!overflows() || wrapPoint <= 0) { currentY = el.scrollTop; return; }
+
+      let pos = el.scrollTop; // single read
+      // Seamless wrap for BOTH auto- and hand-scrolling: the moment we cross into
+      // the duplicated copy, snap back by one full set. It's identical content so
+      // the snap is invisible, and it fires only at the boundary (once per loop) —
+      // NOT every frame — so it never fights the user's momentum the way the old
+      // clamp did (that constant fight is what stuttered).
+      if (pos >= wrapPoint) { pos -= wrapPoint; el.scrollTop = pos; }
+
+      // Paused (hover / touch / drag) → let the user scroll freely; don't
+      // auto-advance, just keep our tracker in sync.
+      if (hovering.current || Date.now() < pauseUntil.current) {
+        currentY = pos;
         return;
       }
 
-      // While the user is hand-scrolling, keep them within the REAL matches only.
-      // Clamping just before the duplicated copy means the repeat is never visible.
-      if (Date.now() < pauseUntil.current) {
-        const maxReal = Math.max(0, wrapPoint - el.clientHeight);
-        if (el.scrollTop > maxReal) el.scrollTop = maxReal;
-        currentY = el.scrollTop;
-        return;
-      }
-
-      // Auto-scroll: glide down and seamlessly wrap through the duplicate copy
-      // (it's identical, so the wrap is invisible).
-      if (Math.abs(el.scrollTop - currentY) > 2) currentY = el.scrollTop;
+      // Auto-advance. Resync first in case the user just hand-scrolled.
+      if (Math.abs(pos - currentY) > 2) currentY = pos;
       currentY += SPEED * dt;
       if (currentY >= wrapPoint) currentY -= wrapPoint;
       el.scrollTop = currentY;
@@ -92,21 +87,23 @@ export default function HeroTodayList({ rows }) {
     };
   }, [rows.length]);
 
-  // Any manual scroll / touch pauses the auto-scroll briefly.
+  // Pause the loop briefly on touch / wheel so a mobile tap-and-read works.
   const pause = () => { pauseUntil.current = Date.now() + 6000; };
 
   return (
     <div
       className="hero-today-scroll"
       ref={scrollRef}
+      onMouseEnter={() => { hovering.current = true; }}
+      onMouseLeave={() => { hovering.current = false; }}
       onPointerDown={pause}
-      onWheel={pause}
       onTouchStart={pause}
+      onWheel={pause}
     >
       {rows.map((m, i) => (
         <HeroMatchRow key={i} m={m} />
       ))}
-      {/* Duplicate rows for infinite scroll if there's an overflow */}
+      {/* Duplicate copy makes the loop seamless; only rendered when it loops. */}
       {rows.length > VISIBLE_ROWS && rows.map((m, i) => (
         <HeroMatchRow key={`dup-${i}`} m={m} />
       ))}
