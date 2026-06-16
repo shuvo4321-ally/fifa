@@ -3,6 +3,7 @@ import Header from "./components/Header";
 import { GROUPS_2026 } from "./data/schedule2026";
 import { Hanken_Grotesk } from "next/font/google";
 import Script from "next/script";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const hankenGrotesk = Hanken_Grotesk({
   subsets: ["latin"],
@@ -32,6 +33,7 @@ export default function RootLayout({ children }) {
         />
         <Header />
         {children}
+        <SpeedInsights />
       </body>
     </html>
   );
