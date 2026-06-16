@@ -1,20 +1,24 @@
 import { TV_CHANNELS } from "../../data/tvChannels";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Same-origin HLS proxy (Edge runtime).
+// Same-origin HLS proxy (Node.js runtime).
 //
 // Why this exists: loading an .m3u8 straight from a far-off IPTV CDN means the
 // browser pays a fresh DNS + TLS handshake per channel, fights missing CORS
 // headers, and can be geo-blocked or mixed-content-blocked on our HTTPS deploy.
 // Routing the manifest + every segment through THIS origin reuses the page's
-// already-warm HTTP/2 connection, kills CORS, upgrades HTTP→HTTPS, and lets the
-// edge cache segments near the viewer — which is what makes the player start
-// fast (the trick tv.shajon.dev uses).
+// already-warm HTTP/2 connection, kills CORS, and upgrades HTTP→HTTPS — which is
+// what makes the player start fast (the trick tv.shajon.dev uses).
+//
+// Runtime note: kept on the default Node.js runtime. The Edge runtime failed to
+// deploy on Vercel for this route; Node serverless delivers the same proxy
+// behaviour (only a marginally higher cold start). To move the bytes off Vercel's
+// bandwidth quota, deploy the Cloudflare Worker in /cloudflare instead.
 //
 // Only plain HLS is proxied. DASH/ClearKey channels are left untouched.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const PROXY_PATH = "/api/proxy";
