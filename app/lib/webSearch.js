@@ -16,6 +16,7 @@ async function tryTavily(query) {
           include_answer: false,
           max_results: 3
         }),
+        signal: AbortSignal.timeout(2500)
       });
 
       if (res.ok) {
@@ -48,7 +49,8 @@ async function trySerper(query) {
           "X-API-KEY": key,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ q: query })
+        body: JSON.stringify({ q: query }),
+        signal: AbortSignal.timeout(2500)
       });
 
       if (res.ok) {
