@@ -49,27 +49,6 @@ export const TV_CHANNELS = [
     type: "hls"
   },
   {
-    name: "Tapmad (FIFA)",
-    logo: "https://tapmad-tv-tapmad-tv.en.aptoide.com/_next/image?url=https%3A%2F%2Fcdn.aptoide.com%2Fimgs%2F1%2F6%2F0%2F1600fc18ab2b5109bfe2cb72fb7af2f5_fgraphic.png&w=3840&q=60",
-    group: "FIFA",
-    url: "https://premierleagpl23.akamaized.net/hls/live/2107108/tapmad-P2s6L_FiN@L-UrU/level_0.m3u8",
-    type: "hls"
-  },
-  {
-    name: "TVRI",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/TVRILogo2019.svg/1280px-TVRILogo2019.svg.png",
-    group: "FIFA",
-    url: "https://ott-balancer.tvri.go.id/live/eds/SportHD/hls/SportHD.m3u8",
-    type: "hls"
-  },
-  {
-    name: "Sport UZ",
-    logo: "https://play-lh.googleusercontent.com/fX31aCtiuNIFEhRrF0rqZ3tj38cn8KQrrMmF5YZHULzm8qH7Dhr_RAOhg5gQhCJQcsAQ",
-    group: "FIFA",
-    url: "https://stream8.cinerama.uz/1004/tracks-v1a1/mono.m3u8",
-    type: "hls"
-  },
-  {
     name: "FOX ONE (ENG)",
     logo: "https://cdn.broadbandtvnews.com/wp-content/uploads/2025/05/13115423/Fox-One-Logo.jpg",
     group: "Sports",
@@ -86,17 +65,6 @@ export const TV_CHANNELS = [
     url: "https://1nyaler.streamhostingcdn.top/stream/32/index.m3u8",
     type: "hls"
   },
-
-  {
-    name: "FUSSBALL TV",
-    logo: "https://github.com/user-attachments/assets/8ccc2603-16a1-47a6-bd16-2f783da7f28d",
-    group: "FIFA",
-    url: "https://svc45.main.sl.t-online.de/bpk-tv/KID01037_FUSSBALLTV1_hd/DASH/index.mpd",
-    type: "dash",
-    kid: "1cb20afcd9d979c833cfd208c7d3eeb2",
-    key: "fef0c15b4a523370892edd5e4133c269"
-  },
-
 
   {
     name: "FIFA CTV - English (1080p)",
