@@ -125,7 +125,9 @@ async function refresh() {
 }
 
 // Shared subscription + adaptive poll lifecycle, used by every consumer below.
-function useScoresTick() {
+// Exported so a list (e.g. the Prediction hub) can subscribe and re-render the
+// moment results change, dropping finished matches immediately.
+export function useScoresTick() {
   const [, setTick] = useState(0);
   useEffect(() => {
     hydrate();

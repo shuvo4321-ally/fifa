@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { FIXTURES_2026, GROUPS_2026 } from "../data/schedule2026";
+import { getLiveScoreSync, useScoresTick } from "../lib/liveScores";
 
 // Build a name → flag lookup once from the group data.
 const FLAGS = {};
@@ -53,9 +54,18 @@ export default function PredictionHub() {
     return () => clearInterval(id);
   }, []);
 
-  const upcomingFixtures = FIXTURES_2026.filter(
-    (f) => f.stage === "Group Stage" && !isFixtureOver(f, now)
-  ).sort((a, b) => {
+  // Subscribe to the shared live-score snapshot so the list re-renders — and a
+  // finished match drops — the instant a result lands, not 2.5h after kickoff.
+  useScoresTick();
+
+  const upcomingFixtures = FIXTURES_2026.filter((f) => {
+    if (f.stage !== "Group Stage" || isFixtureOver(f, now)) return false;
+    // Drop immediately once the live feed marks it finished.
+    const [t1, t2] = splitMatch(f.match);
+    const live = getLiveScoreSync(t1, t2);
+    if (live && live.status === "FINISHED") return false;
+    return true;
+  }).sort((a, b) => {
     const ka = fixtureKickoffMs(a);
     const kb = fixtureKickoffMs(b);
     if (Number.isNaN(ka)) return 1;
@@ -86,7 +96,20 @@ export default function PredictionHub() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type: "predict", match: matchStr }),
       });
-      const data = await res.json();
+      // Parse defensively: on a serverless timeout/crash the platform returns an
+      // HTML error page, not JSON. Reading text first lets us show a clear,
+      // actionable message instead of a raw "Unexpected token '<'".
+      const raw = await res.text();
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        throw new Error(
+          res.status === 504 || res.status === 502 || /<!doctype|<html/i.test(raw)
+            ? "The prediction took too long and timed out. Please tap Try again."
+            : "The prediction service had a hiccup. Please tap Try again."
+        );
+      }
       if (!res.ok) throw new Error(data.error || "Failed to fetch prediction");
       if (data.prediction) setPrediction(data.prediction);
       else if (data.text) setPredictionText(data.text);
