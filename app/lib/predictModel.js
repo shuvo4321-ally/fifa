@@ -28,6 +28,19 @@ function poisson(k, lambda) {
   return (Math.pow(lambda, k) * Math.exp(-lambda)) / factorial(k);
 }
 
+// Dixon-Coles low-score dependency correction. Independent Poisson systematically
+// under-predicts 0-0 and 1-1 and over-predicts 1-0 / 0-1; this tau re-weights just
+// those four cells (rho < 0) so the grid matches real football. A pure calibration
+// fix — strictly more correct, no trade-off.
+const DC_RHO = -0.12;
+function dcTau(i, j, lambdaA, lambdaB) {
+  if (i === 0 && j === 0) return 1 - lambdaA * lambdaB * DC_RHO;
+  if (i === 0 && j === 1) return 1 + lambdaA * DC_RHO;
+  if (i === 1 && j === 0) return 1 + lambdaB * DC_RHO;
+  if (i === 1 && j === 1) return 1 - DC_RHO;
+  return 1;
+}
+
 function clamp(x, lo, hi) {
   return Math.max(lo, Math.min(hi, x));
 }
@@ -65,15 +78,19 @@ function teamStrength(s) {
     }
   }
 
+  // Shrink the form/goal-difference nudge by sample size so a single fluke
+  // result (e.g. one 4-0 win) can't masquerade as elite form — it earns its
+  // full weight only over several games. Regression to the mean = less overfit.
+  const formConfidence = played / (played + 4); // 1g → .2, 3g → .43, 6g → .6
   if (rating == null) {
     // No squad rating — synthesise one from form so the model still runs.
     rating =
       70 +
-      (formPpg != null ? (formPpg - NEUTRAL_PPG) * 6 : 0) +
-      (gdpg != null ? gdpg * 2 : 0);
+      (formPpg != null ? (formPpg - NEUTRAL_PPG) * 6 * formConfidence : 0) +
+      (gdpg != null ? gdpg * 2 * formConfidence : 0);
   } else if (formPpg != null) {
     // Nudge the talent rating by recent momentum.
-    rating += (formPpg - NEUTRAL_PPG) * FORM_WEIGHT + (gdpg != null ? gdpg * GD_WEIGHT : 0);
+    rating += ((formPpg - NEUTRAL_PPG) * FORM_WEIGHT + (gdpg != null ? gdpg * GD_WEIGHT : 0)) * formConfidence;
   }
 
   // Win/loss streak bonus: consecutive recent wins boost confidence, losses dampen it.
@@ -107,14 +124,6 @@ export function dataCoverage(signalA, signalB) {
   return (Number(hasRA) + Number(hasRB) + Number(hasFA) + Number(hasFB)) / 4;
 }
 
-/** Simple string hash → 0..1 (deterministic, varies per matchup). */
-function hashSeed(rA, rB) {
-  // Use the decimal parts of the ratings as a seed so different matchups
-  // with similar gaps still pick different scorelines.
-  const x = (rA * 137.3 + rB * 251.7) % 1;
-  return Math.abs(x);
-}
-
 /** Win/Draw/Loss baseline + expected scoreline from two team signals. */
 export function computeBaseline(signalA, signalB) {
   const strA = teamStrength(signalA);
@@ -142,22 +151,27 @@ export function computeBaseline(signalA, signalB) {
     lambdaB = clamp(lambdaB * (1 + atkEdge * 0.5), 0.15, 5.5);
   }
 
-  // 2. Actual goals-per-game from recent matches: if a team scores 2.5 goals/game
-  //    on average, they should be predicted higher than a team scoring 0.8.
+  // 2. Actual goals-per-game from recent matches, SHRUNK toward the model by
+  //    sample size (regression to the mean). With few games the per-game rate is
+  //    noisy, so we trust it little; a sustained multi-game scoring run earns
+  //    more weight. This captures a genuinely hot attack without overfitting a
+  //    single fluke result — improving accuracy rather than just inflating goals.
+  const games = Math.min(signalA?.form?.played || 0, signalB?.form?.played || 0);
+  const wReal = games / (games + 4); // 0 (no data) → .43 (3 games) → .5 (4) → .67 (8)
   if (strA.gpg != null && strB.gapg != null) {
     const realGoalSignal = (strA.gpg + strB.gapg) / 2;  // avg of A's scoring + B's conceding
-    lambdaA = clamp(0.6 * lambdaA + 0.4 * realGoalSignal, 0.15, 5.5);
+    lambdaA = clamp((1 - wReal) * lambdaA + wReal * realGoalSignal, 0.15, 5.5);
   }
   if (strB.gpg != null && strA.gapg != null) {
     const realGoalSignal = (strB.gpg + strA.gapg) / 2;
-    lambdaB = clamp(0.6 * lambdaB + 0.4 * realGoalSignal, 0.15, 5.5);
+    lambdaB = clamp((1 - wReal) * lambdaB + wReal * realGoalSignal, 0.15, 5.5);
   }
 
   let winA = 0, draw = 0, winB = 0;
   const scorelines = []; // { score, prob }
   for (let i = 0; i <= 8; i++) {
     for (let j = 0; j <= 8; j++) {
-      const p = poisson(i, lambdaA) * poisson(j, lambdaB);
+      const p = dcTau(i, j, lambdaA, lambdaB) * poisson(i, lambdaA) * poisson(j, lambdaB);
       if (i > j) winA += p;
       else if (i === j) draw += p;
       else winB += p;
@@ -169,21 +183,11 @@ export function computeBaseline(signalA, signalB) {
   const d = Math.round((draw / total) * 100);
   const b = 100 - a - d;
 
-  // Pick from the top likely scorelines using team-specific data as a seed,
-  // so different matchups produce different scores even with similar gaps.
+  // The single most accurate point estimate is the MODE — the most-probable
+  // scoreline. It also self-adjusts correctly: a dominant side gets its big
+  // score, two defensive sides get a low draw, evenly-matched sides get 1-1.
   scorelines.sort((x, y) => y.prob - x.prob);
-  const topN = scorelines.slice(0, 5);
-  const seed = hashSeed(ratingA, ratingB);
-  const totalTopProb = topN.reduce((s, x) => s + x.prob, 0);
-  let cumulative = 0;
-  let pickedScore = topN[0].score;
-  for (const sl of topN) {
-    cumulative += sl.prob / totalTopProb;
-    if (seed < cumulative) {
-      pickedScore = sl.score;
-      break;
-    }
-  }
+  const pickedScore = scorelines[0].score;
 
   return {
     winA: a,
