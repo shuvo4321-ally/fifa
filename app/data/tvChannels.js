@@ -53,14 +53,6 @@ export const TV_CHANNELS = [
     url: "http://znty.dyndns.org:5010/hls/eleven1.m3u8",
     type: "hls"
   },
-
-  {
-    name: "LOL",
-    logo: "https://i.ibb.co.com/S7tZS6cg/Bein-Sports-1-Direct.png",
-    group: "FIFA",
-    url: "https://1nyaler.streamhostingcdn.top/stream/23/index.m3u8",
-    type: "hls"
-  },
   {
     name: "BEIN Sports 1",
     logo: "https://images.seeklogo.com/logo-png/48/1/bein-sports-1-logo-png_seeklogo-481583.png",
