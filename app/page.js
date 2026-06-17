@@ -124,6 +124,9 @@ export default function Home() {
   const openLegend = (legend) => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     window.history.pushState(null, '', '#' + legend.id);
+    // pushState is silent (no hashchange event fires), so open the theater
+    // directly — otherwise the card click only changed the URL and nothing opened.
+    setActiveLegend(legend);
   };
 
   const backToHome = () => {
