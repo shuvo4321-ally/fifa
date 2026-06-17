@@ -2,7 +2,6 @@ import "./globals.css";
 import Header from "./components/Header";
 import { GROUPS_2026 } from "./data/schedule2026";
 import { Hanken_Grotesk } from "next/font/google";
-import Script from "next/script";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const hankenGrotesk = Hanken_Grotesk({
@@ -27,10 +26,9 @@ export default function RootLayout({ children }) {
         ))}
       </head>
       <body>
-        <Script
-          src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.7/shaka-player.compiled.js"
-          strategy="beforeInteractive"
-        />
+        {/* Shaka Player is loaded on demand by HlsPlayer only when a DASH
+            channel actually plays — not site-wide — so it's off every other
+            page and doesn't trip React 19's "script tag while rendering". */}
         <Header />
         {children}
         <SpeedInsights />
