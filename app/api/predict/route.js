@@ -229,23 +229,30 @@ export async function POST(request) {
     let webNewsStr = "";
 
     if (teams.length === 2) {
-      const [analysis, h2hNews, teamANews, teamBNews] = await Promise.all([
-        buildMatchAnalysis(teams[0], teams[1]),
-        fetchWebSearch(`${teams[0]} vs ${teams[1]} head to head football match records history`),
-        fetchWebSearch(`${teams[0]} national football team latest news injuries suspensions squad`),
-        fetchWebSearch(`${teams[1]} national football team latest news injuries suspensions squad`),
-      ]);
-      liveDataStr = analysis.context;
-      signalA = analysis.signalA;
-      signalB = analysis.signalB;
+      // Degrade gracefully: if the RAG data fetch fails, still produce a
+      // prediction from Gemini (with whatever baseline we have) instead of
+      // crashing the route into a 500/HTML error page.
+      try {
+        const [analysis, h2hNews, teamANews, teamBNews] = await Promise.all([
+          buildMatchAnalysis(teams[0], teams[1]),
+          fetchWebSearch(`${teams[0]} vs ${teams[1]} head to head football match records history`),
+          fetchWebSearch(`${teams[0]} national football team latest news injuries suspensions squad`),
+          fetchWebSearch(`${teams[1]} national football team latest news injuries suspensions squad`),
+        ]);
+        liveDataStr = analysis.context;
+        signalA = analysis.signalA;
+        signalB = analysis.signalB;
 
-      const newsParts = [];
-      if (h2hNews) newsParts.push(`### Head-to-Head Records & History:\n${h2hNews}`);
-      if (teamANews) newsParts.push(`### ${teams[0]} Latest News & Injury Updates:\n${teamANews}`);
-      if (teamBNews) newsParts.push(`### ${teams[1]} Latest News & Injury Updates:\n${teamBNews}`);
-      webNewsStr = newsParts.join("\n\n");
+        const newsParts = [];
+        if (h2hNews) newsParts.push(`### Head-to-Head Records & History:\n${h2hNews}`);
+        if (teamANews) newsParts.push(`### ${teams[0]} Latest News & Injury Updates:\n${teamANews}`);
+        if (teamBNews) newsParts.push(`### ${teams[1]} Latest News & Injury Updates:\n${teamBNews}`);
+        webNewsStr = newsParts.join("\n\n");
 
-      baseline = computeBaseline(signalA, signalB);
+        baseline = computeBaseline(signalA, signalB);
+      } catch (e) {
+        console.warn("RAG data fetch failed, predicting without it:", e?.message ?? e);
+      }
     }
 
     const newsContext = webNewsStr
