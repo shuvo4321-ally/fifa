@@ -8,10 +8,8 @@ export const TV_CHANNELS = [
     name: "D Sports",
     logo: "https://upload.wikimedia.org/wikipedia/commons/5/5a/DSports.png",
     group: "FIFA",
-    url: "https://otte.live.fly.ww.aiv-cdn.net/gru-nitro/live/clients/dash/enc/ubehitlwzo/out/v1/8e09c381a51f4366a19e979418112e8f/cenc.mpd",
-    type: "dash",
-    kid: "a7d11d37a1f7611ee88d4db880171f32",
-    key: "68f96d618b0b956b008c445896a25a79"
+    url: "https://1nyaler.streamhostingcdn.top/stream/106/index.m3u8",
+    type: "hls"
   },
 
   {
@@ -49,12 +47,13 @@ export const TV_CHANNELS = [
     type: "hls"
   },
   {
-    name: "Somoy TV",
-    logo: "https://s3.aynaott.com/storage/ece71c1163a377fbe2d93f9d28c34f60",
+    name: "DAZN 1",
+    logo: "https://i.postimg.cc/Kc3mP7Qt/cbimage.png",
     group: "FIFA",
-    url: "https://live.thebosstv.com:30443/dwlive/Somoy-TV/chunks.m3u8",
+    url: "http://znty.dyndns.org:5010/hls/eleven1.m3u8",
     type: "hls"
   },
+
   {
     name: "LOL",
     logo: "https://i.ibb.co.com/S7tZS6cg/Bein-Sports-1-Direct.png",
@@ -70,13 +69,11 @@ export const TV_CHANNELS = [
     type: "hls"
   },
   {
-    name: "FOX ONE (ENG)",
+    name: "FOX English",
     logo: "https://cdn.broadbandtvnews.com/wp-content/uploads/2025/05/13115423/Fox-One-Logo.jpg",
-    group: "Sports",
-    url: "https://otte-tim.live.pv-cdn.net/pdx-nitro/live/clients/dash/enc/ajfoeddkbz/out/v1/b78800b9b2304879b15843f455836829/cenc.mpd",
-    type: "dash",
-    kid: "f6564ec2aee819046328a0e153be574d",
-    key: "ff46a8a1031eb27ef22576a077c98ab7"
+    group: "FIFA",
+    url: "https://1nyaler.streamhostingcdn.top/stream/26/index.m3u8",
+    type: "hls"
   },
 
   {
@@ -103,5 +100,19 @@ export const TV_CHANNELS = [
     group: "FIFA",
     url: "https://d1211whpimeups.cloudfront.net/smil:rtbgo/chunklist.m3u8",
     type: "hls"
+  },
+  {
+    name: "Football World Cup 2026",
+    logo: "https://carboncredits.com/wp-content/uploads/2025/09/shutterstock_2306088965-e1757112807302.jpg",
+    group: "FIFA",
+    url: "http://starhub.pro/live/farhat-3379/67897-913379/744524.ts",
+    type: "ts"
+  },
+  {
+    name: "Football World Cup 2026 4K",
+    logo: "https://carboncredits.com/wp-content/uploads/2025/09/shutterstock_2306088965-e1757112807302.jpg",
+    group: "FIFA",
+    url: "http://starhub.pro/live/farhat-3379/67897-913379/744527.ts",
+    type: "ts"
   }
 ];
