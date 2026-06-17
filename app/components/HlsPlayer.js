@@ -13,6 +13,24 @@ function proxify(u) {
   return `/api/proxy?url=${encodeURIComponent(u)}`;
 }
 
+// Load Shaka Player on demand — only when a DASH channel actually plays — instead
+// of site-wide. Cached so it's injected once; resolves when window.shaka is ready.
+let shakaPromise = null;
+function ensureShaka() {
+  if (typeof window === "undefined") return Promise.reject(new Error("no window"));
+  if (window.shaka) return Promise.resolve();
+  if (shakaPromise) return shakaPromise;
+  shakaPromise = new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.7/shaka-player.compiled.js";
+    s.async = true;
+    s.onload = () => (window.shaka ? resolve() : reject(new Error("Shaka loaded but window.shaka missing")));
+    s.onerror = () => { shakaPromise = null; reject(new Error("Failed to load Shaka Player")); };
+    document.head.appendChild(s);
+  });
+  return shakaPromise;
+}
+
 export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, streamType, drmKid, drmKey, onErrorCallback }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
@@ -208,21 +226,9 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
     };
 
     if (isDash) {
-      // Shaka Player is loaded globally via layout.js <Script> tag.
-      // Poll for window.shaka availability (it uses strategy="lazyOnload").
-      const waitForShaka = () => {
-        return new Promise((resolve, reject) => {
-          if (window.shaka) { resolve(); return; }
-          let elapsed = 0;
-          const interval = setInterval(() => {
-            elapsed += 100;
-            if (window.shaka) { clearInterval(interval); resolve(); return; }
-            if (elapsed >= 15000) { clearInterval(interval); reject(new Error("Shaka Player did not load in time.")); }
-          }, 100);
-        });
-      };
-
-      waitForShaka()
+      // Shaka is loaded on demand (see ensureShaka) the first time a DASH
+      // channel plays, then reused.
+      ensureShaka()
         .then(() => { if (!isStale()) return initShaka(); })
         .catch((err) => {
           console.warn("Shaka player failed to load:", err?.message ?? err);
