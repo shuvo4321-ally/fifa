@@ -15,16 +15,58 @@ export default function BetaWatchParty() {
 
   const { joined, connecting, muted, peers, error, join, leave, toggleMute } = useVoiceRoom(ROOM);
 
-  // Default display name (editable before joining).
+  // Restore the last channel + name on mount, so a refresh keeps you on the same
+  // channel (it only changes when YOU pick another, not on reload). Done
+  // post-mount to avoid an SSR/hydration mismatch.
   useEffect(() => {
-    setName(`Guest-${Math.floor(1000 + Math.random() * 9000)}`);
+    try {
+      const savedCh = localStorage.getItem("beta-channel");
+      if (savedCh) { const ch = CHANNELS.find((c) => c.name === savedCh); if (ch) setActive(ch); }
+    } catch {}
+    let savedName = "";
+    try { savedName = localStorage.getItem("beta-name") || ""; } catch {}
+    setName(savedName || `Guest-${Math.floor(1000 + Math.random() * 9000)}`);
   }, []);
+
+  // Persist the name as it changes.
+  useEffect(() => { try { if (name) localStorage.setItem("beta-name", name); } catch {} }, [name]);
+
+  // ── Stay in voice across a refresh (only "Leave" actually leaves) ──
+  // sessionStorage survives a reload but NOT a tab close — exactly the behaviour
+  // we want: a refresh rejoins automatically; closing the tab doesn't.
+  useEffect(() => {
+    if (joined) { try { sessionStorage.setItem("beta-in-voice", "1"); } catch {} }
+  }, [joined]);
+
+  const autoTried = useRef(false);
+  useEffect(() => {
+    if (autoTried.current || !name) return; // wait until the saved name is restored
+    autoTried.current = true;
+    try { if (sessionStorage.getItem("beta-in-voice") === "1") join(name); } catch {}
+  }, [name, join]);
+
+  // A failed (re)join shouldn't keep retrying on every refresh.
+  useEffect(() => {
+    if (error && !joined && !connecting) { try { sessionStorage.removeItem("beta-in-voice"); } catch {} }
+  }, [error, joined, connecting]);
+
+  // Only an explicit Leave clears the rejoin flag.
+  const handleLeave = () => {
+    try { sessionStorage.removeItem("beta-in-voice"); } catch {}
+    leave();
+  };
+
+  // Switch channel AND remember it (only a real pick updates the saved channel).
+  const pickChannel = (ch) => {
+    setActive(ch);
+    try { if (ch) localStorage.setItem("beta-channel", ch.name); } catch {}
+  };
 
   const cycle = (dir) => {
     if (!active) return;
     const i = CHANNELS.findIndex((c) => c.name === active.name);
     if (i < 0) return;
-    setActive(CHANNELS[(i + dir + CHANNELS.length) % CHANNELS.length]);
+    pickChannel(CHANNELS[(i + dir + CHANNELS.length) % CHANNELS.length]);
   };
 
   const toggleFullscreen = () => {
@@ -113,7 +155,7 @@ export default function BetaWatchParty() {
               <button onClick={toggleMute} style={btn(muted ? "#dc2626" : "rgba(255,255,255,0.12)")}>
                 {muted ? "🔇 Unmute" : "🎙 Mute"}
               </button>
-              <button onClick={leave} style={btn("rgba(255,255,255,0.12)")}>Leave</button>
+              <button onClick={handleLeave} style={btn("rgba(255,255,255,0.12)")}>Leave</button>
             </div>
           </>
         )}
@@ -128,7 +170,7 @@ export default function BetaWatchParty() {
             <button
               key={c.name}
               className={`tv-channel${active === c ? " is-active" : ""}`}
-              onClick={() => setActive(c)}
+              onClick={() => pickChannel(c)}
             >
               {active === c && <span className="tv-channel-badge">On now</span>}
               <span className="tv-channel-logo-wrap">
