@@ -55,5 +55,12 @@ export const TV_CHANNELS = [
     group: "FIFA",
     url: "https://dfr80qz435crc.cloudfront.net/MNOP/Amagi/Caze/Caze_TV_BR/Caze_TV.m3u8",
     type: "hls"
+  },
+  {
+    name: "Somoy TV",
+    logo: "https://s3.aynaott.com/storage/ece71c1163a377fbe2d93f9d28c34f60",
+    group: "FIFA",
+    url: "https://live.thebosstv.com:30443/dwlive/Somoy-TV/chunks.m3u8",
+    type: "hls"
   }
 ];
