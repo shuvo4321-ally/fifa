@@ -6,19 +6,28 @@ import { TV_CHANNELS } from "../data/tvChannels";
 import { useVoiceRoom } from "../lib/voiceRoom";
 
 const CHANNELS = TV_CHANNELS;
-const ROOM = "beta"; // one shared room — anyone with this URL joins it
+const MAX = 8; // peer-to-peer voice is reliable up to ~8
+const newCode = () => Math.random().toString(36).slice(2, 8).toUpperCase(); // 6-char room code
 
 export default function BetaWatchParty() {
-  const [active, setActive] = useState(CHANNELS[0] || null);
+  const [ready, setReady] = useState(false);
+  const [roomCode, setRoomCode] = useState("");
+  const [joinInput, setJoinInput] = useState("");
   const [name, setName] = useState("");
+  const [active, setActive] = useState(CHANNELS[0] || null);
+  const [copied, setCopied] = useState(false);
   const stageRef = useRef(null);
 
-  const { joined, connecting, muted, peers, error, join, leave, toggleMute } = useVoiceRoom(ROOM);
+  // The room code IS the secret — the voice channel is keyed to it, so only
+  // people with your invite link land in the same party.
+  const { joined, connecting, muted, peers, error, count, full, join, leave, toggleMute } = useVoiceRoom(roomCode, MAX);
 
-  // Restore the last channel + name on mount, so a refresh keeps you on the same
-  // channel (it only changes when YOU pick another, not on reload). Done
-  // post-mount to avoid an SSR/hydration mismatch.
+  // Read room code (from the invite link) + saved channel/name on mount.
   useEffect(() => {
+    try {
+      const r = (new URL(window.location.href).searchParams.get("room") || "").trim().toUpperCase();
+      if (r) setRoomCode(r);
+    } catch {}
     try {
       const savedCh = localStorage.getItem("beta-channel");
       if (savedCh) { const ch = CHANNELS.find((c) => c.name === savedCh); if (ch) setActive(ch); }
@@ -26,71 +35,108 @@ export default function BetaWatchParty() {
     let savedName = "";
     try { savedName = localStorage.getItem("beta-name") || ""; } catch {}
     setName(savedName || `Guest-${Math.floor(1000 + Math.random() * 9000)}`);
+    setReady(true);
   }, []);
 
-  // Persist the name as it changes.
   useEffect(() => { try { if (name) localStorage.setItem("beta-name", name); } catch {} }, [name]);
 
-  // ── Stay in voice across a refresh (only "Leave" actually leaves) ──
-  // sessionStorage survives a reload but NOT a tab close — exactly the behaviour
-  // we want: a refresh rejoins automatically; closing the tab doesn't.
-  useEffect(() => {
-    if (joined) { try { sessionStorage.setItem("beta-in-voice", "1"); } catch {} }
-  }, [joined]);
-
+  // Stay in voice across a refresh (sessionStorage; cleared by Leave or tab close).
+  useEffect(() => { if (joined) { try { sessionStorage.setItem("beta-in-voice", "1"); } catch {} } }, [joined]);
   const autoTried = useRef(false);
   useEffect(() => {
-    if (autoTried.current || !name) return; // wait until the saved name is restored
+    if (autoTried.current || !ready || !roomCode || !name) return;
     autoTried.current = true;
     try { if (sessionStorage.getItem("beta-in-voice") === "1") join(name); } catch {}
-  }, [name, join]);
-
-  // A failed (re)join shouldn't keep retrying on every refresh.
+  }, [ready, roomCode, name, join]);
   useEffect(() => {
     if (error && !joined && !connecting) { try { sessionStorage.removeItem("beta-in-voice"); } catch {} }
   }, [error, joined, connecting]);
 
-  // Only an explicit Leave clears the rejoin flag.
-  const handleLeave = () => {
-    try { sessionStorage.removeItem("beta-in-voice"); } catch {}
-    leave();
+  const setRoom = (code) => {
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("room", code);
+      window.history.replaceState(null, "", url.toString());
+    } catch {}
+    setRoomCode(code);
+  };
+  const createParty = () => setRoom(newCode());
+  const joinByCode = () => { const c = joinInput.trim().toUpperCase(); if (c) setRoom(c); };
+  const copyLink = () => {
+    try { navigator.clipboard.writeText(window.location.href); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch {}
   };
 
-  // Switch channel AND remember it (only a real pick updates the saved channel).
-  const pickChannel = (ch) => {
-    setActive(ch);
-    try { if (ch) localStorage.setItem("beta-channel", ch.name); } catch {}
-  };
+  const handleLeave = () => { try { sessionStorage.removeItem("beta-in-voice"); } catch {} leave(); };
 
+  const pickChannel = (ch) => { setActive(ch); try { if (ch) localStorage.setItem("beta-channel", ch.name); } catch {} };
   const cycle = (dir) => {
     if (!active) return;
     const i = CHANNELS.findIndex((c) => c.name === active.name);
     if (i < 0) return;
     pickChannel(CHANNELS[(i + dir + CHANNELS.length) % CHANNELS.length]);
   };
-
   const toggleFullscreen = () => {
-    const el = stageRef.current;
-    if (!el) return;
+    const el = stageRef.current; if (!el) return;
     const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
     if (fsEl) (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
     else (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el);
   };
 
-  const count = peers.length + (joined ? 1 : 0);
+  if (!ready) return null; // avoid an SSR/hydration flash before we read the URL
 
+  // ── LOBBY: no room yet ──
+  if (!roomCode) {
+    return (
+      <main className="live-page livetv-page">
+        <div className="live-head">
+          <div>
+            <h1 className="live-title">Watch Party <span style={betaTag}>BETA</span></h1>
+            <p className="predict-sub">Private rooms — only people you send the invite link to can join (max {MAX}).</p>
+          </div>
+        </div>
+        <section style={{ ...card, maxWidth: 460, marginLeft: "auto", marginRight: "auto", flexDirection: "column", alignItems: "stretch", gap: 14 }}>
+          <button onClick={createParty} style={{ ...btn("#ffd34d"), color: "#10101a", fontWeight: 800, fontSize: 15, padding: "12px 18px" }}>
+            ＋ Create a private party
+          </button>
+          <div style={{ textAlign: "center", color: "rgba(255,255,255,0.4)", fontSize: 13 }}>— or join one —</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              value={joinInput}
+              onChange={(e) => setJoinInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && joinByCode()}
+              placeholder="Enter party code"
+              style={{ ...input, flex: 1, textTransform: "uppercase" }}
+            />
+            <button onClick={joinByCode} style={btn("rgba(255,255,255,0.12)")}>Join</button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  const roomFull = full || (!joined && count >= MAX);
+
+  // ── PARTY: inside a room ──
   return (
     <main className="live-page livetv-page">
       <div className="live-head">
         <div>
-          <h1 className="live-title">
-            Watch Party <span style={{ fontSize: 13, color: "#ffd34d", verticalAlign: "middle", marginLeft: 8, fontWeight: 800, letterSpacing: ".08em" }}>BETA</span>
-          </h1>
-          <p className="predict-sub">Watch Live TV together and talk over voice. Share this page&apos;s URL — anyone who opens it can join.</p>
+          <h1 className="live-title">Watch Party <span style={betaTag}>BETA</span></h1>
+          <p className="predict-sub">Watch Live TV together and talk over voice.</p>
         </div>
       </div>
 
-      <div className="live-stage livetv-stage" ref={stageRef}>
+      {/* ── Room / invite bar ── */}
+      <section style={{ ...card, justifyContent: "space-between" }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>Party code</span>
+          <code style={{ background: "rgba(255,255,255,0.1)", padding: "4px 10px", borderRadius: 8, fontWeight: 800, letterSpacing: "0.12em" }}>{roomCode}</code>
+          {joined && <span style={{ color: "#3ddc84", fontSize: 13, fontWeight: 700 }}>● {count}/{MAX} in party</span>}
+        </span>
+        <button onClick={copyLink} style={btn("rgba(255,255,255,0.12)")}>{copied ? "✓ Link copied" : "Copy invite link"}</button>
+      </section>
+
+      <div className="live-stage livetv-stage" ref={stageRef} style={{ marginTop: 14 }}>
         {active ? (
           <HlsPlayer
             src={active.url || undefined}
@@ -108,35 +154,17 @@ export default function BetaWatchParty() {
       </div>
 
       {/* ── Voice bar ── */}
-      <section
-        style={{
-          marginTop: 16, padding: "14px 16px", borderRadius: 14,
-          background: "rgba(20,20,28,0.6)", border: "1px solid rgba(255,255,255,0.12)",
-          display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12,
-        }}
-      >
+      <section style={{ ...card, marginTop: 16 }}>
         {!joined ? (
           <>
             <span style={{ fontWeight: 700 }}>🎙 Voice chat</span>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-              maxLength={24}
-              style={{
-                background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)",
-                borderRadius: 8, padding: "8px 12px", color: "#fff", outline: "none", minWidth: 140,
-              }}
-            />
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" maxLength={24} style={{ ...input, minWidth: 140 }} />
             <button
               onClick={() => join(name)}
-              disabled={connecting}
-              style={{
-                background: "#ffd34d", color: "#10101a", fontWeight: 800, border: "none",
-                borderRadius: 8, padding: "9px 18px", cursor: "pointer", opacity: connecting ? 0.6 : 1,
-              }}
+              disabled={connecting || roomFull}
+              style={{ ...btn("#ffd34d"), color: "#10101a", fontWeight: 800, opacity: connecting || roomFull ? 0.5 : 1 }}
             >
-              {connecting ? "Joining…" : "Join voice"}
+              {roomFull ? "Party full" : connecting ? "Joining…" : "Join voice"}
             </button>
             <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 13 }}>
               Only your mic is shared — the TV audio you hear stays on your device.
@@ -144,17 +172,13 @@ export default function BetaWatchParty() {
           </>
         ) : (
           <>
-            <span style={{ fontWeight: 700, color: "#3ddc84" }}>● In voice · {count} {count === 1 ? "person" : "people"}</span>
+            <span style={{ fontWeight: 700, color: "#3ddc84" }}>● In voice · {count}/{MAX}</span>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               <span style={chip(true)}>{name} (you)</span>
-              {peers.map((p) => (
-                <span key={p.id} style={chip(false)}>{p.name}</span>
-              ))}
+              {peers.map((p) => <span key={p.id} style={chip(false)}>{p.name}</span>)}
             </div>
             <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-              <button onClick={toggleMute} style={btn(muted ? "#dc2626" : "rgba(255,255,255,0.12)")}>
-                {muted ? "🔇 Unmute" : "🎙 Mute"}
-              </button>
+              <button onClick={toggleMute} style={btn(muted ? "#dc2626" : "rgba(255,255,255,0.12)")}>{muted ? "🔇 Unmute" : "🎙 Mute"}</button>
               <button onClick={handleLeave} style={btn("rgba(255,255,255,0.12)")}>Leave</button>
             </div>
           </>
@@ -167,11 +191,7 @@ export default function BetaWatchParty() {
         <div className="livetv-guide-head"><h2 className="livetv-guide-title">Channels</h2></div>
         <div className="tv-channels">
           {CHANNELS.map((c) => (
-            <button
-              key={c.name}
-              className={`tv-channel${active === c ? " is-active" : ""}`}
-              onClick={() => pickChannel(c)}
-            >
+            <button key={c.name} className={`tv-channel${active === c ? " is-active" : ""}`} onClick={() => pickChannel(c)}>
               {active === c && <span className="tv-channel-badge">On now</span>}
               <span className="tv-channel-logo-wrap">
                 <span className="tv-channel-fallback">{(c.name.replace(/[^A-Za-z]/g, "").slice(0, 2) || "TV").toUpperCase()}</span>
@@ -187,6 +207,16 @@ export default function BetaWatchParty() {
   );
 }
 
+const betaTag = { fontSize: 13, color: "#ffd34d", verticalAlign: "middle", marginLeft: 8, fontWeight: 800, letterSpacing: ".08em" };
+const card = {
+  marginTop: 16, padding: "14px 16px", borderRadius: 14,
+  background: "rgba(20,20,28,0.6)", border: "1px solid rgba(255,255,255,0.12)",
+  display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12,
+};
+const input = {
+  background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)",
+  borderRadius: 8, padding: "9px 12px", color: "#fff", outline: "none",
+};
 const chip = (me) => ({
   padding: "5px 10px", borderRadius: 999, fontSize: 13, fontWeight: 600,
   background: me ? "rgba(255,211,77,0.18)" : "rgba(255,255,255,0.1)",
