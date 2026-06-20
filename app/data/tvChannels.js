@@ -80,20 +80,5 @@ export const TV_CHANNELS = [
     type: "dash",
     kid: "14eeabf30c14b7fbf3008c03099ce011",
     key: "17d2ac8dbc5429bd70af3433aa12158d"
-  },
-  {
-    name: "Toffee",
-    logo: "https://static.wikia.nocookie.net/etv-gspn-bangla/images/4/43/Toffee_logo.png",
-    group: "FIFA",
-    url: "https://prod-cdn01-live.toffeelive.com/live/FIFA-2026-5/0/master_1700.m3u8?hdntl=Expires=1782030536~_GO=Generated~URLPrefix=aHR0cHM6Ly9wcm9kLWNkbjAxLWxpdmUudG9mZmVlbGl2ZS5jb20~Signature=AduQTZ9HGTA0mWw_1BM4vBOsaGJIHPpjfpgbzddewBVA3V2b-1hSAxZ_Tg4n64ar-_KUxuHxNiYClLxNWyvUreGqC18C",
-    type: "hls",
-    no_proxy: true
-  },
-  {
-    name: "BEIN Sports 5",
-    logo: "https://carboncredits.com/wp-content/uploads/2025/09/shutterstock_2306088965-e1757112807302.jpg",
-    group: "FIFA",
-    url: "http://starhub.pro/live/farhat-3379/67897-913379/744527.ts",
-    type: "hls"
   }
 ];
