@@ -10,12 +10,12 @@ export default function LiveScoreInline({ matchStr }) {
 
   if (!valid) return null;
 
-  // Inline score ONLY while a match is actually live. ESPN reports 0-0 for
-  // not-yet-started (TIMED) matches, so checking the score alone made every
-  // upcoming fixture show "0-0". A finished result isn't shown inline either —
-  // it lives in the group table and the scorecard — so the schedule stays clean.
+  // Show the score for FINISHED and LIVE matches; show "VS" only for upcoming.
+  // ESPN reports 0-0 for not-yet-started (TIMED) matches, so we must gate on the
+  // status — otherwise every upcoming fixture would display a phantom "0-0".
   const isLive = live && (live.status === "IN_PLAY" || live.status === "PAUSED");
-  const hasScore = isLive && live.s1 != null && live.s2 != null;
+  const isFinished = live && live.status === "FINISHED";
+  const hasScore = (isLive || isFinished) && live.s1 != null && live.s2 != null;
   if (!hasScore) {
     return <span className="fixture-vs">VS</span>;
   }
@@ -23,7 +23,8 @@ export default function LiveScoreInline({ matchStr }) {
   return (
     <span
       className="fixture-vs"
-      style={{ color: "#ff5252", fontSize: "18px", fontWeight: 900 }}
+      style={{ color: isLive ? "#ff5252" : "white", fontSize: "18px", fontWeight: 900 }}
+      title={isLive ? "Live" : "Full time"}
     >
       {live.s1} - {live.s2}
     </span>
