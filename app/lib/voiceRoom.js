@@ -16,12 +16,14 @@ const ICE_SERVERS = [
  * the others — the live-TV audio they're hearing is never transmitted. Anyone on
  * the same `roomName` who joins can talk; everyone hears everyone.
  */
-export function useVoiceRoom(roomName) {
+export function useVoiceRoom(roomName, capacity = 8) {
   const [joined, setJoined] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [muted, setMuted] = useState(false);
   const [peers, setPeers] = useState([]); // [{ id, name }]
   const [error, setError] = useState("");
+  const [count, setCount] = useState(0); // people in the party (incl. you)
+  const [full, setFull] = useState(false);
 
   const meId = useRef("");
   if (!meId.current) {
@@ -32,6 +34,7 @@ export function useVoiceRoom(roomName) {
   const channelRef = useRef(null);
   const localStream = useRef(null);
   const pcs = useRef(new Map()); // remoteId -> { pc, audioEl, pendingIce: [], name }
+  const leaveRef = useRef(() => {}); // late-bound so the presence handler can bow out when full
 
   const send = useCallback((payload) => {
     channelRef.current?.send({ type: "broadcast", event: "signal", payload });
@@ -129,6 +132,7 @@ export function useVoiceRoom(roomName) {
     nameRef.current = (displayName || "Guest").slice(0, 24);
     setConnecting(true);
     setError("");
+    setFull(false);
     try {
       localStream.current = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     } catch (e) {
@@ -146,29 +150,41 @@ export function useVoiceRoom(roomName) {
 
     channel.on("presence", { event: "sync" }, () => {
       const state = channel.presenceState();
-      const present = Object.entries(state)
-        .map(([key, metas]) => ({ id: key, name: metas?.[0]?.name || "Guest" }))
-        .filter((p) => p.id !== meId.current);
+      // Everyone in the room, ordered by who joined first (stable tiebreak on id).
+      const all = Object.entries(state)
+        .map(([key, metas]) => ({ id: key, name: metas?.[0]?.name || "Guest", joinedAt: metas?.[0]?.joinedAt || 0 }))
+        .sort((a, b) => (a.joinedAt - b.joinedAt) || (a.id < b.id ? -1 : 1));
+      setCount(all.length);
 
-      // Connect to any new peer. Deterministic initiator (higher id calls) avoids
-      // both sides offering at once (glare).
-      for (const p of present) {
+      // Enforce the party limit: only the first `capacity` people (by join order)
+      // stay. If the room was already full when you joined, bow out gracefully.
+      const myIndex = all.findIndex((p) => p.id === meId.current);
+      if (myIndex >= capacity) {
+        setError(`Party is full (${capacity}/${capacity}).`);
+        setFull(true);
+        leaveRef.current();
+        return;
+      }
+
+      const allowed = all.slice(0, capacity).filter((p) => p.id !== meId.current);
+      // Connect to any new peer. Deterministic initiator (higher id calls) avoids glare.
+      for (const p of allowed) {
         if (!pcs.current.has(p.id) && meId.current > p.id) callPeer(p.id, p.name);
       }
-      // Drop peers that left.
+      // Drop peers that left (or got bumped past the limit).
       for (const id of [...pcs.current.keys()]) {
-        if (!present.some((p) => p.id === id)) closePeer(id);
+        if (!allowed.some((p) => p.id === id)) closePeer(id);
       }
     });
 
     channel.subscribe(async (status) => {
       if (status === "SUBSCRIBED") {
-        await channel.track({ id: meId.current, name: nameRef.current });
+        await channel.track({ id: meId.current, name: nameRef.current, joinedAt: Date.now() });
         setJoined(true);
         setConnecting(false);
       }
     });
-  }, [joined, connecting, roomName, handleSignal, callPeer, closePeer]);
+  }, [joined, connecting, roomName, capacity, handleSignal, callPeer, closePeer]);
 
   const leave = useCallback(() => {
     for (const id of [...pcs.current.keys()]) closePeer(id);
@@ -178,7 +194,9 @@ export function useVoiceRoom(roomName) {
     setPeers([]);
     setJoined(false);
     setMuted(false);
+    setCount(0);
   }, [closePeer]);
+  leaveRef.current = leave; // keep the late-bound ref pointing at the latest leave
 
   const toggleMute = useCallback(() => {
     const track = localStream.current?.getAudioTracks?.()[0];
@@ -190,5 +208,5 @@ export function useVoiceRoom(roomName) {
   // Clean up on unmount.
   useEffect(() => () => { leave(); }, [leave]);
 
-  return { joined, connecting, muted, peers, error, meId: meId.current, join, leave, toggleMute };
+  return { joined, connecting, muted, peers, error, count, full, capacity, meId: meId.current, join, leave, toggleMute };
 }
