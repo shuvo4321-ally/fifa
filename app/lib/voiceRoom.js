@@ -133,6 +133,17 @@ export function useVoiceRoom(roomName, capacity = 8) {
     setConnecting(true);
     setError("");
     setFull(false);
+    // getUserMedia only exists in a secure context. On a phone opening the LAN
+    // dev URL (http://<ip>) the mic API is missing entirely — say so clearly.
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      setConnecting(false);
+      setError(
+        typeof window !== "undefined" && window.isSecureContext === false
+          ? "Microphone needs a secure (https) page. Open the deployed https site, not a local IP."
+          : "Microphone isn't available in this browser."
+      );
+      return;
+    }
     try {
       localStream.current = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     } catch (e) {
