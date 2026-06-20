@@ -3,14 +3,18 @@
 import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
 
-// Route an HLS manifest through our same-origin proxy. This is what makes
-// channels start fast: the browser reuses the page's warm connection instead of
-// a cold DNS+TLS handshake to a distant CDN, and CORS / mixed-content / geo
-// blocks disappear. The proxy rewrites the manifest so segments come through it
-// too. DASH (.mpd) is left direct — only plain HLS is proxied.
+// HLS proxy — OFF by default so live-TV video does NOT flow through Vercel.
+// Proxying every segment via /api/proxy billed as "Fast Origin Transfer" and blew
+// past the free tier (18GB/10GB). Default is now DIRECT loading (zero Vercel
+// bandwidth). To restore fast/CORS-free loading WITHOUT the Vercel cost, deploy
+// the Cloudflare Worker in /cloudflare and set NEXT_PUBLIC_HLS_PROXY to its URL
+// (Cloudflare doesn't bill egress like Vercel). Set it to "/api/proxy" to use the
+// costly Vercel proxy again.
+const HLS_PROXY = (process.env.NEXT_PUBLIC_HLS_PROXY || "").trim().replace(/\/+$/, "");
 function proxify(u) {
   if (!u || !/^https?:\/\//i.test(u)) return u;
-  return `/api/proxy?url=${encodeURIComponent(u)}`;
+  if (!HLS_PROXY) return u; // direct — no proxy, no Vercel bandwidth
+  return `${HLS_PROXY}?url=${encodeURIComponent(u)}`;
 }
 
 // Load Shaka Player on demand — only when a DASH channel actually plays — instead
