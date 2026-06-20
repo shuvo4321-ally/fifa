@@ -4401,7 +4401,7 @@ a.search-result:hover {
 .watch-party-bg-scrim {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(10, 10, 10, 0.2) 0%, rgba(10, 10, 10, 0.85) 100%);
+  background: radial-gradient(circle at center, rgba(10, 10, 10, 0.05) 0%, rgba(10, 10, 10, 0.6) 100%);
   pointer-events: none;
 }
 
@@ -4409,7 +4409,7 @@ a.search-result:hover {
 @media (max-width: 768px) {
   .watch-party-bg-container {
     background-image: url('/images/watch_party_bg_mobile.png');
-    opacity: 0.35; /* Premium opacity: subtle, rich details */
+    opacity: 0.65; /* Premium opacity: subtle, rich details */
   }
 }
 
@@ -4417,7 +4417,7 @@ a.search-result:hover {
 @media (min-width: 769px) {
   .watch-party-bg-container {
     background-image: url('/images/watch_party_bg_desktop.png');
-    opacity: 0.28; /* Premium opacity: elegant, clear contrast for text */
+    opacity: 0.55; /* Premium opacity: elegant, clear contrast for text */
   }
 }
 
