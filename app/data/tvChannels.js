@@ -9,7 +9,8 @@ export const TV_CHANNELS = [
     logo: "https://upload.wikimedia.org/wikipedia/commons/5/5a/DSports.png",
     group: "FIFA",
     url: "https://1nyaler.streamhostingcdn.top/stream/106/index.m3u8",
-    type: "hls"
+    type: "hls",
+    no_proxy: true
   },
   {
     name: "M6 Direct TV",
@@ -18,21 +19,24 @@ export const TV_CHANNELS = [
     url: "https://origin-m6web.live.6cloud.fr/out/v1/6play/6play-m6/cmaf_cenc00/dash-short-hd.mpd",
     type: "dash",
     kid: "433ffba670963e70857859a9dff4be04",
-    key: "51ede3a821229fe81e71282c8eff80e3"
+    key: "51ede3a821229fe81e71282c8eff80e3",
+    no_proxy: true
   },
   {
     name: "DAZN FIFA",
     logo: "https://i.postimg.cc/Kc3mP7Qt/cbimage.png",
     group: "FIFA",
     url: "https://1nyaler.streamhostingcdn.top/stream/94/index.m3u8",
-    type: "hls"
+    type: "hls",
+    no_proxy: true
   },
   {
     name: "BEIN Sports 1",
     logo: "https://images.seeklogo.com/logo-png/48/1/bein-sports-1-logo-png_seeklogo-481583.png",
     group: "FIFA",
     url: "https://1nyaler.streamhostingcdn.top/stream/23/index.m3u8",
-    type: "hls"
+    type: "hls",
+    no_proxy: true
   },
   {
     name: "FOX",
@@ -41,7 +45,8 @@ export const TV_CHANNELS = [
     url: "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/9crxia693u/out/v1/fc40f22f10374517a2784e1d97cb23f4/cenc.mpd",
     type: "dash",
     kid: "1f68713028d439ec03be07f56c1d6213",
-    key: "20093db6455160fffed4c394def3193d"
+    key: "20093db6455160fffed4c394def3193d",
+    no_proxy: true
   },
 
   {
@@ -49,7 +54,8 @@ export const TV_CHANNELS = [
     logo: "https://images.seeklogo.com/logo-png/25/1/win-sports-logo-png_seeklogo-259337.png",
     group: "FIFA",
     url: "https://1nyaler.streamhostingcdn.top/stream/32/index.m3u8",
-    type: "hls"
+    type: "hls",
+    no_proxy: true
   },
   {
     name: "CAZE TV",
@@ -63,14 +69,16 @@ export const TV_CHANNELS = [
     logo: "https://s3.aynaott.com/storage/ece71c1163a377fbe2d93f9d28c34f60",
     group: "FIFA",
     url: "https://live.thebosstv.com:30443/dwlive/Somoy-TV/chunks.m3u8",
-    type: "hls"
+    type: "hls",
+    no_proxy: true
   },
   {
     name: "TVP Sport",
     logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Logo_TVP_Sport.jpg/1280px-Logo_TVP_Sport.jpg",
     group: "FIFA",
     url: "https://1nyaler.streamhostingcdn.top/stream/89/index.m3u8",
-    type: "hls"
+    type: "hls",
+    no_proxy: true
   },
   {
     name: "TSN 1",
@@ -79,6 +87,7 @@ export const TV_CHANNELS = [
     url: "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/w0rehjjrwe/out/v1/69a2a7041395406b970598f61680e7cf/cenc.mpd",
     type: "dash",
     kid: "14eeabf30c14b7fbf3008c03099ce011",
-    key: "17d2ac8dbc5429bd70af3433aa12158d"
+    key: "17d2ac8dbc5429bd70af3433aa12158d",
+    no_proxy: true
   }
 ];
