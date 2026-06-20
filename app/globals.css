@@ -4175,3 +4175,249 @@ a.search-result:hover {
   object-fit: contain;
 }
 
+/* ===== Knockout Bracket ===== */
+.bracket-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.bracket-content {
+  flex: 1;
+  background: var(--color-surface-base);
+  padding: var(--space-8) 0;
+  overflow: hidden;
+}
+
+.bracket-container-scroll {
+  width: 100%;
+  overflow-x: auto;
+  padding: 0 var(--space-8) var(--space-8);
+  scrollbar-width: thin;
+}
+
+.bracket-layout {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: var(--space-6);
+  min-width: 1200px;
+}
+
+.bracket-side {
+  display: flex;
+  gap: var(--space-6);
+}
+
+.bracket-round {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 200px;
+}
+
+/* Specific round height balancing (adjusting gap implicitly via flex space-around) */
+.bracket-match-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+  flex: 1; /* evenly distributes space in the flex column */
+}
+
+.bracket-match {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-xs);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.bracket-match:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.bracket-team {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.bracket-team:last-child {
+  border-bottom: none;
+}
+
+.bracket-team-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.bracket-score {
+  color: var(--brand-yellow);
+}
+
+/* Connecting Lines */
+/* Lines are drawn from the wrappers so they always span the correct height */
+.bracket-side .bracket-match-wrapper::after {
+  content: '';
+  position: absolute;
+  width: calc(var(--space-6) / 2);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+  top: 50%;
+  z-index: 1;
+}
+
+.bracket-left-side .bracket-match-wrapper::after {
+  right: calc(var(--space-6) / -2);
+}
+
+.bracket-right-side .bracket-match-wrapper::after {
+  left: calc(var(--space-6) / -2);
+}
+
+/* For matches that connect pairs, draw vertical lines between them */
+/* Using nth-child logic to draw top or bottom parts of the fork */
+
+/* Left Side Connectors */
+.bracket-left-side .bracket-round:not(:last-child) .bracket-match-wrapper:nth-child(odd)::before {
+  content: '';
+  position: absolute;
+  right: calc(var(--space-6) / -2);
+  top: 50%;
+  bottom: calc(-50% - 100%); /* stretch down to the middle of the gap */
+  height: calc(100% + var(--space-6)); /* approximate, flex gap handles height dynamically but CSS tree lines can be tricky. We'll use a standard absolute stretch */
+}
+
+/* A simpler tree logic using right border for odd children */
+.bracket-left-side .bracket-round:not(:last-child) .bracket-match-wrapper:nth-child(odd)::before {
+  content: '';
+  position: absolute;
+  right: calc(var(--space-6) / -2);
+  top: 50%;
+  height: 100%;
+  border-right: 2px solid rgba(255, 255, 255, 0.2);
+  border-top: 2px solid rgba(255, 255, 255, 0.2);
+}
+.bracket-left-side .bracket-round:not(:last-child) .bracket-match-wrapper:nth-child(even)::before {
+  content: '';
+  position: absolute;
+  right: calc(var(--space-6) / -2);
+  bottom: 50%;
+  height: 100%;
+  border-right: 2px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Right Side Connectors */
+.bracket-right-side .bracket-round:not(:first-child) .bracket-match-wrapper:nth-child(odd)::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--space-6) / -2);
+  top: 50%;
+  height: 100%;
+  border-left: 2px solid rgba(255, 255, 255, 0.2);
+  border-top: 2px solid rgba(255, 255, 255, 0.2);
+}
+.bracket-right-side .bracket-round:not(:first-child) .bracket-match-wrapper:nth-child(even)::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--space-6) / -2);
+  bottom: 50%;
+  height: 100%;
+  border-left: 2px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Center Panel */
+.bracket-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 240px;
+}
+
+.bracket-trophy {
+  text-align: center;
+  margin-bottom: var(--space-6);
+}
+
+.bracket-trophy h2 {
+  color: var(--color-text-tertiary);
+  font-size: 18px;
+  margin: var(--space-2) 0;
+  font-weight: 700;
+}
+
+.bracket-trophy p {
+  color: var(--brand-yellow);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.trophy-icon {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(253, 224, 71, 0.2);
+}
+
+.match-title {
+  text-align: center;
+  font-size: 10px;
+  color: var(--brand-yellow);
+  padding: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* Watch Party Page Custom Backgrounds */
+.watch-party-bg-container {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: background-image 0.5s ease-in-out, opacity 0.5s ease-in-out;
+}
+
+/* Scrim overlay for premium readability */
+.watch-party-bg-scrim {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(16, 16, 26, 0.4) 0%, rgba(16, 16, 26, 0.85) 100%);
+  pointer-events: none;
+}
+
+/* Mobile view: 9,16.png (watch_party_bg_mobile.png) */
+@media (max-width: 768px) {
+  .watch-party-bg-container {
+    background-image: url('/images/watch_party_bg_mobile.png');
+    opacity: 0.22; /* Premium opacity: subtle, rich details */
+  }
+}
+
+/* Window/Desktop view: 16,9.png (watch_party_bg_desktop.png) */
+@media (min-width: 769px) {
+  .watch-party-bg-container {
+    background-image: url('/images/watch_party_bg_desktop.png');
+    opacity: 0.18; /* Premium opacity: elegant, clear contrast for text */
+  }
+}
+

@@ -87,30 +87,35 @@ export default function WatchParty() {
   // ── LOBBY: no room yet ──
   if (!roomCode) {
     return (
-      <main className="live-page livetv-page">
-        <div className="live-head live-head--center">
-          <div>
-            <h1 className="live-title">Watch Party</h1>
-            <p className="predict-sub">Private rooms — only people you send the invite link to can join (max {MAX}).</p>
-          </div>
+      <>
+        <div className="watch-party-bg-container">
+          <div className="watch-party-bg-scrim" />
         </div>
-        <section style={{ ...card, maxWidth: 460, marginLeft: "auto", marginRight: "auto", flexDirection: "column", alignItems: "stretch", gap: 14 }}>
-          <button onClick={createParty} style={{ ...btn("#ffd34d"), color: "#10101a", fontWeight: 800, fontSize: 15, padding: "12px 18px" }}>
-            ＋ Create a private party
-          </button>
-          <div style={{ textAlign: "center", color: "rgba(255,255,255,0.4)", fontSize: 13 }}>— or join one —</div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <input
-              value={joinInput}
-              onChange={(e) => setJoinInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && joinByCode()}
-              placeholder="Enter party code"
-              style={{ ...input, flex: 1, textTransform: "uppercase" }}
-            />
-            <button onClick={joinByCode} style={btn("rgba(255,255,255,0.12)")}>Join</button>
+        <main className="live-page livetv-page">
+          <div className="live-head live-head--center">
+            <div>
+              <h1 className="live-title">Watch Party</h1>
+              <p className="predict-sub">Private rooms — only people you send the invite link to can join (max {MAX}).</p>
+            </div>
           </div>
-        </section>
-      </main>
+          <section style={{ ...card, maxWidth: 460, marginLeft: "auto", marginRight: "auto", flexDirection: "column", alignItems: "stretch", gap: 14 }}>
+            <button onClick={createParty} style={{ ...btn("#ffd34d"), color: "#10101a", fontWeight: 800, fontSize: 15, padding: "12px 18px" }}>
+              ＋ Create a private party
+            </button>
+            <div style={{ textAlign: "center", color: "rgba(255,255,255,0.4)", fontSize: 13 }}>— or join one —</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                value={joinInput}
+                onChange={(e) => setJoinInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && joinByCode()}
+                placeholder="Enter party code"
+                style={{ ...input, flex: 1, textTransform: "uppercase" }}
+              />
+              <button onClick={joinByCode} style={btn("rgba(255,255,255,0.12)")}>Join</button>
+            </div>
+          </section>
+        </main>
+      </>
     );
   }
 
@@ -118,92 +123,97 @@ export default function WatchParty() {
 
   // ── PARTY: inside a room ──
   return (
-    <main className="live-page livetv-page">
-      <div className="live-head live-head--center">
-        <div>
-          <h1 className="live-title">Watch Party</h1>
-          <p className="predict-sub">Watch Live TV together and talk over voice.</p>
+    <>
+      <div className="watch-party-bg-container">
+        <div className="watch-party-bg-scrim" />
+      </div>
+      <main className="live-page livetv-page">
+        <div className="live-head live-head--center">
+          <div>
+            <h1 className="live-title">Watch Party</h1>
+            <p className="predict-sub">Watch Live TV together and talk over voice.</p>
+          </div>
         </div>
-      </div>
 
-      {/* ── Room / invite bar ── */}
-      <section style={{ ...card, justifyContent: "space-between" }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>Party code</span>
-          <code style={{ background: "rgba(255,255,255,0.1)", padding: "4px 10px", borderRadius: 8, fontWeight: 800, letterSpacing: "0.12em" }}>{roomCode}</code>
-          {joined && <span style={{ color: "#3ddc84", fontSize: 13, fontWeight: 700 }}>● {count}/{MAX} in party</span>}
-        </span>
-        <button onClick={copyLink} style={btn("rgba(255,255,255,0.12)")}>{copied ? "✓ Link copied" : "Copy invite link"}</button>
-      </section>
+        {/* ── Room / invite bar ── */}
+        <section style={{ ...card, justifyContent: "space-between" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>Party code</span>
+            <code style={{ background: "rgba(255,255,255,0.1)", padding: "4px 10px", borderRadius: 8, fontWeight: 800, letterSpacing: "0.12em" }}>{roomCode}</code>
+            {joined && <span style={{ color: "#3ddc84", fontSize: 13, fontWeight: 700 }}>● {count}/{MAX} in party</span>}
+          </span>
+          <button onClick={copyLink} style={btn("rgba(255,255,255,0.12)")}>{copied ? "✓ Link copied" : "Copy invite link"}</button>
+        </section>
 
-      <div className="live-stage livetv-stage" ref={stageRef} style={{ marginTop: 14 }}>
-        {active ? (
-          <HlsPlayer
-            src={active.url || undefined}
-            poster={active.logo || undefined}
-            streamType={active.type}
-            drmKid={active.kid}
-            drmKey={active.key}
-            onFullscreen={toggleFullscreen}
-            onPrev={() => cycle(-1)}
-            onNext={() => cycle(1)}
-          />
-        ) : (
-          <div className="live-overlay live-cover"><p className="live-overlay-title">No channels</p></div>
-        )}
-      </div>
+        <div className="live-stage livetv-stage" ref={stageRef} style={{ marginTop: 14 }}>
+          {active ? (
+            <HlsPlayer
+              src={active.url || undefined}
+              poster={active.logo || undefined}
+              streamType={active.type}
+              drmKid={active.kid}
+              drmKey={active.key}
+              onFullscreen={toggleFullscreen}
+              onPrev={() => cycle(-1)}
+              onNext={() => cycle(1)}
+            />
+          ) : (
+            <div className="live-overlay live-cover"><p className="live-overlay-title">No channels</p></div>
+          )}
+        </div>
 
-      {/* ── Voice bar ── */}
-      <section style={{ ...card, marginTop: 16 }}>
-        {!joined ? (
-          <>
-            <span style={{ fontWeight: 700 }}>🎙 Voice chat</span>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" maxLength={24} style={{ ...input, minWidth: 140 }} />
-            <button
-              onClick={() => join(name)}
-              disabled={connecting || roomFull}
-              style={{ ...btn("#ffd34d"), color: "#10101a", fontWeight: 800, opacity: connecting || roomFull ? 0.5 : 1 }}
-            >
-              {roomFull ? "Party full" : connecting ? "Joining…" : "Join voice"}
-            </button>
-            <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 13 }}>
-              Only your mic is shared — the TV audio you hear stays on your device.
-            </span>
-          </>
-        ) : (
-          <>
-            <span style={{ fontWeight: 700, color: "#3ddc84" }}>● In voice · {count}/{MAX}</span>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              <span style={chip(true)}>{name} (you)</span>
-              {peers.map((p) => <span key={p.id} style={chip(false)}>{p.name}</span>)}
-            </div>
-            <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-              <button onClick={toggleMute} style={btn(muted ? "#dc2626" : "rgba(255,255,255,0.12)")}>{muted ? "🔇 Unmute" : "🎙 Mute"}</button>
-              <button onClick={handleLeave} style={btn("rgba(255,255,255,0.12)")}>Leave</button>
-            </div>
-          </>
-        )}
-        {error && <span style={{ color: "#ff6b6b", fontSize: 13, width: "100%" }}>{error}</span>}
-      </section>
-
-      {/* ── Channel strip ── */}
-      <section className="livetv-guide" style={{ marginTop: 16 }}>
-        <div className="livetv-guide-head"><h2 className="livetv-guide-title">Channels</h2></div>
-        <div className="tv-channels">
-          {CHANNELS.map((c) => (
-            <button key={c.name} className={`tv-channel${active === c ? " is-active" : ""}`} onClick={() => pickChannel(c)}>
-              {active === c && <span className="tv-channel-badge">On now</span>}
-              <span className="tv-channel-logo-wrap">
-                <span className="tv-channel-fallback">{(c.name.replace(/[^A-Za-z]/g, "").slice(0, 2) || "TV").toUpperCase()}</span>
-                {c.logo && <img src={c.logo} alt="" className="tv-channel-logo" onError={(e) => { e.currentTarget.style.display = "none"; }} />}
+        {/* ── Voice bar ── */}
+        <section style={{ ...card, marginTop: 16 }}>
+          {!joined ? (
+            <>
+              <span style={{ fontWeight: 700 }}>🎙 Voice chat</span>
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" maxLength={24} style={{ ...input, minWidth: 140 }} />
+              <button
+                onClick={() => join(name)}
+                disabled={connecting || roomFull}
+                style={{ ...btn("#ffd34d"), color: "#10101a", fontWeight: 800, opacity: connecting || roomFull ? 0.5 : 1 }}
+              >
+                {roomFull ? "Party full" : connecting ? "Joining…" : "Join voice"}
+              </button>
+              <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 13 }}>
+                Only your mic is shared — the TV audio you hear stays on your device.
               </span>
-              <span className="tv-channel-name">{c.name}</span>
-              <span className="tv-channel-group">{c.group}</span>
-            </button>
-          ))}
-        </div>
-      </section>
-    </main>
+            </>
+          ) : (
+            <>
+              <span style={{ fontWeight: 700, color: "#3ddc84" }}>● In voice · {count}/{MAX}</span>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                <span style={chip(true)}>{name} (you)</span>
+                {peers.map((p) => <span key={p.id} style={chip(false)}>{p.name}</span>)}
+              </div>
+              <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+                <button onClick={toggleMute} style={btn(muted ? "#dc2626" : "rgba(255,255,255,0.12)")}>{muted ? "🔇 Unmute" : "🎙 Mute"}</button>
+                <button onClick={handleLeave} style={btn("rgba(255,255,255,0.12)")}>Leave</button>
+              </div>
+            </>
+          )}
+          {error && <span style={{ color: "#ff6b6b", fontSize: 13, width: "100%" }}>{error}</span>}
+        </section>
+
+        {/* ── Channel strip ── */}
+        <section className="livetv-guide" style={{ marginTop: 16 }}>
+          <div className="livetv-guide-head"><h2 className="livetv-guide-title">Channels</h2></div>
+          <div className="tv-channels">
+            {CHANNELS.map((c) => (
+              <button key={c.name} className={`tv-channel${active === c ? " is-active" : ""}`} onClick={() => pickChannel(c)}>
+                {active === c && <span className="tv-channel-badge">On now</span>}
+                <span className="tv-channel-logo-wrap">
+                  <span className="tv-channel-fallback">{(c.name.replace(/[^A-Za-z]/g, "").slice(0, 2) || "TV").toUpperCase()}</span>
+                  {c.logo && <img src={c.logo} alt="" className="tv-channel-logo" onError={(e) => { e.currentTarget.style.display = "none"; }} />}
+                </span>
+                <span className="tv-channel-name">{c.name}</span>
+                <span className="tv-channel-group">{c.group}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      </main>
+    </>
   );
 }
 
