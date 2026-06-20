@@ -88,7 +88,7 @@ export default function WatchParty() {
   if (!roomCode) {
     return (
       <main className="live-page livetv-page">
-        <div className="live-head">
+        <div className="live-head live-head--center">
           <div>
             <h1 className="live-title">Watch Party</h1>
             <p className="predict-sub">Private rooms — only people you send the invite link to can join (max {MAX}).</p>
@@ -119,7 +119,7 @@ export default function WatchParty() {
   // ── PARTY: inside a room ──
   return (
     <main className="live-page livetv-page">
-      <div className="live-head">
+      <div className="live-head live-head--center">
         <div>
           <h1 className="live-title">Watch Party</h1>
           <p className="predict-sub">Watch Live TV together and talk over voice.</p>
