@@ -38,6 +38,31 @@ export default function WatchParty() {
     setReady(true);
   }, []);
 
+  // Lock background height to prevent jumping/shifting when mobile URL bar hides/shows on scroll.
+  useEffect(() => {
+    const bg = document.querySelector(".watch-party-bg-container");
+    if (!bg) return;
+
+    let lastWidth = window.innerWidth;
+    const updateHeight = () => {
+      bg.style.height = `${window.innerHeight}px`;
+    };
+
+    updateHeight();
+
+    const handleResize = () => {
+      // Only recalculate if width actually changed (e.g., orientation swap or screen size change),
+      // preventing layout shifts when scrolling vertically on mobile browsers.
+      if (window.innerWidth !== lastWidth) {
+        lastWidth = window.innerWidth;
+        updateHeight();
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   useEffect(() => { try { if (name) localStorage.setItem("watch-party-name", name); } catch {} }, [name]);
 
   // Stay in voice across a refresh (sessionStorage; cleared by Leave or tab close).
