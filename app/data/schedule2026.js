@@ -221,6 +221,10 @@ export const FIXTURES_2026 = [
   { date: "Jul 2, 2026", match: "H1 vs F2", group: "Knockout", time: "04:00 AM", stage: "Round of 32" },
   { date: "Jul 3, 2026", match: "K1 vs I2", group: "Knockout", time: "01:00 AM", stage: "Round of 32" },
   { date: "Jul 3, 2026", match: "L1 vs J2", group: "Knockout", time: "04:00 AM", stage: "Round of 32" },
+  { date: "Jul 4, 2026", match: "W1 vs 3rd A/B/C", group: "Knockout", time: "01:00 AM", stage: "Round of 32" },
+  { date: "Jul 4, 2026", match: "W2 vs 3rd D/E/F", group: "Knockout", time: "04:00 AM", stage: "Round of 32" },
+  { date: "Jul 5, 2026", match: "W3 vs 3rd G/H/I", group: "Knockout", time: "01:00 AM", stage: "Round of 32" },
+  { date: "Jul 5, 2026", match: "W4 vs 3rd J/K/L", group: "Knockout", time: "04:00 AM", stage: "Round of 32" },
 
   // ── Round of 16 ──
   { date: "Jul 6, 2026", match: "Winner R32-1 vs Winner R32-2", group: "Knockout", time: "01:00 AM", stage: "Round of 16" },
