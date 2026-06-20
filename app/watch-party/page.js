@@ -220,7 +220,11 @@ export default function WatchParty() {
 // Styles
 const card = {
   marginTop: 16, padding: "14px 16px", borderRadius: 14,
-  background: "rgba(20,20,28,0.6)", border: "1px solid rgba(255,255,255,0.12)",
+  background: "rgba(10, 10, 15, 0.45)",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
+  border: "1px solid rgba(255, 255, 255, 0.08)",
+  boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.3)",
   display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12,
 };
 const input = {
