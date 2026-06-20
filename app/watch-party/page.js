@@ -38,59 +38,6 @@ export default function WatchParty() {
     setReady(true);
   }, []);
 
-  // Lock background height to prevent jumping/shifting when mobile URL bar hides/shows on scroll.
-  useEffect(() => {
-    const bg = document.querySelector(".watch-party-bg-container");
-    if (!bg) return;
-
-    let lastWidth = window.innerWidth;
-    const updateHeight = () => {
-      bg.style.height = `${window.innerHeight}px`;
-    };
-
-    updateHeight();
-
-    const handleResize = () => {
-      // Only recalculate if width actually changed (e.g., orientation swap or screen size change),
-      // preventing layout shifts when scrolling vertically on mobile browsers.
-      if (window.innerWidth !== lastWidth) {
-        lastWidth = window.innerWidth;
-        updateHeight();
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // Remove page scroll option on mobile view.
-  useEffect(() => {
-    const handleScrollLock = () => {
-      if (window.innerWidth <= 768) {
-        document.body.style.overflow = "hidden";
-        document.body.style.height = "100vh";
-        document.documentElement.style.overflow = "hidden";
-        document.documentElement.style.height = "100vh";
-      } else {
-        document.body.style.overflow = "";
-        document.body.style.height = "";
-        document.documentElement.style.overflow = "";
-        document.documentElement.style.height = "";
-      }
-    };
-
-    handleScrollLock();
-    window.addEventListener("resize", handleScrollLock);
-
-    return () => {
-      window.removeEventListener("resize", handleScrollLock);
-      document.body.style.overflow = "";
-      document.body.style.height = "";
-      document.documentElement.style.overflow = "";
-      document.documentElement.style.height = "";
-    };
-  }, []);
-
   useEffect(() => { try { if (name) localStorage.setItem("watch-party-name", name); } catch {} }, [name]);
 
   // Stay in voice across a refresh (sessionStorage; cleared by Leave or tab close).
@@ -99,7 +46,11 @@ export default function WatchParty() {
   useEffect(() => {
     if (autoTried.current || !ready || !roomCode || !name) return;
     autoTried.current = true;
-    try { if (sessionStorage.getItem("watch-party-in-voice") === "1") join(name); } catch {}
+    // Auto-rejoin only on non-touch devices. Phones require a user gesture for
+    // the mic, so auto-grabbing it on load is unreliable and can wedge the Join
+    // button — on mobile we let the user tap "Join voice" instead.
+    const isTouch = typeof navigator !== "undefined" && (navigator.maxTouchPoints > 0 || "ontouchstart" in window);
+    try { if (!isTouch && sessionStorage.getItem("watch-party-in-voice") === "1") join(name); } catch {}
   }, [ready, roomCode, name, join]);
   useEffect(() => {
     if (error && !joined && !connecting) { try { sessionStorage.removeItem("watch-party-in-voice"); } catch {} }
@@ -141,6 +92,8 @@ export default function WatchParty() {
   if (!roomCode) {
     return (
       <>
+        {/* Lobby keeps the premium image background; once you're in a party the
+            page switches to the plain Live-TV background. */}
         <div className="watch-party-bg-container">
           <div className="watch-party-bg-scrim" />
         </div>
@@ -177,9 +130,6 @@ export default function WatchParty() {
   // ── PARTY: inside a room ──
   return (
     <>
-      <div className="watch-party-bg-container">
-        <div className="watch-party-bg-scrim" />
-      </div>
       <main className="live-page livetv-page">
         <div className="live-head live-head--center">
           <div>
@@ -240,10 +190,6 @@ export default function WatchParty() {
                 <span style={chip(true)}>{name} (you)</span>
                 {peers.map((p) => <span key={p.id} style={chip(false)}>{p.name}</span>)}
               </div>
-              <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-                <button onClick={toggleMute} style={btn(muted ? "#dc2626" : "rgba(255,255,255,0.12)")}>{muted ? "🔇 Unmute" : "🎙 Mute"}</button>
-                <button onClick={handleLeave} style={btn("rgba(255,255,255,0.12)")}>Leave</button>
-              </div>
             </>
           )}
           {error && <span style={{ color: "#ff6b6b", fontSize: 13, width: "100%" }}>{error}</span>}
@@ -267,6 +213,17 @@ export default function WatchParty() {
           </div>
         </section>
       </main>
+
+      {/* Always-on call controls — fixed so Mute/Leave are one tap away even when
+          the page scrolls (essential on mobile). */}
+      {joined && (
+        <div style={callBar}>
+          <button onClick={toggleMute} style={callBtn(muted ? "#dc2626" : "rgba(255,255,255,0.16)")} aria-label={muted ? "Unmute" : "Mute"}>
+            <span style={{ fontSize: 16 }}>{muted ? "🔇" : "🎙"}</span> {muted ? "Unmute" : "Mute"}
+          </button>
+          <button onClick={handleLeave} style={callBtn("rgba(220,38,38,0.92)")} aria-label="Leave the party">✕ Leave</button>
+        </div>
+      )}
     </>
   );
 }
@@ -294,4 +251,15 @@ const chip = (me) => ({
 const btn = (bg) => ({
   background: bg, color: "#fff", fontWeight: 700, border: "1px solid rgba(255,255,255,0.18)",
   borderRadius: 8, padding: "9px 16px", cursor: "pointer",
+});
+const callBar = {
+  position: "fixed", bottom: "max(18px, env(safe-area-inset-bottom))", left: "50%", transform: "translateX(-50%)",
+  zIndex: 200, display: "flex", gap: 10, padding: 8, borderRadius: 999,
+  background: "rgba(10,10,15,0.72)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)",
+  border: "1px solid rgba(255,255,255,0.14)", boxShadow: "0 10px 34px rgba(0,0,0,0.55)",
+};
+const callBtn = (bg) => ({
+  display: "inline-flex", alignItems: "center", gap: 7, border: "none",
+  borderRadius: 999, padding: "11px 22px", fontWeight: 800, fontSize: 14,
+  color: "#fff", cursor: "pointer", background: bg, whiteSpace: "nowrap",
 });
