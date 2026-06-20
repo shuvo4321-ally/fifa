@@ -35,11 +35,13 @@ export const TV_CHANNELS = [
     type: "hls"
   },
   {
-    name: "FOX English",
-    logo: "https://cdn.broadbandtvnews.com/wp-content/uploads/2025/05/13115423/Fox-One-Logo.jpg",
+    name: "FOX",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Fox_Broadcasting_Company_logo_%282019%29.svg/250px-Fox_Broadcasting_Company_logo_%282019%29.svg.png",
     group: "FIFA",
-    url: "https://1nyaler.streamhostingcdn.top/stream/26/index.m3u8",
-    type: "hls"
+    url: "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/9crxia693u/out/v1/fc40f22f10374517a2784e1d97cb23f4/cenc.mpd",
+    type: "dash",
+    kid: "1f68713028d439ec03be07f56c1d6213",
+    key: "20093db6455160fffed4c394def3193d"
   },
 
   {
