@@ -9,7 +9,7 @@ const CHANNELS = TV_CHANNELS;
 const MAX = 8; // peer-to-peer voice is reliable up to ~8
 const newCode = () => Math.random().toString(36).slice(2, 8).toUpperCase(); // 6-char room code
 
-export default function BetaWatchParty() {
+export default function WatchParty() {
   const [ready, setReady] = useState(false);
   const [roomCode, setRoomCode] = useState("");
   const [joinInput, setJoinInput] = useState("");
@@ -29,27 +29,27 @@ export default function BetaWatchParty() {
       if (r) setRoomCode(r);
     } catch {}
     try {
-      const savedCh = localStorage.getItem("beta-channel");
+      const savedCh = localStorage.getItem("watch-party-channel");
       if (savedCh) { const ch = CHANNELS.find((c) => c.name === savedCh); if (ch) setActive(ch); }
     } catch {}
     let savedName = "";
-    try { savedName = localStorage.getItem("beta-name") || ""; } catch {}
+    try { savedName = localStorage.getItem("watch-party-name") || ""; } catch {}
     setName(savedName || `Guest-${Math.floor(1000 + Math.random() * 9000)}`);
     setReady(true);
   }, []);
 
-  useEffect(() => { try { if (name) localStorage.setItem("beta-name", name); } catch {} }, [name]);
+  useEffect(() => { try { if (name) localStorage.setItem("watch-party-name", name); } catch {} }, [name]);
 
   // Stay in voice across a refresh (sessionStorage; cleared by Leave or tab close).
-  useEffect(() => { if (joined) { try { sessionStorage.setItem("beta-in-voice", "1"); } catch {} } }, [joined]);
+  useEffect(() => { if (joined) { try { sessionStorage.setItem("watch-party-in-voice", "1"); } catch {} } }, [joined]);
   const autoTried = useRef(false);
   useEffect(() => {
     if (autoTried.current || !ready || !roomCode || !name) return;
     autoTried.current = true;
-    try { if (sessionStorage.getItem("beta-in-voice") === "1") join(name); } catch {}
+    try { if (sessionStorage.getItem("watch-party-in-voice") === "1") join(name); } catch {}
   }, [ready, roomCode, name, join]);
   useEffect(() => {
-    if (error && !joined && !connecting) { try { sessionStorage.removeItem("beta-in-voice"); } catch {} }
+    if (error && !joined && !connecting) { try { sessionStorage.removeItem("watch-party-in-voice"); } catch {} }
   }, [error, joined, connecting]);
 
   const setRoom = (code) => {
@@ -66,9 +66,9 @@ export default function BetaWatchParty() {
     try { navigator.clipboard.writeText(window.location.href); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch {}
   };
 
-  const handleLeave = () => { try { sessionStorage.removeItem("beta-in-voice"); } catch {} leave(); };
+  const handleLeave = () => { try { sessionStorage.removeItem("watch-party-in-voice"); } catch {} leave(); };
 
-  const pickChannel = (ch) => { setActive(ch); try { if (ch) localStorage.setItem("beta-channel", ch.name); } catch {} };
+  const pickChannel = (ch) => { setActive(ch); try { if (ch) localStorage.setItem("watch-party-channel", ch.name); } catch {} };
   const cycle = (dir) => {
     if (!active) return;
     const i = CHANNELS.findIndex((c) => c.name === active.name);
@@ -90,7 +90,7 @@ export default function BetaWatchParty() {
       <main className="live-page livetv-page">
         <div className="live-head">
           <div>
-            <h1 className="live-title">Watch Party <span style={betaTag}>BETA</span></h1>
+            <h1 className="live-title">Watch Party</h1>
             <p className="predict-sub">Private rooms — only people you send the invite link to can join (max {MAX}).</p>
           </div>
         </div>
@@ -121,7 +121,7 @@ export default function BetaWatchParty() {
     <main className="live-page livetv-page">
       <div className="live-head">
         <div>
-          <h1 className="live-title">Watch Party <span style={betaTag}>BETA</span></h1>
+          <h1 className="live-title">Watch Party</h1>
           <p className="predict-sub">Watch Live TV together and talk over voice.</p>
         </div>
       </div>
@@ -207,7 +207,7 @@ export default function BetaWatchParty() {
   );
 }
 
-const betaTag = { fontSize: 13, color: "#ffd34d", verticalAlign: "middle", marginLeft: 8, fontWeight: 800, letterSpacing: ".08em" };
+// Styles
 const card = {
   marginTop: 16, padding: "14px 16px", borderRadius: 14,
   background: "rgba(20,20,28,0.6)", border: "1px solid rgba(255,255,255,0.12)",
