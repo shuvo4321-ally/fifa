@@ -19,8 +19,12 @@
 // Allowed upstream registrable domains — seeded from the HLS channels so this
 // can't be abused as a generic open relay. Add a domain here when you add an
 // HLS channel on a new host.
+// Registrable domains of your HLS channel hosts. Add a line when you add a
+// channel on a new host (otherwise the Worker returns 403 for it).
 const ALLOWED_DOMAINS = new Set([
   "streamhostingcdn.top",
+  "cloudfront.net",
+  "thebosstv.com",
   "akamaized.net",
   "tvri.go.id",
   "cinerama.uz",
