@@ -63,6 +63,34 @@ export default function WatchParty() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Remove page scroll option on mobile view.
+  useEffect(() => {
+    const handleScrollLock = () => {
+      if (window.innerWidth <= 768) {
+        document.body.style.overflow = "hidden";
+        document.body.style.height = "100vh";
+        document.documentElement.style.overflow = "hidden";
+        document.documentElement.style.height = "100vh";
+      } else {
+        document.body.style.overflow = "";
+        document.body.style.height = "";
+        document.documentElement.style.overflow = "";
+        document.documentElement.style.height = "";
+      }
+    };
+
+    handleScrollLock();
+    window.addEventListener("resize", handleScrollLock);
+
+    return () => {
+      window.removeEventListener("resize", handleScrollLock);
+      document.body.style.overflow = "";
+      document.body.style.height = "";
+      document.documentElement.style.overflow = "";
+      document.documentElement.style.height = "";
+    };
+  }, []);
+
   useEffect(() => { try { if (name) localStorage.setItem("watch-party-name", name); } catch {} }, [name]);
 
   // Stay in voice across a refresh (sessionStorage; cleared by Leave or tab close).
