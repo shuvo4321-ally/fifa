@@ -31,7 +31,7 @@ function ensureShaka() {
   return shakaPromise;
 }
 
-export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, streamType, drmKid, drmKey, onErrorCallback }) {
+export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, streamType, drmKid, drmKey, onErrorCallback, noProxy }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const hlsRef = useRef(null);
@@ -239,7 +239,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
       // lazy chunk to fetch on play — the channel starts as fast as possible.
       // The manifest goes through our same-origin proxy for a warm, CORS-free,
       // geo-unblocked fetch.
-      const streamSrc = proxify(src);
+      const streamSrc = noProxy ? src : proxify(src);
       // Prefer hls.js wherever MSE exists (Chrome/Edge/Firefox/Electron). Only
       // fall back to NATIVE HLS when hls.js can't run (iOS Safari) — Chromium
       // reports canPlayType("…mpegurl")="maybe" but can't actually play it, so

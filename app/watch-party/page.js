@@ -153,6 +153,7 @@ export default function WatchParty() {
               streamType={active.type}
               drmKid={active.kid}
               drmKey={active.key}
+              noProxy={active.no_proxy}
               onFullscreen={toggleFullscreen}
               onPrev={() => cycle(-1)}
               onNext={() => cycle(1)}

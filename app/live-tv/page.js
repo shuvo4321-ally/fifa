@@ -133,6 +133,7 @@ export default function LiveTvPage() {
               streamType={active.type}
               drmKid={active.kid}
               drmKey={active.key}
+              noProxy={active.no_proxy}
               onFullscreen={toggleFullscreen}
               onPrev={handlePrev}
               onNext={handleNext}
