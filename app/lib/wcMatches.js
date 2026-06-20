@@ -12,7 +12,11 @@ async function fromEspn() {
   let res;
   try {
     res = await fetch(
-      "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard",
+      // Whole-tournament date range in ONE call. The default scoreboard only
+      // returns the CURRENT day's handful of matches, so every other day's
+      // results — and therefore the group tables and most scorecards — stayed
+      // blank. WC 2026 runs Jun 11 – Jul 19, 2026.
+      "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260720",
       { cache: "no-store" }
     );
   } catch {
