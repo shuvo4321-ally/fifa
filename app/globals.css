@@ -4405,19 +4405,18 @@ a.search-result:hover {
   pointer-events: none;
 }
 
-/* Mobile view: 9,16.png (watch_party_bg_mobile.png) */
+/* Mobile view: 9,16.png (watch_party_bg_mobile.webp) */
 @media (max-width: 768px) {
   .watch-party-bg-container {
-    background-image: url('/images/watch_party_bg_mobile.png');
+    background-image: url('/images/watch_party_bg_mobile.webp');
     opacity: 0.65; /* Premium opacity: subtle, rich details */
   }
 }
 
-/* Window/Desktop view: 16,9.png (watch_party_bg_desktop.png) */
+/* Window/Desktop view: 16,9.png (watch_party_bg_desktop.webp) */
 @media (min-width: 769px) {
   .watch-party-bg-container {
-    background-image: url('/images/watch_party_bg_desktop.png');
+    background-image: url('/images/watch_party_bg_desktop.webp');
     opacity: 0.55; /* Premium opacity: elegant, clear contrast for text */
   }
 }
-
