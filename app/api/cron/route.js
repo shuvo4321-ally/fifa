@@ -13,7 +13,11 @@ export async function GET(request) {
 
   try {
     console.log('Running Supabase Keep-Alive Cron...')
-    
+
+    if (!supabase) {
+      return NextResponse.json({ success: false, message: "Supabase not configured" })
+    }
+
     // Make a lightweight query to the database to prevent it from pausing.
     // NOTE: You can replace 'keep_alive' with any table you have (e.g. 'users' or 'matches')
     const { error } = await supabase.from('keep_alive').select('id').limit(1)
