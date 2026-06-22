@@ -1,8 +1,0 @@
-# Cloudflare Worker config for the HLS proxy.
-# Deploy from this folder:  wrangler deploy
-name = "hls-proxy"
-main = "worker.js"
-compatibility_date = "2025-01-01"
-
-# The free plan (workers.dev subdomain) is enough to start.
-workers_dev = true
