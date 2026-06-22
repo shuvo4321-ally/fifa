@@ -151,8 +151,8 @@ export default function Hero({ hero, slides, today, pinned = false, onCta }) {
             <span className="hero-fixtures-head">{today.heading}</span>
             <div className="hero-today">
               <HeroTodayList rows={today.rows} />
-              <Link href="/live-tv" className="hero-today-cta">
-                {today.moreCount > 0 ? `+${today.moreCount} more · Watch Now →` : "Watch Now →"}
+              <Link href="/calendar" className="hero-today-cta">
+                {today.moreCount > 0 ? `+${today.moreCount} more · View Schedule →` : "View Schedule →"}
               </Link>
             </div>
           </div>

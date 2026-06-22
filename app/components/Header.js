@@ -2,14 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SearchBox from "./SearchBox";
 
 const NAV = [
   { label: "Home", href: "/" },
   { label: "Prediction", href: "/live" },
-  { label: "Live TV", href: "/live-tv" },
-  { label: "Watch Party", href: "/watch-party" },
   { label: "Schedule", href: "/calendar" },
 ];
 
@@ -50,16 +48,18 @@ export default function Header() {
             </svg>
           </Link>
           <nav className="nav-desktop">
-            {NAV.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={`nav-link${isActive(item.href) ? " is-active" : ""}`}
-                onClick={(e) => handleNavClick(e, item.href)}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {NAV.map((item) => {
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className={`nav-link${isActive(item.href) ? " is-active" : ""}`}
+                  onClick={(e) => handleNavClick(e, item.href)}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
         </div>
 
@@ -81,16 +81,18 @@ export default function Header() {
 
       {menuOpen && (
         <nav className="nav-mobile">
-          {NAV.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={`nav-mobile-link${isActive(item.href) ? " is-active" : ""}`}
-              onClick={(e) => handleNavClick(e, item.href)}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {NAV.map((item) => {
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={`nav-mobile-link${isActive(item.href) ? " is-active" : ""}`}
+                onClick={(e) => handleNavClick(e, item.href)}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
       )}
     </>
