@@ -3145,3 +3145,83 @@ a.search-result:hover {
   .predict-fixture-list { max-height: 360px; }
 }
 
+
+/* ===== Restored homepage/calendar mobile layout (was dropped in the
+   live-TV-removal CSS rewrite; hero mobile image + sizing). ===== */
+@media (max-width: 640px) {
+  /* ---- Home: tournament editions (portrait) ---- */
+  .tournament-grid { gap: var(--space-4); }
+  .tournament-card { flex-basis: 144px; }
+  .tournament-poster { border-radius: 12px; }
+  .tournament-title { font-size: var(--font-size-sm); }
+
+  /* ---- Home: legends carousel (16:9) ---- */
+  .legends-content { padding-left: var(--page-gutter); }
+  .films-header-area { padding-right: var(--page-gutter); }
+  .films-main-title { font-size: 22px; }
+  .films-description { font-size: var(--font-size-md); }
+  .legend-card-container { flex-basis: min(300px, 82vw); }
+  .legend-last-name { font-size: 20px; }
+
+  /* ---- Hero on phones: shorter AND normal-scroll ----
+     The desktop sticky-overlap parallax left the pinned hero bleeding
+     through as an ugly gap between the cards and the Legends row. On
+     phones the hero simply scrolls away and the rows follow it directly. */
+  .hero-bg-img {
+    background-image: var(--bg-mobile) !important;
+  }
+  .hero { position: relative; height: 60vh; height: 60svh; min-height: 400px; }
+  .home-content { margin-top: 0; }
+  .home-content::before { display: none; }
+  .hero-eyebrow { font-size: 26px; padding: 6px 12px; }
+  .hero .hero-content {
+    left: var(--page-gutter);
+    right: var(--page-gutter);
+    top: auto;
+    bottom: var(--space-8);
+    transform: none;
+    max-width: none;
+    padding: 0;
+  }
+
+  .hero .hero-content.centered {
+    left: var(--page-gutter);
+    top: 75%;
+  }
+  .hero-desc {
+    font-size: var(--font-size-md);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  /* Bright pitch images washed out the white copy — anchor to bottom over a
+     much stronger scrim, plus a text-shadow for guaranteed legibility. */
+  .hero-scrim {
+    background: linear-gradient(
+      to top,
+      rgba(8, 14, 18, 0.97) 0%,
+      rgba(8, 14, 18, 0.86) 26%,
+      rgba(8, 14, 18, 0.45) 56%,
+      rgba(8, 14, 18, 0.12) 100%
+    );
+  }
+  .hero-title,
+  .hero-desc { text-shadow: 0 2px 14px rgba(0, 0, 0, 0.75); }
+
+  /* ---- Schedule: reclaim side space, tighten ---- */
+  .calendar-content { padding: var(--space-4) 0; }
+  .unified-groups-grid { padding: 0 var(--space-3); gap: 32px; }
+  .fixtures-list { padding: 0 var(--space-3); }
+  .calendar-hero { padding: var(--space-7) var(--space-3) 0; }
+  .calendar-subnav { padding: 0 var(--space-3); gap: var(--space-6); }
+
+  /* ---- Scorecard modal ---- */
+  .scorecard-overlay { padding: var(--space-5); }
+  .scorecard-header { padding: var(--space-7) var(--space-5); }
+  .scorecard-flag { width: 52px; height: 52px; }
+  .scorecard-team h2 { font-size: var(--font-size-md); }
+  .scorecard-score { font-size: 40px; }
+  .scorecard-tabs { padding: 0 var(--space-5); }
+}
+
