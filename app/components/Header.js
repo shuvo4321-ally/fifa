@@ -9,6 +9,7 @@ const NAV = [
   { label: "Home", href: "/" },
   { label: "Prediction", href: "/live" },
   { label: "Schedule", href: "/calendar" },
+  { label: "Knockout", href: "/bracket" },
 ];
 
 export default function Header() {
