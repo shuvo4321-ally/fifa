@@ -8,6 +8,8 @@ import SearchBox from "./SearchBox";
 const NAV = [
   { label: "Home", href: "/" },
   { label: "Prediction", href: "/live" },
+  { label: "Live TV", href: "/live-tv" },
+  { label: "Watch Party", href: "/watch-party" },
   { label: "Schedule", href: "/calendar" },
   { label: "Knockout", href: "/bracket" },
 ];
