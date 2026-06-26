@@ -49,7 +49,7 @@ export default function PredictionHub() {
   // off the moment they finish, without a manual refresh.
   const [now, setNow] = useState(0);
   useEffect(() => {
-    setNow(Date.now());
+    setTimeout(() => setNow(Date.now()), 0);
     const id = setInterval(() => setNow(Date.now()), 60000);
     return () => clearInterval(id);
   }, []);
