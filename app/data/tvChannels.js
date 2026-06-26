@@ -42,7 +42,13 @@ export const TV_CHANNELS = [
     group: "FIFA",
     url: "https://dfr80qz435crc.cloudfront.net/MNOP/Amagi/Caze/Caze_TV_BR/Caze_TV.m3u8",
     type: "hls"
+  },
+  {
+    name: "T Sports HD",
+    logo: "https://images.seeklogo.com/logo-png/64/1/t-sports-logo-png_seeklogo-640172.png",
+    group: "FIFA",
+    url: "https://trs1.aynaott.com/tsports/tracks-v1a1/mono.ts.m3u8",
+    type: "hls",
+    no_proxy: true
   }
-
-
 ];
