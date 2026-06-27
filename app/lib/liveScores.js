@@ -170,6 +170,12 @@ export function getLiveScoreSync(team1, team2) {
   return lookupScore(snapshot.matches, team1, team2);
 }
 
+/** Group tables from the current snapshot — sync, for non-hook callers. */
+export function getGroupStandingsSync(groups, fixtures) {
+  hydrate();
+  return deriveStandings(snapshot.matches, groups, fixtures);
+}
+
 // Build group tables purely from FINISHED match results — same source as the
 // fixture scorelines, so the two can never disagree.
 function deriveStandings(matches, groups, fixtures) {

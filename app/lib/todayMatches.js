@@ -1,5 +1,16 @@
 import { FIXTURES_2026, GROUPS_2026 } from "../data/schedule2026.js";
-import { getLiveScoreSync } from "./liveScores.js";
+import { getLiveScoreSync, getGroupStandingsSync } from "./liveScores.js";
+
+// Resolve a knockout placeholder ("B1" = Group B winner, "D2" = Group D
+// runner-up) to the actual team from the live standings. Other placeholders
+// ("3rd A/B/C", "Winner R32-1", …) are left as-is until they're decidable.
+function resolvePlaceholder(spec, standings) {
+  const m = (spec || "").trim().match(/^([A-L])([12])$/);
+  if (!m) return spec;
+  const rows = standings["Group " + m[1]];
+  if (rows && rows.some((r) => r.gp > 0)) return rows[Number(m[2]) - 1]?.name || spec;
+  return spec;
+}
 
 // name → flag lookup, built once.
 const FLAGS = {};
@@ -71,8 +82,11 @@ export function buildTodaySlide(now) {
     .filter((f) => f.dayKey === targetKey && !f.isFinished && f.k + EXPIRE_MS > now) // drop matches immediately after they finish
     .sort((a, b) => a.k - b.k);
 
+  const standings = getGroupStandingsSync(GROUPS_2026, FIXTURES_2026);
   const rows = dayFixtures.slice(0, MAX_ROWS).map((f) => {
-    const [t1, t2] = f.match.split(" vs ").map((s) => s.trim());
+    const [r1, r2] = f.match.split(" vs ").map((s) => s.trim());
+    const t1 = resolvePlaceholder(r1, standings);
+    const t2 = resolvePlaceholder(r2, standings);
     const slug = groupSlug(f.group);
     return {
       team1: t1,
