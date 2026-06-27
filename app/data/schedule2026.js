@@ -208,23 +208,25 @@ export const FIXTURES_2026 = [
   { date: "Jun 28, 2026", match: "Panama vs England", group: "Group L", time: "03:00 AM", stage: "Group Stage" },
   { date: "Jun 28, 2026", match: "Croatia vs Ghana", group: "Group L", time: "03:00 AM", stage: "Group Stage" },
 
-  // ── Round of 32 (group placeholders) ──
-  { date: "Jun 28, 2026", match: "A1 vs C2", group: "Knockout", time: "01:00 AM", stage: "Round of 32" },
-  { date: "Jun 28, 2026", match: "B1 vs D2", group: "Knockout", time: "04:00 AM", stage: "Round of 32" },
-  { date: "Jun 29, 2026", match: "E1 vs G2", group: "Knockout", time: "01:00 AM", stage: "Round of 32" },
-  { date: "Jun 29, 2026", match: "F1 vs H2", group: "Knockout", time: "04:00 AM", stage: "Round of 32" },
-  { date: "Jun 30, 2026", match: "I1 vs K2", group: "Knockout", time: "01:00 AM", stage: "Round of 32" },
-  { date: "Jun 30, 2026", match: "J1 vs L2", group: "Knockout", time: "04:00 AM", stage: "Round of 32" },
-  { date: "Jul 1, 2026", match: "C1 vs A2", group: "Knockout", time: "01:00 AM", stage: "Round of 32" },
-  { date: "Jul 1, 2026", match: "D1 vs B2", group: "Knockout", time: "04:00 AM", stage: "Round of 32" },
-  { date: "Jul 2, 2026", match: "G1 vs E2", group: "Knockout", time: "01:00 AM", stage: "Round of 32" },
-  { date: "Jul 2, 2026", match: "H1 vs F2", group: "Knockout", time: "04:00 AM", stage: "Round of 32" },
-  { date: "Jul 3, 2026", match: "K1 vs I2", group: "Knockout", time: "01:00 AM", stage: "Round of 32" },
-  { date: "Jul 3, 2026", match: "L1 vs J2", group: "Knockout", time: "04:00 AM", stage: "Round of 32" },
-  { date: "Jul 4, 2026", match: "W1 vs 3rd A/B/C", group: "Knockout", time: "01:00 AM", stage: "Round of 32" },
-  { date: "Jul 4, 2026", match: "W2 vs 3rd D/E/F", group: "Knockout", time: "04:00 AM", stage: "Round of 32" },
-  { date: "Jul 5, 2026", match: "W3 vs 3rd G/H/I", group: "Knockout", time: "01:00 AM", stage: "Round of 32" },
-  { date: "Jul 5, 2026", match: "W4 vs 3rd J/K/L", group: "Knockout", time: "04:00 AM", stage: "Round of 32" },
+  // ── Round of 32 — official FIFA 2026 structure (matches the bracket).
+  //    Times are Bangladesh (UTC+6), converted from each venue's kickoff;
+  //    listed in chronological order. Comment = official match number. ──
+  { date: "Jun 29, 2026", match: "A2 vs B2", group: "Knockout", time: "01:00 AM", stage: "Round of 32" },              // M73
+  { date: "Jun 29, 2026", match: "C1 vs F2", group: "Knockout", time: "11:00 PM", stage: "Round of 32" },              // M76
+  { date: "Jun 30, 2026", match: "E1 vs 3rd A/B/C/D/F", group: "Knockout", time: "02:30 AM", stage: "Round of 32" },   // M74
+  { date: "Jun 30, 2026", match: "F1 vs C2", group: "Knockout", time: "07:00 AM", stage: "Round of 32" },              // M75
+  { date: "Jun 30, 2026", match: "E2 vs I2", group: "Knockout", time: "11:00 PM", stage: "Round of 32" },              // M78
+  { date: "Jul 1, 2026", match: "I1 vs 3rd C/D/F/G/H", group: "Knockout", time: "03:00 AM", stage: "Round of 32" },    // M77
+  { date: "Jul 1, 2026", match: "A1 vs 3rd C/E/F/H/I", group: "Knockout", time: "07:00 AM", stage: "Round of 32" },    // M79
+  { date: "Jul 1, 2026", match: "L1 vs 3rd E/H/I/J/K", group: "Knockout", time: "10:00 PM", stage: "Round of 32" },    // M80
+  { date: "Jul 2, 2026", match: "G1 vs 3rd A/E/H/I/J", group: "Knockout", time: "02:00 AM", stage: "Round of 32" },    // M82
+  { date: "Jul 2, 2026", match: "D1 vs 3rd B/E/F/I/J", group: "Knockout", time: "06:00 AM", stage: "Round of 32" },    // M81
+  { date: "Jul 3, 2026", match: "H1 vs J2", group: "Knockout", time: "01:00 AM", stage: "Round of 32" },               // M84
+  { date: "Jul 3, 2026", match: "K2 vs L2", group: "Knockout", time: "05:00 AM", stage: "Round of 32" },               // M83
+  { date: "Jul 3, 2026", match: "B1 vs 3rd E/F/G/I/J", group: "Knockout", time: "09:00 AM", stage: "Round of 32" },    // M85
+  { date: "Jul 4, 2026", match: "D2 vs G2", group: "Knockout", time: "12:00 AM", stage: "Round of 32" },               // M88
+  { date: "Jul 4, 2026", match: "J1 vs H2", group: "Knockout", time: "04:00 AM", stage: "Round of 32" },               // M86
+  { date: "Jul 4, 2026", match: "K1 vs 3rd D/E/I/J/L", group: "Knockout", time: "07:30 AM", stage: "Round of 32" },    // M87
 
   // ── Round of 16 ──
   { date: "Jul 6, 2026", match: "Winner R32-1 vs Winner R32-2", group: "Knockout", time: "01:00 AM", stage: "Round of 16" },
