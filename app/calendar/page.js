@@ -39,11 +39,23 @@ export default function Calendar() {
     return null;
   };
 
+  // "B1" = Group B winner, "D2" = Group D runner-up → the live team from the
+  // standings. Other placeholders (3rd X/Y/Z, Winner R32-N) stay as-is.
+  const resolveSlot = (spec) => {
+    const m = (spec || "").match(/^([A-L])([12])$/);
+    if (!m) return spec;
+    const rows = standings["Group " + m[1]];
+    if (rows && rows.some((r) => r.gp > 0)) return rows[Number(m[2]) - 1]?.name || spec;
+    return spec;
+  };
+
   const renderMatchWithFlags = (matchStr) => {
     if (!matchStr.includes(" vs "))
       return <span className="fixture-tbd">{matchStr}</span>;
 
-    const [team1, team2] = matchStr.split(" vs ").map((s) => s.trim());
+    const [raw1, raw2] = matchStr.split(" vs ").map((s) => s.trim());
+    const team1 = resolveSlot(raw1);
+    const team2 = resolveSlot(raw2);
     const flag1 = getFlag(team1);
     const flag2 = getFlag(team2);
 
@@ -53,7 +65,7 @@ export default function Calendar() {
           <span className="fixture-team-name">{team1}</span>
           {flag1 && <img src={flag1} alt="" className="flag-icon" loading="lazy" decoding="async" />}
         </span>
-        <LiveScoreInline matchStr={matchStr} />
+        <LiveScoreInline matchStr={`${team1} vs ${team2}`} />
         <span className="fixture-team fixture-team--away">
           {flag2 && <img src={flag2} alt="" className="flag-icon" loading="lazy" decoding="async" />}
           <span className="fixture-team-name">{team2}</span>
