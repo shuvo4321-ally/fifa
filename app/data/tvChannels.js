@@ -11,6 +11,15 @@ export const TV_CHANNELS = [
     url: "https://1nyaler.streamhostingcdn.top/stream/23/index.m3u8",
     type: "hls",
     no_proxy: true
+  },
+  {
+    name: "QAZ SPORTS FHD",
+    logo: "https://cdn.livesoccertv.com/images/channels/thumbnails/kazsport-kazakhstan.jpg",
+    group: "QAZ",
+    url: "https://fo03-bkm.beetv.kz/bpk-tv/000003038/tve/index.m3u8",
+    type: "hls",
+    no_proxy: true
   }
 ];
+
 
