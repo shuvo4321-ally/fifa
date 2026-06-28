@@ -29,6 +29,17 @@ export const TV_CHANNELS = [
     kid: "1f68713028d439ec03be07f56c1d6213",
     key: "20093db6455160fffed4c394def3193d",
     no_proxy: false
+  },
+  {
+    name: "TSN SPORTS FHD",
+    logo: "https://www.bellmedia.ca/lede/wp-content/uploads/2024/09/18581592_10155403529061055_8240563011649656197_n.jpg",
+    group: "TSN",
+    url: "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/w0rehjjrwe/out/v1/69a2a7041395406b970598f61680e7cf/cenc.mpd",
+    type: "dash",
+    kid: "14eeabf30c14b7fbf3008c03099ce011",
+    key: "17d2ac8dbc5429bd70af3433aa12158d",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+    no_proxy: false
   }
 ];
 
