@@ -51,63 +51,6 @@ export const TV_CHANNELS = [
     key: "a879b1d38ed002d4018bce96f9219b8d",
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
     no_proxy: false
-  },
-  {
-    name: "WC TV FHD",
-    logo: "https://i.pinimg.com/1200x/af/10/79/af10795cab0afa9fee94b52d4837db73.jpg",
-    group: "WC",
-    url: "https://qp-pldt-live-bpk-ucd-prod.akamaized.net/bpk-tv/fifa_ppv1/default/index.mpd",
-    type: "dash",
-    kid: "2c338a117d434ce4bbe3569231af90f1",
-    key: "a9633d901ee8a3f4f58ac314b5c5f4fb",
-    no_proxy: false
-  },
-  {
-    name: "TELEMUNDO HD",
-    logo: "https://duckduckgo.com/i/2e3815a5b7ddd3c9.png",
-    group: "TELEMUNDO",
-    url: "https://instreams.pro/US/NFLHD3/tracks-v1a1/mono.m3u8?",
-    type: "hls",
-    no_proxy: false,
-    referer: "https://instream.click/",
-    origin: "https://instream.click"
-  },
-  {
-    name: "ARABIC LIVE FHD",
-    logo: "",
-    group: "ARABIC",
-    url: "https://cdn2.xyzstreams.st/bein4kinternal/index.m3u8?",
-    type: "hls",
-    no_proxy: false,
-    referer: "https://xyzstreams.st/"
-  },
-  {
-    name: "HD SERVER ENG",
-    logo: "",
-    group: "HD",
-    url: "https://edgestreams.pro/hls/24SDAZFcsqnj24.m3u8?",
-    type: "hls",
-    no_proxy: false,
-    referer: "https://streamscenter.online/",
-    origin: "https://streamscenter.online"
-  },
-  {
-    name: "Bein Sports 2 Arabic",
-    logo: "https://play-lh.googleusercontent.com/jBDZq3aBmCXuvtuJHEasqsdYPRxMBGzYmEha4dMlgoIk19Zlh6BGQC08Zt6Ifrmzhg",
-    group: "beIN",
-    url: "https://1nyaler.streamhostingcdn.top/stream/21/index.m3u8",
-    type: "hls",
-    no_proxy: true
-  },
-  {
-    name: "HD SERVER AR",
-    logo: "",
-    group: "HD",
-    url: "https://mainstreams.pro/hls/eJmauBDCIf.m3u8?",
-    type: "hls",
-    no_proxy: false,
-    referer: "https://streamscenter.online/",
-    origin: "https://streamscenter.online"
   }
 ];
 
