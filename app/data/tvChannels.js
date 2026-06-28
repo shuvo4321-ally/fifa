@@ -19,6 +19,16 @@ export const TV_CHANNELS = [
     url: "https://fo03-bkm.beetv.kz/bpk-tv/000003038/tve/index.m3u8",
     type: "hls",
     no_proxy: true
+  },
+  {
+    name: "FOX SPORTS 4K",
+    logo: "https://images.seeklogo.com/logo-png/28/1/fox-sports-logo-png_seeklogo-284763.png",
+    group: "FOX",
+    url: "https://otte.cache.aiv-cdn.net/lhr-nitro/live/clients/dash/enc/m5hvr8vyu9/out/v1/31d30c91fc65458789b84209d3fa22e4/cenc.mpd",
+    type: "dash",
+    kid: "1f68713028d439ec03be07f56c1d6213",
+    key: "20093db6455160fffed4c394def3193d",
+    no_proxy: false
   }
 ];
 
