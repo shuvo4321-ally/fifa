@@ -51,6 +51,16 @@ export const TV_CHANNELS = [
     key: "a879b1d38ed002d4018bce96f9219b8d",
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
     no_proxy: false
+  },
+  {
+    name: "TIPIK FR FHD",
+    logo: "https://upload.wikimedia.org/wikipedia/fr/b/bb/Logo_Tipik_2025.png",
+    group: "TIPIK",
+    url: "https://c9851ec-rbm-hilv-fsly.cdn.redbee.live/L26/6b640fa2/a765d074.isml/dash/.mpd",
+    type: "dash",
+    kid: "adca25b8779e4168a0cd710f59f61ccf",
+    key: "be5383ed3cd8079f4ffe78ad067f476a",
+    no_proxy: false
   }
 ];
 
