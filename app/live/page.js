@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { FIXTURES_2026, GROUPS_2026 } from "../data/schedule2026";
-import { getLiveScoreSync, useScoresTick } from "../lib/liveScores";
+import { getLiveScoreSync, useGroupStandings } from "../lib/liveScores";
+import { thirdAssignmentsByWinner } from "../lib/knockoutBracket";
 
 // Build a name → flag lookup once from the group data.
 const FLAGS = {};
@@ -54,24 +55,51 @@ export default function PredictionHub() {
     return () => clearInterval(id);
   }, []);
 
-  // Subscribe to the shared live-score snapshot so the list re-renders — and a
-  // finished match drops — the instant a result lands, not 2.5h after kickoff.
-  useScoresTick();
+  // Standings drive knockout resolution (and subscribe to the shared snapshot,
+  // so the list re-renders the instant a result lands).
+  const standings = useGroupStandings(GROUPS_2026, FIXTURES_2026);
+  const thirds = thirdAssignmentsByWinner(standings, GROUPS_2026);
 
-  const upcomingFixtures = FIXTURES_2026.filter((f) => {
-    if (f.stage !== "Group Stage" || isFixtureOver(f, now)) return false;
-    // Drop immediately once the live feed marks it finished.
-    const [t1, t2] = splitMatch(f.match);
-    const live = getLiveScoreSync(t1, t2);
-    if (live && live.status === "FINISHED") return false;
-    return true;
-  }).sort((a, b) => {
-    const ka = fixtureKickoffMs(a);
-    const kb = fixtureKickoffMs(b);
-    if (Number.isNaN(ka)) return 1;
-    if (Number.isNaN(kb)) return -1;
-    return ka - kb; // Ascending: earliest date first
-  });
+  // Resolve knockout placeholders to the live teams: "B1" = Group B winner,
+  // "D2" = runner-up, "E1 vs 3rd …" = winner vs the bracket-assigned third.
+  const resolveSlot = (spec) => {
+    const m = (spec || "").match(/^([A-L])([12])$/);
+    if (!m) return spec;
+    const rows = standings["Group " + m[1]];
+    if (rows && rows.some((r) => r.gp > 0)) return rows[Number(m[2]) - 1]?.name || spec;
+    return spec;
+  };
+  const resolveMatch = (matchStr) => {
+    const [r1, r2] = splitMatch(matchStr);
+    let t1 = resolveSlot(r1), t2 = resolveSlot(r2);
+    const w1 = r1.match(/^([A-L])1$/), w2 = r2.match(/^([A-L])1$/);
+    if (w1 && /^3rd/i.test(r2) && thirds[w1[1]]) t2 = thirds[w1[1]];
+    else if (w2 && /^3rd/i.test(r1) && thirds[w2[1]]) t1 = thirds[w2[1]];
+    return [t1, t2];
+  };
+
+  // Every fixture — group AND knockout — whose teams are known and that hasn't
+  // kicked off / finished. Knockout placeholders that aren't decidable yet
+  // (no resolved flag, e.g. "Winner R32-1") are skipped until their teams set.
+  const upcomingFixtures = FIXTURES_2026
+    .filter((f) => f.match.includes(" vs ") && !isFixtureOver(f, now))
+    .map((f) => {
+      const [t1, t2] = resolveMatch(f.match);
+      return { ...f, t1, t2, resolvedMatch: `${t1} vs ${t2}` };
+    })
+    .filter((f) => {
+      if (!getFlag(f.t1) || !getFlag(f.t2)) return false; // both must be real teams
+      const live = getLiveScoreSync(f.t1, f.t2);
+      if (live && live.status === "FINISHED") return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const ka = fixtureKickoffMs(a);
+      const kb = fixtureKickoffMs(b);
+      if (Number.isNaN(ka)) return 1;
+      if (Number.isNaN(kb)) return -1;
+      return ka - kb; // Ascending: earliest date first
+    });
 
   const closeModal = useCallback(() => {
     setActiveMatch(null);
@@ -83,7 +111,7 @@ export default function PredictionHub() {
   }, []);
 
   const handlePredict = useCallback(async (fixture) => {
-    const matchStr = typeof fixture === "string" ? fixture : fixture.match;
+    const matchStr = typeof fixture === "string" ? fixture : (fixture.resolvedMatch || fixture.match);
     setActiveMatch(matchStr);
     if (fixture && fixture.date) setActiveMeta({ date: fixture.date, group: fixture.group });
     setPrediction(null);
@@ -140,7 +168,7 @@ export default function PredictionHub() {
 
       <div className="match-grid">
         {upcomingFixtures.map((f, i) => {
-          const [t1, t2] = splitMatch(f.match);
+          const t1 = f.t1, t2 = f.t2;
           return (
             <button key={i} className="match-card" onClick={() => handlePredict(f)}>
               <div className="match-card-meta">

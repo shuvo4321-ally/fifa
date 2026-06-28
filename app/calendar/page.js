@@ -6,6 +6,7 @@ import { GROUPS_2026, FIXTURES_2026 } from "../data/schedule2026";
 const ScorecardModal = dynamic(() => import("../components/ScorecardModal"));
 import LiveScoreInline from "../components/LiveScoreInline";
 import { useGroupStandings } from "../lib/liveScores";
+import { thirdAssignmentsByWinner } from "../lib/knockoutBracket";
 const STAGES = ["Group Stage", "Round of 32", "Round of 16", "Quarter-Final", "Semi-Final", "Final"];
 
 // "Group A" → "group-a" — anchor target for hero deep-links.
@@ -17,6 +18,8 @@ export default function Calendar() {
   // Group tables derived from the same match results the fixtures show — the two
   // can't disagree, and it drops the separate /api/standings call.
   const standings = useGroupStandings(GROUPS_2026, FIXTURES_2026);
+  // winner-group-letter → third-placed opponent (same matching as the bracket).
+  const thirds = thirdAssignmentsByWinner(standings, GROUPS_2026);
 
   // Deep-link from the home hero: /calendar#group-a scrolls to that group's
   // table (the Group Stage view is the default, so the anchor exists on load).
@@ -54,8 +57,13 @@ export default function Calendar() {
       return <span className="fixture-tbd">{matchStr}</span>;
 
     const [raw1, raw2] = matchStr.split(" vs ").map((s) => s.trim());
-    const team1 = resolveSlot(raw1);
-    const team2 = resolveSlot(raw2);
+    let team1 = resolveSlot(raw1);
+    let team2 = resolveSlot(raw2);
+    // "E1 vs 3rd A/B/C/D/F": fill the third-place side from the bracket's
+    // assignment (group winner is always the non-"3rd" side).
+    const w1 = raw1.match(/^([A-L])1$/), w2 = raw2.match(/^([A-L])1$/);
+    if (w1 && /^3rd/i.test(raw2) && thirds[w1[1]]) team2 = thirds[w1[1]];
+    else if (w2 && /^3rd/i.test(raw1) && thirds[w2[1]]) team1 = thirds[w2[1]];
     const flag1 = getFlag(team1);
     const flag2 = getFlag(team2);
 
