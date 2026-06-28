@@ -53,14 +53,61 @@ export const TV_CHANNELS = [
     no_proxy: false
   },
   {
-    name: "TIPIK FR FHD",
-    logo: "https://upload.wikimedia.org/wikipedia/fr/b/bb/Logo_Tipik_2025.png",
-    group: "TIPIK",
-    url: "https://c9851ec-rbm-hilv-fsly.cdn.redbee.live/L26/6b640fa2/a765d074.isml/dash/.mpd",
+    name: "WC TV FHD",
+    logo: "https://i.pinimg.com/1200x/af/10/79/af10795cab0afa9fee94b52d4837db73.jpg",
+    group: "WC",
+    url: "https://qp-pldt-live-bpk-ucd-prod.akamaized.net/bpk-tv/fifa_ppv1/default/index.mpd",
     type: "dash",
-    kid: "adca25b8779e4168a0cd710f59f61ccf",
-    key: "be5383ed3cd8079f4ffe78ad067f476a",
+    kid: "2c338a117d434ce4bbe3569231af90f1",
+    key: "a9633d901ee8a3f4f58ac314b5c5f4fb",
     no_proxy: false
+  },
+  {
+    name: "TELEMUNDO HD",
+    logo: "https://duckduckgo.com/i/2e3815a5b7ddd3c9.png",
+    group: "TELEMUNDO",
+    url: "https://instreams.pro/US/NFLHD3/tracks-v1a1/mono.m3u8?",
+    type: "hls",
+    no_proxy: false,
+    referer: "https://instream.click/",
+    origin: "https://instream.click"
+  },
+  {
+    name: "ARABIC LIVE FHD",
+    logo: "",
+    group: "ARABIC",
+    url: "https://cdn2.xyzstreams.st/bein4kinternal/index.m3u8?",
+    type: "hls",
+    no_proxy: false,
+    referer: "https://xyzstreams.st/"
+  },
+  {
+    name: "HD SERVER ENG",
+    logo: "",
+    group: "HD",
+    url: "https://edgestreams.pro/hls/24SDAZFcsqnj24.m3u8?",
+    type: "hls",
+    no_proxy: false,
+    referer: "https://streamscenter.online/",
+    origin: "https://streamscenter.online"
+  },
+  {
+    name: "Bein Sports 2 Arabic",
+    logo: "https://play-lh.googleusercontent.com/jBDZq3aBmCXuvtuJHEasqsdYPRxMBGzYmEha4dMlgoIk19Zlh6BGQC08Zt6Ifrmzhg",
+    group: "beIN",
+    url: "https://1nyaler.streamhostingcdn.top/stream/21/index.m3u8",
+    type: "hls",
+    no_proxy: true
+  },
+  {
+    name: "HD SERVER AR",
+    logo: "",
+    group: "HD",
+    url: "https://mainstreams.pro/hls/eJmauBDCIf.m3u8?",
+    type: "hls",
+    no_proxy: false,
+    referer: "https://streamscenter.online/",
+    origin: "https://streamscenter.online"
   }
 ];
 
