@@ -16,7 +16,6 @@ const splitMatch = (m) => (m || "").split(" vs ").map((s) => s.trim());
 // regardless of where the viewer is.
 const MONTHS = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
 const BDT_OFFSET_MS = 6 * 60 * 60 * 1000;
-const MATCH_OVER_MS = 2.5 * 60 * 60 * 1000; // full time + halftime + stoppage, with margin
 
 function fixtureKickoffMs(f) {
   const dm = /([A-Za-z]{3})[a-z]*\s+(\d{1,2}),\s*(\d{4})/.exec(f?.date || "");
@@ -30,11 +29,12 @@ function fixtureKickoffMs(f) {
   return Date.UTC(Number(dm[3]), month, Number(dm[2]), hour, Number(tm[2])) - BDT_OFFSET_MS;
 }
 
-// A match is "over" once enough time has passed since kickoff. Unparseable
-// dates count as upcoming so a data hiccup never silently hides a fixture.
-function isFixtureOver(f, now) {
+// Prediction is for matches still to come, so a fixture leaves the list the
+// moment its kickoff time passes. Unparseable dates count as upcoming so a data
+// hiccup never silently hides a fixture (the live-status check still drops it).
+function hasFixtureStarted(f, now) {
   const k = fixtureKickoffMs(f);
-  return !Number.isNaN(k) && now > k + MATCH_OVER_MS;
+  return !Number.isNaN(k) && now >= k;
 }
 
 export default function PredictionHub() {
@@ -82,7 +82,7 @@ export default function PredictionHub() {
   // kicked off / finished. Knockout placeholders that aren't decidable yet
   // (no resolved flag, e.g. "Winner R32-1") are skipped until their teams set.
   const upcomingFixtures = FIXTURES_2026
-    .filter((f) => f.match.includes(" vs ") && !isFixtureOver(f, now))
+    .filter((f) => f.match.includes(" vs ") && !hasFixtureStarted(f, now))
     .map((f) => {
       const [t1, t2] = resolveMatch(f.match);
       return { ...f, t1, t2, resolvedMatch: `${t1} vs ${t2}` };
@@ -90,7 +90,8 @@ export default function PredictionHub() {
     .filter((f) => {
       if (!getFlag(f.t1) || !getFlag(f.t2)) return false; // both must be real teams
       const live = getLiveScoreSync(f.t1, f.t2);
-      if (live && live.status === "FINISHED") return false;
+      // gone the moment it's live or finished — prediction is for upcoming only
+      if (live && (live.status === "IN_PLAY" || live.status === "PAUSED" || live.status === "FINISHED")) return false;
       return true;
     })
     .sort((a, b) => {
