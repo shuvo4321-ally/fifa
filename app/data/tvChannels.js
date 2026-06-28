@@ -40,6 +40,17 @@ export const TV_CHANNELS = [
     key: "17d2ac8dbc5429bd70af3433aa12158d",
     "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
     no_proxy: false
+  },
+  {
+    name: "FOX ONE HD",
+    logo: "https://images.seeklogo.com/logo-png/28/1/fox-sports-logo-png_seeklogo-284763.png",
+    group: "FOX",
+    url: "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/zpfs5hlgya/out/v1/84b1d591a23640178a8e8aa43c6e59a7/cenc.mpd",
+    type: "dash",
+    kid: "0cc2f872759c96de70237e6fa6de03d0",
+    key: "a879b1d38ed002d4018bce96f9219b8d",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+    no_proxy: false
   }
 ];
 
