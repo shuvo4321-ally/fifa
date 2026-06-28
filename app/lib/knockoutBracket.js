@@ -87,6 +87,33 @@ function matchThirds(slots, qualGroups) {
   return slotOwner;
 }
 
+// For the schedule/calendar: maps each group WINNER's letter (the "vs 3rd"
+// matches — E,I,A,L,D,G,B,K) to the third-placed team it faces, using the SAME
+// ranking + bipartite matching as the bracket so the two never disagree.
+// Returns {} entries only for slots whose third is decidable yet.
+export function thirdAssignmentsByWinner(standings, groups) {
+  const thirds = [];
+  for (const g of groups) {
+    const letter = g.name.replace("Group ", "");
+    const row = standings["Group " + letter]?.[2];
+    if (row && row.gp > 0) thirds.push({ letter, name: row.name, pts: row.pts, gd: row.gd, gf: row.gf });
+  }
+  thirds.sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.name.localeCompare(b.name));
+  const qualThirds = thirds.slice(0, 8);
+  const thirdNameByGroup = new Map(qualThirds.map((t) => [t.letter, t.name]));
+  const thirdSlots = R32_SPEC
+    .map((m, idx) => (m.b && m.b.third ? { idx, bucket: m.b.third } : null))
+    .filter(Boolean);
+  const slotOwner = matchThirds(thirdSlots, qualThirds.map((t) => t.letter));
+  const out = {};
+  for (const slot of thirdSlots) {
+    const winnerLetter = R32_SPEC[slot.idx].a[1]; // "1E" → "E"
+    const g = slotOwner.get(slot.idx);
+    if (g) out[winnerLetter] = thirdNameByGroup.get(g);
+  }
+  return out;
+}
+
 export function buildBracket(standings, groups, fixtures) {
   const flags = {};
   for (const g of groups) for (const t of g.teams) flags[t.name] = t.flag;
