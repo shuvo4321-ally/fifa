@@ -180,5 +180,14 @@ export function buildBracket(standings, groups, fixtures) {
   const sf = advance(qf);
   const final = advance(sf);
 
-  return { flags, rounds: { r32, r16, qf, sf, final } };
+  // Third-place play-off: the two semi-final LOSERS.
+  const loserOf = (match) => {
+    if (!match || !match.s1?.name || !match.s2?.name) return null;
+    const sc = getLiveScoreSync(match.s1.name, match.s2.name);
+    if (!sc || sc.status !== "FINISHED" || sc.s1 == null || sc.s2 == null || sc.s1 === sc.s2) return null;
+    return sc.s1 > sc.s2 ? match.s2 : match.s1;
+  };
+  const thirdPlace = [{ s1: loserOf(sf[0]) || tbdObj("Loser SF1"), s2: loserOf(sf[1]) || tbdObj("Loser SF2") }];
+
+  return { flags, rounds: { r32, r16, qf, sf, final, thirdPlace } };
 }
