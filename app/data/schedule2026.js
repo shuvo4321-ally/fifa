@@ -251,6 +251,6 @@ export const FIXTURES_2026 = [
   { date: "Jul 16, 2026", match: "Winner 99 vs Winner 100", group: "Knockout", time: "01:00 AM", stage: "Semi-Final", ref: { round: "sf", i: 1 } },   // M102
 
   // ── Third place & Final ──
-  { date: "Jul 19, 2026", match: "Loser 101 vs Loser 102", group: "Third-place", time: "04:00 AM", stage: "Final" },                                  // M103
+  { date: "Jul 19, 2026", match: "Loser 101 vs Loser 102", group: "Third-place", time: "04:00 AM", stage: "Final", ref: { round: "thirdPlace", i: 0 } }, // M103
   { date: "Jul 20, 2026", match: "Winner 101 vs Winner 102", group: "Final", time: "04:00 AM", stage: "Final", ref: { round: "final", i: 0 } },       // M104
 ];
