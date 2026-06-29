@@ -228,27 +228,29 @@ export const FIXTURES_2026 = [
   { date: "Jul 4, 2026", match: "J1 vs H2", group: "Knockout", time: "04:00 AM", stage: "Round of 32" },               // M86
   { date: "Jul 4, 2026", match: "K1 vs 3rd D/E/I/J/L", group: "Knockout", time: "07:30 AM", stage: "Round of 32" },    // M87
 
-  // ── Round of 16 ──
-  { date: "Jul 6, 2026", match: "Winner R32-1 vs Winner R32-2", group: "Knockout", time: "01:00 AM", stage: "Round of 16" },
-  { date: "Jul 6, 2026", match: "Winner R32-3 vs Winner R32-4", group: "Knockout", time: "04:00 AM", stage: "Round of 16" },
-  { date: "Jul 7, 2026", match: "Winner R32-5 vs Winner R32-6", group: "Knockout", time: "01:00 AM", stage: "Round of 16" },
-  { date: "Jul 7, 2026", match: "Winner R32-7 vs Winner R32-8", group: "Knockout", time: "04:00 AM", stage: "Round of 16" },
-  { date: "Jul 8, 2026", match: "Winner R32-9 vs Winner R32-10", group: "Knockout", time: "01:00 AM", stage: "Round of 16" },
-  { date: "Jul 8, 2026", match: "Winner R32-11 vs Winner R32-12", group: "Knockout", time: "04:00 AM", stage: "Round of 16" },
-  { date: "Jul 9, 2026", match: "Winner R32-13 vs Winner R32-14", group: "Knockout", time: "01:00 AM", stage: "Round of 16" },
-  { date: "Jul 9, 2026", match: "Winner R32-15 vs Winner R32-16", group: "Knockout", time: "04:00 AM", stage: "Round of 16" },
+  // ── Round of 16 — resolves live from the R32 winners. `ref` points into the
+  //    bracket's advancement rounds (buildBracket); official BD times, in order.
+  //    Comment = official match number. ──
+  { date: "Jul 4, 2026", match: "Winner 73 vs Winner 75", group: "Knockout", time: "11:00 PM", stage: "Round of 16", ref: { round: "r16", i: 1 } },  // M90
+  { date: "Jul 5, 2026", match: "Winner 74 vs Winner 77", group: "Knockout", time: "03:00 AM", stage: "Round of 16", ref: { round: "r16", i: 0 } },  // M89
+  { date: "Jul 6, 2026", match: "Winner 76 vs Winner 78", group: "Knockout", time: "02:00 AM", stage: "Round of 16", ref: { round: "r16", i: 4 } },  // M91
+  { date: "Jul 6, 2026", match: "Winner 79 vs Winner 80", group: "Knockout", time: "06:00 AM", stage: "Round of 16", ref: { round: "r16", i: 5 } },  // M92
+  { date: "Jul 7, 2026", match: "Winner 83 vs Winner 84", group: "Knockout", time: "01:00 AM", stage: "Round of 16", ref: { round: "r16", i: 2 } },  // M93
+  { date: "Jul 7, 2026", match: "Winner 81 vs Winner 82", group: "Knockout", time: "06:00 AM", stage: "Round of 16", ref: { round: "r16", i: 3 } },  // M94
+  { date: "Jul 7, 2026", match: "Winner 86 vs Winner 88", group: "Knockout", time: "10:00 PM", stage: "Round of 16", ref: { round: "r16", i: 6 } },  // M95
+  { date: "Jul 8, 2026", match: "Winner 85 vs Winner 87", group: "Knockout", time: "02:00 AM", stage: "Round of 16", ref: { round: "r16", i: 7 } },  // M96
 
-  // ── Quarter-finals ──
-  { date: "Jul 10, 2026", match: "Winner R16-1 vs Winner R16-2", group: "Knockout", time: "01:00 AM", stage: "Quarter-Final" },
-  { date: "Jul 11, 2026", match: "Winner R16-3 vs Winner R16-4", group: "Knockout", time: "01:00 AM", stage: "Quarter-Final" },
-  { date: "Jul 11, 2026", match: "Winner R16-5 vs Winner R16-6", group: "Knockout", time: "04:00 AM", stage: "Quarter-Final" },
-  { date: "Jul 12, 2026", match: "Winner R16-7 vs Winner R16-8", group: "Knockout", time: "01:00 AM", stage: "Quarter-Final" },
+  // ── Quarter-finals — resolves from the R16 winners ──
+  { date: "Jul 10, 2026", match: "Winner 89 vs Winner 90", group: "Knockout", time: "02:00 AM", stage: "Quarter-Final", ref: { round: "qf", i: 0 } }, // M97
+  { date: "Jul 11, 2026", match: "Winner 93 vs Winner 94", group: "Knockout", time: "01:00 AM", stage: "Quarter-Final", ref: { round: "qf", i: 1 } }, // M98
+  { date: "Jul 12, 2026", match: "Winner 91 vs Winner 92", group: "Knockout", time: "03:00 AM", stage: "Quarter-Final", ref: { round: "qf", i: 2 } }, // M99
+  { date: "Jul 12, 2026", match: "Winner 95 vs Winner 96", group: "Knockout", time: "07:00 AM", stage: "Quarter-Final", ref: { round: "qf", i: 3 } }, // M100
 
-  // ── Semi-finals ──
-  { date: "Jul 14, 2026", match: "Winner QF-1 vs Winner QF-2", group: "Knockout", time: "01:00 AM", stage: "Semi-Final" },
-  { date: "Jul 15, 2026", match: "Winner QF-3 vs Winner QF-4", group: "Knockout", time: "01:00 AM", stage: "Semi-Final" },
+  // ── Semi-finals — resolves from the QF winners ──
+  { date: "Jul 15, 2026", match: "Winner 97 vs Winner 98", group: "Knockout", time: "01:00 AM", stage: "Semi-Final", ref: { round: "sf", i: 0 } },    // M101
+  { date: "Jul 16, 2026", match: "Winner 99 vs Winner 100", group: "Knockout", time: "01:00 AM", stage: "Semi-Final", ref: { round: "sf", i: 1 } },   // M102
 
   // ── Third place & Final ──
-  { date: "Jul 18, 2026", match: "Loser SF-1 vs Loser SF-2", group: "Third-place", time: "01:00 AM", stage: "Final" },
-  { date: "Jul 19, 2026", match: "Winner SF-1 vs Winner SF-2", group: "Final", time: "01:00 AM", stage: "Final" },
+  { date: "Jul 19, 2026", match: "Loser 101 vs Loser 102", group: "Third-place", time: "04:00 AM", stage: "Final" },                                  // M103
+  { date: "Jul 20, 2026", match: "Winner 101 vs Winner 102", group: "Final", time: "04:00 AM", stage: "Final", ref: { round: "final", i: 0 } },       // M104
 ];
