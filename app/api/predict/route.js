@@ -14,7 +14,9 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const MODEL = "gemini-3.5-flash";
+// Prefer the newest flash model; fall back to the reliable one when the newer
+// one is capacity-constrained (503 UNAVAILABLE) so predictions never hard-fail.
+const MODELS = ["gemini-3.5-flash", "gemini-2.5-flash"];
 
 // Structured shape Gemini must return for a prediction (JSON mode). Rendering a
 // real card from this is what makes the output readable instead of a text blob.
@@ -317,12 +319,16 @@ CRITICAL RULES FOR PREDICTIONS:
 
   let lastErrorMsg = "AI service error.";
   let lastStatus = 502;
-  let overloadHits = 0; // 503s = model-wide overload, not per-key — bail out fast.
+  // Try each model in preference order; within a model, round-robin the keys.
+  for (let mi = 0; mi < MODELS.length; mi++) {
+   const model = MODELS[mi];
+   let overloadHits = 0;        // 503s = this model is overloaded for everyone
+   let modelOverloaded = false;
 
   // Round-robin: try each key until one succeeds.
   for (let i = 0; i < apiKeys.length; i++) {
     const apiKey = apiKeys[i];
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
     try {
       const res = await fetch(url, {
@@ -349,7 +355,8 @@ CRITICAL RULES FOR PREDICTIONS:
         // 503 = the model is overloaded for everyone; cycling more keys just wastes
         // ~3s each, so give up after a few attempts instead of hanging ~1 min.
         if (res.status === 503) {
-          if (++overloadHits >= 3) break;
+          // this model is overloaded for everyone — fall back to the next model
+          if (++overloadHits >= 1) { modelOverloaded = true; break; }
           continue;
         }
         if (res.status === 429 || res.status >= 500) continue;
@@ -397,8 +404,12 @@ CRITICAL RULES FOR PREDICTIONS:
       lastStatus = 500;
     }
   }
+    // Fall back to the next model only when this one was overloaded; for other
+    // failures (bad request, etc.) stop here.
+    if (!modelOverloaded) break;
+  }
 
-  console.error("All Gemini API keys failed.");
+  console.error("All Gemini API keys/models failed.");
   const friendlyError =
     lastStatus === 503
       ? "The AI is overloaded right now (Gemini is at high demand). Please try again in a moment."
