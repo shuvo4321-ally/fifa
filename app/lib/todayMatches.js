@@ -1,15 +1,33 @@
 import { FIXTURES_2026, GROUPS_2026 } from "../data/schedule2026.js";
 import { getLiveScoreSync, getGroupStandingsSync } from "./liveScores.js";
+import { buildBracket, thirdAssignmentsByWinner } from "./knockoutBracket.js";
 
 // Resolve a knockout placeholder ("B1" = Group B winner, "D2" = Group D
-// runner-up) to the actual team from the live standings. Other placeholders
-// ("3rd A/B/C", "Winner R32-1", …) are left as-is until they're decidable.
+// runner-up) to the actual team from the live standings.
 function resolvePlaceholder(spec, standings) {
   const m = (spec || "").trim().match(/^([A-L])([12])$/);
   if (!m) return spec;
   const rows = standings["Group " + m[1]];
   if (rows && rows.some((r) => r.gp > 0)) return rows[Number(m[2]) - 1]?.name || spec;
   return spec;
+}
+
+// Resolve a full fixture to its two teams: group winner/runner-up, the actual
+// third-placed opponent (feed-driven), and R16+ winners that have advanced —
+// the same resolution the bracket and calendar use, so they all agree.
+function resolveMatchTeams(fixture, standings, thirds, bracket) {
+  const [r1, r2] = (fixture.match || "").split(" vs ").map((s) => s.trim());
+  if (fixture.ref) {
+    const m = bracket?.rounds?.[fixture.ref.round]?.[fixture.ref.i];
+    const a = m?.s1 && !m.s1.tbd ? m.s1.name : resolvePlaceholder(r1, standings);
+    const b = m?.s2 && !m.s2.tbd ? m.s2.name : resolvePlaceholder(r2, standings);
+    return [a, b];
+  }
+  let t1 = resolvePlaceholder(r1, standings), t2 = resolvePlaceholder(r2, standings);
+  const w1 = r1.match(/^([A-L])1$/), w2 = r2.match(/^([A-L])1$/);
+  if (w1 && /^3rd/i.test(r2) && thirds[w1[1]]) t2 = thirds[w1[1]];
+  else if (w2 && /^3rd/i.test(r1) && thirds[w2[1]]) t1 = thirds[w2[1]];
+  return [t1, t2];
 }
 
 // name → flag lookup, built once.
@@ -58,11 +76,15 @@ function fixtureDayKey(f) {
  * caller can compute it post-mount and avoid an SSR hydration mismatch.
  */
 export function buildTodaySlide(now) {
+  const standings = getGroupStandingsSync(GROUPS_2026, FIXTURES_2026);
+  const thirds = thirdAssignmentsByWinner(standings, GROUPS_2026);
+  const bracket = buildBracket(standings, GROUPS_2026, FIXTURES_2026);
+
   const fixtures = FIXTURES_2026
     .filter((f) => f.match.includes(" vs "))
     .map((f) => {
       const k = kickoffMs(f);
-      const [t1, t2] = f.match.split(" vs ").map((s) => s.trim());
+      const [t1, t2] = resolveMatchTeams(f, standings, thirds, bracket);
       const live = getLiveScoreSync(t1, t2);
       const isFinished = live && live.status === "FINISHED";
       return { ...f, k, dayKey: fixtureDayKey(f), t1, t2, isFinished };
@@ -82,11 +104,8 @@ export function buildTodaySlide(now) {
     .filter((f) => f.dayKey === targetKey && !f.isFinished && f.k + EXPIRE_MS > now) // drop matches immediately after they finish
     .sort((a, b) => a.k - b.k);
 
-  const standings = getGroupStandingsSync(GROUPS_2026, FIXTURES_2026);
   const rows = dayFixtures.slice(0, MAX_ROWS).map((f) => {
-    const [r1, r2] = f.match.split(" vs ").map((s) => s.trim());
-    const t1 = resolvePlaceholder(r1, standings);
-    const t2 = resolvePlaceholder(r2, standings);
+    const t1 = f.t1, t2 = f.t2; // already resolved above
     const slug = groupSlug(f.group);
     return {
       team1: t1,
