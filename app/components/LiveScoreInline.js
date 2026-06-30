@@ -20,13 +20,21 @@ export default function LiveScoreInline({ matchStr }) {
     return <span className="fixture-vs">VS</span>;
   }
 
+  // Knockout decided on penalties: the s1-s2 score already includes extra time;
+  // append the shootout tally so e.g. a 1-1 (4-3 pens) reads correctly.
+  const hasPens = live.p1 != null && live.p2 != null;
   return (
     <span
       className="fixture-vs"
       style={{ color: isLive ? "#ff5252" : "white", fontSize: "18px", fontWeight: 900 }}
-      title={isLive ? "Live" : "Full time"}
+      title={isLive ? "Live" : hasPens ? "After penalties" : "Full time"}
     >
       {live.s1} - {live.s2}
+      {hasPens && (
+        <span style={{ fontSize: "11px", fontWeight: 700, marginLeft: 4, opacity: 0.85 }}>
+          ({live.p1}-{live.p2}&nbsp;pens)
+        </span>
+      )}
     </span>
   );
 }

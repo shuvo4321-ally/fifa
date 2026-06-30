@@ -153,7 +153,13 @@ function lookupScore(matches, team1, team2) {
     if (fwd || rev) {
       const h = m.score?.home;
       const a = m.score?.away;
-      return { status: m.status, minute: m.minute, s1: rev ? a : h, s2: rev ? h : a };
+      // Orient the winner flag + penalty tally to team1 (so "s1" === team1 won).
+      let winner = null;
+      if (m.winner === "home") winner = rev ? "s2" : "s1";
+      else if (m.winner === "away") winner = rev ? "s1" : "s2";
+      const p1 = m.pens ? (rev ? m.pens.away : m.pens.home) : null;
+      const p2 = m.pens ? (rev ? m.pens.home : m.pens.away) : null;
+      return { status: m.status, minute: m.minute, s1: rev ? a : h, s2: rev ? h : a, winner, p1, p2 };
     }
   }
   return null;
@@ -174,6 +180,26 @@ export function getLiveScoreSync(team1, team2) {
 export function getGroupStandingsSync(groups, fixtures) {
   hydrate();
   return deriveStandings(snapshot.matches, groups, fixtures);
+}
+
+// A real (non-placeholder) team name? The feed uses "Round of 32 5 Winner" etc.
+// for fixtures whose teams aren't set yet — those must not count as opponents.
+const isPlaceholderTeam = (n) => !n || /winner|loser|round of|place|tbd|3rd|runner/i.test(n);
+
+/**
+ * The actual opponent a team faces in a given knockout round, read from the
+ * feed — the source of truth for the real matchups (e.g. who a group winner
+ * actually drew as their third-placed opponent). `round` is the ESPN slug,
+ * e.g. "round-of-32". Returns null until that fixture is published.
+ */
+export function getRoundOpponentSync(teamName, round) {
+  hydrate();
+  for (const m of snapshot.matches) {
+    if (round && m.round !== round) continue;
+    if (isSameTeam(m.home, teamName) && !isPlaceholderTeam(m.away)) return m.away;
+    if (isSameTeam(m.away, teamName) && !isPlaceholderTeam(m.home)) return m.home;
+  }
+  return null;
 }
 
 // Build group tables purely from FINISHED match results — same source as the

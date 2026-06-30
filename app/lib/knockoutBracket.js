@@ -17,7 +17,8 @@
 // Nothing is hard-coded to a result; every team is read from the live table, so
 // the bracket re-shuffles the instant a standing changes.
 
-import { getLiveScoreSync } from "./liveScores";
+import { getLiveScoreSync, getRoundOpponentSync } from "./liveScores";
+import { isSameTeam } from "./teamNormalization";
 
 export const TEAM_CODES = {
   "Czechia": "CZE", "Korea Republic": "KOR", "Mexico": "MEX", "South Africa": "RSA",
@@ -87,29 +88,50 @@ function matchThirds(slots, qualGroups) {
   return slotOwner;
 }
 
-// For the schedule/calendar: maps each group WINNER's letter (the "vs 3rd"
-// matches — E,I,A,L,D,G,B,K) to the third-placed team it faces, using the SAME
-// ranking + bipartite matching as the bracket so the two never disagree.
-// Returns {} entries only for slots whose third is decidable yet.
+// Maps each group WINNER's letter (the "vs 3rd" matches — A,B,D,E,G,I,K,L) to
+// the third-placed team it faces. Prefers the ACTUAL matchup from the feed (the
+// official FIFA allocation, once the R32 fixtures are published), and falls back
+// to a bipartite assignment over the eligibility buckets before then. Used by
+// the bracket, schedule and prediction so they always agree with reality.
 export function thirdAssignmentsByWinner(standings, groups) {
-  const thirds = [];
-  for (const g of groups) {
-    const letter = g.name.replace("Group ", "");
-    const row = standings["Group " + letter]?.[2];
-    if (row && row.gp > 0) thirds.push({ letter, name: row.name, pts: row.pts, gd: row.gd, gf: row.gf });
-  }
-  thirds.sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.name.localeCompare(b.name));
-  const qualThirds = thirds.slice(0, 8);
-  const thirdNameByGroup = new Map(qualThirds.map((t) => [t.letter, t.name]));
-  const thirdSlots = R32_SPEC
-    .map((m, idx) => (m.b && m.b.third ? { idx, bucket: m.b.third } : null))
+  const flags = {};
+  for (const g of groups) for (const t of g.teams) flags[t.name] = t.flag;
+  // map a feed spelling ("Congo DR", "Cape Verde") back to our schedule name.
+  const scheduleNameOf = (feedName) => {
+    for (const n in flags) if (isSameTeam(n, feedName)) return n;
+    return feedName;
+  };
+  const slots = R32_SPEC
+    .map((m, idx) => (m.b && m.b.third ? { idx, bucket: m.b.third, winnerLetter: m.a[1] } : null))
     .filter(Boolean);
-  const slotOwner = matchThirds(thirdSlots, qualThirds.map((t) => t.letter));
+
   const out = {};
-  for (const slot of thirdSlots) {
-    const winnerLetter = R32_SPEC[slot.idx].a[1]; // "1E" → "E"
-    const g = slotOwner.get(slot.idx);
-    if (g) out[winnerLetter] = thirdNameByGroup.get(g);
+  const pending = [];
+  for (const slot of slots) {
+    const rows = standings["Group " + slot.winnerLetter];
+    const winnerName = rows && rows.some((r) => r.gp > 0) ? rows[0]?.name : null;
+    const opp = winnerName ? getRoundOpponentSync(winnerName, "round-of-32") : null;
+    if (opp) out[slot.winnerLetter] = scheduleNameOf(opp);
+    else pending.push(slot);
+  }
+
+  // Bipartite fallback for any "vs 3rd" slot the feed hasn't published yet.
+  if (pending.length) {
+    const thirds = [];
+    for (const g of groups) {
+      const letter = g.name.replace("Group ", "");
+      const row = standings["Group " + letter]?.[2];
+      if (row && row.gp > 0) thirds.push({ letter, name: row.name, pts: row.pts, gd: row.gd, gf: row.gf });
+    }
+    thirds.sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.name.localeCompare(b.name));
+    const taken = new Set(Object.values(out));
+    const qual = thirds.slice(0, 8).filter((t) => !taken.has(scheduleNameOf(t.name)));
+    const owner = matchThirds(pending.map((s) => ({ idx: s.idx, bucket: s.bucket })), qual.map((t) => t.letter));
+    const byGroup = new Map(qual.map((t) => [t.letter, t.name]));
+    for (const slot of pending) {
+      const g = owner.get(slot.idx);
+      if (g) out[slot.winnerLetter] = byGroup.get(g);
+    }
   }
   return out;
 }
@@ -124,24 +146,8 @@ export function buildBracket(standings, groups, fixtures) {
     return !!(rows && rows.some((x) => x.gp > 0));
   };
 
-  // ── Rank third-placed teams (best first). Conduct & FIFA-ranking tie-breaks
-  //    aren't available client-side, so name is the final deterministic key. ──
-  const thirds = [];
-  for (const g of groups) {
-    const letter = g.name.replace("Group ", "");
-    const row = groupRows(letter)?.[2];
-    if (row && row.gp > 0) thirds.push({ letter, name: row.name, pts: row.pts, gd: row.gd, gf: row.gf });
-  }
-  thirds.sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.name.localeCompare(b.name));
-  const qualThirds = thirds.slice(0, 8);                 // 8 best advance
-  const qualGroups = qualThirds.map((t) => t.letter);
-  const thirdNameByGroup = new Map(qualThirds.map((t) => [t.letter, t.name]));
-
-  // Assign the qualifying thirds to their slots via the official buckets.
-  const thirdSlots = R32_SPEC
-    .map((m, idx) => (m.b && m.b.third ? { idx, bucket: m.b.third } : null))
-    .filter(Boolean);
-  const slotOwner = matchThirds(thirdSlots, qualGroups);
+  // Third-place opponents — from the feed's real matchups (bipartite fallback).
+  const thirdByWinner = thirdAssignmentsByWinner(standings, groups);
 
   const resolvePos = (spec) => {
     const letter = spec[1], pos = parseInt(spec[0], 10);
@@ -151,9 +157,9 @@ export function buildBracket(standings, groups, fixtures) {
   };
   const resolveSide = (side, idx) => {
     if (typeof side === "string") return resolvePos(side);
-    // third slot
-    const g = slotOwner.get(idx);
-    if (g) return teamObj(thirdNameByGroup.get(g), flags);
+    // third slot: look it up by the group winner of this match.
+    const name = thirdByWinner[R32_SPEC[idx].a[1]];
+    if (name) return teamObj(name, flags);
     return tbdObj("3rd " + side.third.join("/"));
   };
 
@@ -161,11 +167,16 @@ export function buildBracket(standings, groups, fixtures) {
   const r32ordered = R32_SPEC.map((m, idx) => ({ s1: resolveSide(m.a, idx), s2: resolveSide(m.b, idx) }));
   const r32 = BRACKET_ORDER.map((i) => r32ordered[i]);
 
+  // Knockout has no draws: a level score is settled in extra time / penalties,
+  // so trust the feed's winner flag; fall back to goals only if it's missing.
   const winnerOf = (match) => {
     if (!match || !match.s1?.name || !match.s2?.name) return null;
     const sc = getLiveScoreSync(match.s1.name, match.s2.name);
-    if (!sc || sc.status !== "FINISHED" || sc.s1 == null || sc.s2 == null || sc.s1 === sc.s2) return null;
-    return sc.s1 > sc.s2 ? match.s1 : match.s2;
+    if (!sc || sc.status !== "FINISHED") return null;
+    if (sc.winner === "s1") return match.s1;
+    if (sc.winner === "s2") return match.s2;
+    if (sc.s1 != null && sc.s2 != null && sc.s1 !== sc.s2) return sc.s1 > sc.s2 ? match.s1 : match.s2;
+    return null;
   };
   const advance = (round) => {
     const next = [];
@@ -184,8 +195,11 @@ export function buildBracket(standings, groups, fixtures) {
   const loserOf = (match) => {
     if (!match || !match.s1?.name || !match.s2?.name) return null;
     const sc = getLiveScoreSync(match.s1.name, match.s2.name);
-    if (!sc || sc.status !== "FINISHED" || sc.s1 == null || sc.s2 == null || sc.s1 === sc.s2) return null;
-    return sc.s1 > sc.s2 ? match.s2 : match.s1;
+    if (!sc || sc.status !== "FINISHED") return null;
+    if (sc.winner === "s1") return match.s2;
+    if (sc.winner === "s2") return match.s1;
+    if (sc.s1 != null && sc.s2 != null && sc.s1 !== sc.s2) return sc.s1 > sc.s2 ? match.s2 : match.s1;
+    return null;
   };
   const thirdPlace = [{ s1: loserOf(sf[0]) || tbdObj("Loser SF1"), s2: loserOf(sf[1]) || tbdObj("Loser SF2") }];
 
