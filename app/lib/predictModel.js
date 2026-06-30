@@ -106,6 +106,10 @@ function teamStrength(s) {
     else if (first === "L") rating -= Math.min(streak, 4) * 0.8;
   }
 
+  // Quality of opposition: beating/holding clearly stronger sides (a small team
+  // upsetting a giant) is a stronger signal than flat W-D-L — bump the rating.
+  if (typeof s?.qualityBonus === "number") rating += s.qualityBonus;
+
   return {
     overall: clamp(rating, 50, 95),
     attack: s?.attack || null,    // { overall, sho, pac } from Supabase
@@ -237,6 +241,34 @@ export function confidenceFrom(coverage, margin) {
   if (coverage >= 0.5 && margin >= 0.08) return "Medium";
   if (coverage < 0.5) return "Low";
   return "Medium";
+}
+
+/**
+ * Upset potential & unpredictability — beyond who's "stronger" (ratings/Elo),
+ * how likely is the result to defy the favourite, and how much of a coin-flip is
+ * it? This is the dimension that lets a smaller side knock out a giant.
+ *
+ *   upsetChance      the UNDERDOG's chance to GO THROUGH. In a knockout a level
+ *                    game is settled in extra time / on penalties, so half the
+ *                    draw mass is a coin-flip and added in — e.g. why Paraguay
+ *                    (≈25% to advance) could eliminate Germany.
+ *   volatility 0-100 outcome entropy (how even W/D/L is) + a low-scoring premium:
+ *                    tight, few-goal games hinge on one moment, so they're more
+ *                    random. High ⇒ coin-flip, low ⇒ near-foregone.
+ */
+export function upsetMetrics({ winProbA, drawProb, winProbB }, baseline, { knockout = false } = {}) {
+  const a = Number(winProbA) || 0, d = Number(drawProb) || 0, b = Number(winProbB) || 0;
+  const dogWin = Math.min(a, b);
+  const upsetChance = Math.round(clamp(dogWin + (knockout ? d / 2 : 0), 0, 100));
+
+  const ps = [a, d, b].map((p) => p / 100).filter((p) => p > 0);
+  const entropy = ps.length ? -ps.reduce((s, p) => s + p * Math.log(p), 0) / Math.log(3) : 0; // 0..1
+  const totalGoals = (baseline?.lambdaA ?? 1.45) + (baseline?.lambdaB ?? 1.45);
+  const lowGoal = clamp((3.0 - totalGoals) / 3.0, 0, 1); // few goals ⇒ higher variance
+  const volatility = Math.round(clamp(100 * (0.7 * entropy + 0.3 * lowGoal), 0, 100));
+
+  const unpredictability = volatility >= 66 ? "High" : volatility >= 38 ? "Medium" : "Low";
+  return { upsetChance, volatility, unpredictability };
 }
 
 /** Pick the favourite implied by a probability triple. */
