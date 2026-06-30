@@ -55,28 +55,32 @@ export default function Calendar() {
     return spec;
   };
 
+  // Resolve a fixture's two teams: group winner/runner-up, the actual third-place
+  // opponent, and R16+ advancing winners. Used for the row display AND the
+  // scorecard modal so both show real teams instead of "I1 / 3rd C/D/F/G/H".
+  const resolveTeams = (fixture) => {
+    const matchStr = typeof fixture === "string" ? fixture : fixture.match;
+    const [raw1, raw2] = (matchStr || "").split(" vs ").map((s) => s.trim());
+    let team1 = resolveSlot(raw1), team2 = resolveSlot(raw2);
+    const ref = typeof fixture === "object" ? fixture.ref : null;
+    if (ref) {
+      const m = bracket.rounds?.[ref.round]?.[ref.i];
+      if (m?.s1 && !m.s1.tbd) team1 = m.s1.name;
+      if (m?.s2 && !m.s2.tbd) team2 = m.s2.name;
+    } else {
+      const w1 = raw1.match(/^([A-L])1$/), w2 = raw2.match(/^([A-L])1$/);
+      if (w1 && /^3rd/i.test(raw2) && thirds[w1[1]]) team2 = thirds[w1[1]];
+      else if (w2 && /^3rd/i.test(raw1) && thirds[w2[1]]) team1 = thirds[w2[1]];
+    }
+    return [team1, team2];
+  };
+
   const renderMatchWithFlags = (fixture) => {
     const matchStr = typeof fixture === "string" ? fixture : fixture.match;
     if (!matchStr.includes(" vs "))
       return <span className="fixture-tbd">{matchStr}</span>;
 
-    const [raw1, raw2] = matchStr.split(" vs ").map((s) => s.trim());
-    let team1 = resolveSlot(raw1);
-    let team2 = resolveSlot(raw2);
-    const ref = typeof fixture === "object" ? fixture.ref : null;
-    if (ref) {
-      // R16+ : show the advanced winners once each round's results land,
-      // otherwise the "Winner N" label stays.
-      const m = bracket.rounds?.[ref.round]?.[ref.i];
-      if (m?.s1 && !m.s1.tbd) team1 = m.s1.name;
-      if (m?.s2 && !m.s2.tbd) team2 = m.s2.name;
-    } else {
-      // "E1 vs 3rd A/B/C/D/F": fill the third-place side from the bracket's
-      // assignment (group winner is always the non-"3rd" side).
-      const w1 = raw1.match(/^([A-L])1$/), w2 = raw2.match(/^([A-L])1$/);
-      if (w1 && /^3rd/i.test(raw2) && thirds[w1[1]]) team2 = thirds[w1[1]];
-      else if (w2 && /^3rd/i.test(raw1) && thirds[w2[1]]) team1 = thirds[w2[1]];
-    }
+    const [team1, team2] = resolveTeams(fixture);
     const flag1 = getFlag(team1);
     const flag2 = getFlag(team2);
 
@@ -171,7 +175,7 @@ export default function Calendar() {
                                 className={`fixture-row-mini ${fixture.match.includes(" vs ") ? "clickable" : ""}`}
                                 onClick={() => {
                                   if (fixture.match.includes(" vs ")) {
-                                    setSelectedFixture({ ...fixture, flag1, flag2 });
+                                    { const [rt1, rt2] = resolveTeams(fixture); setSelectedFixture({ ...fixture, match: `${rt1} vs ${rt2}`, flag1: getFlag(rt1), flag2: getFlag(rt2) }); }
                                   }
                                 }}
                               >
@@ -212,7 +216,7 @@ export default function Calendar() {
                     className={`fixture-row ${fixture.match.includes(" vs ") ? "clickable" : ""}`}
                     onClick={() => {
                       if (fixture.match.includes(" vs ")) {
-                        setSelectedFixture({ ...fixture, flag1, flag2 });
+                        { const [rt1, rt2] = resolveTeams(fixture); setSelectedFixture({ ...fixture, match: `${rt1} vs ${rt2}`, flag1: getFlag(rt1), flag2: getFlag(rt2) }); }
                       }
                     }}
                   >
