@@ -36,6 +36,10 @@ async function fromEspn() {
         (st.shortDetail || "").trim().toUpperCase() === "HT";
       status = ht ? "PAUSED" : "IN_PLAY";
     } else if (st.state === "post") status = "FINISHED";
+    // Knockout matches can't draw — they're settled in extra time or on
+    // penalties. ESPN's `winner` flag marks the actual winner regardless of how
+    // (90'/ET/shootout); `shootoutScore` carries the penalty tally when present.
+    const hasPens = home?.shootoutScore != null || away?.shootoutScore != null;
     return {
       home: home?.team?.displayName || "",
       away: away?.team?.displayName || "",
@@ -44,6 +48,17 @@ async function fromEspn() {
         home: home?.score != null ? Number(home.score) : null,
         away: away?.score != null ? Number(away.score) : null,
       },
+      winner: home?.winner === true ? "home" : away?.winner === true ? "away" : null,
+      pens: hasPens
+        ? {
+            home: home?.shootoutScore != null ? Number(home.shootoutScore) : null,
+            away: away?.shootoutScore != null ? Number(away.shootoutScore) : null,
+          }
+        : null,
+      // ESPN tags the round here ("round-of-32", "round-of-16", …) — the source
+      // of truth for the ACTUAL knockout matchups (incl. third-place allocation).
+      round: e?.season?.slug || null,
+      note: comp?.notes?.[0]?.headline || null,
       minute: st.shortDetail || null,
       utcDate: e?.date || null,
     };
