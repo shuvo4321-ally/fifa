@@ -10,6 +10,7 @@ import {
   confidenceFrom,
   favoriteFrom,
   scoreMatchesFavorite,
+  upsetMetrics,
 } from "../../lib/predictModel";
 
 export const dynamic = "force-dynamic";
@@ -110,7 +111,7 @@ function buildBasis(signalA, signalB) {
  * Blends probabilities, recomputes favourite + confidence from the grounded
  * numbers, keeps the scoreline only if consistent, and attaches trust signals.
  */
-function groundPrediction(parsed, baseline, signalA, signalB, teams) {
+function groundPrediction(parsed, baseline, signalA, signalB, teams, knockout = false) {
   if (!baseline) {
     // No baseline (e.g. couldn't parse two teams) — just normalise to 100.
     const a = Number(parsed.winProbA) || 0;
@@ -144,6 +145,27 @@ function groundPrediction(parsed, baseline, signalA, signalB, teams) {
   // Derive favourite + confidence from the grounded numbers (not the LLM's self-report).
   parsed.favorite = favoriteFrom(blended, parsed.teamA, parsed.teamB);
   parsed.confidence = confidenceFrom(baseline.coverage, marginOf(blended));
+
+  // Upset potential / unpredictability — the variance dimension beyond strength.
+  const um = upsetMetrics(blended, baseline, { knockout });
+  parsed.upsetChance = um.upsetChance;
+  parsed.volatility = um.volatility;
+  parsed.unpredictability = um.unpredictability;
+
+  // Knockout has no draws: a level game is settled in extra time / on penalties
+  // (≈ a coin-flip). Convert the draw mass into who ADVANCES and re-derive the
+  // favourite + confidence from the go-through odds, not the 90-minute result.
+  parsed.knockout = !!knockout;
+  if (knockout) {
+    const advA = Math.round(Math.max(0, Math.min(100, blended.winProbA + blended.drawProb / 2)));
+    parsed.advanceA = advA;
+    parsed.advanceB = 100 - advA;
+    parsed.favorite = advA >= parsed.advanceB ? parsed.teamA : parsed.teamB;
+    parsed.confidence = confidenceFrom(baseline.coverage, Math.abs(advA - parsed.advanceB) / 100);
+    // Flag a level predicted scoreline so the UI can mark "→ penalties".
+    const sm = /^(\d+)\s*-\s*(\d+)$/.exec((parsed.predictedScore || "").trim());
+    parsed.toPenalties = !!(sm && sm[1] === sm[2]);
+  }
 
   // Keep the LLM's scoreline if it's reasonable (matches the favourite direction).
   // Only fall back to the baseline score when the LLM's score contradicts the data.
@@ -190,7 +212,7 @@ export async function POST(request) {
     return Response.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const { type, match, message } = body || {};
+  const { type, match, message, knockout = false } = body || {};
 
   let userPrompt = "";
   let liveDataStr = "";
@@ -261,15 +283,19 @@ export async function POST(request) {
       ? `\n🚨 LATEST BREAKING NEWS & RECENT FORM (HIGHEST PRIORITY):\n${webNewsStr}\n`
       : "";
 
+    const upset = baseline
+      ? upsetMetrics({ winProbA: baseline.winA, drawProb: baseline.draw, winProbB: baseline.winB }, baseline, { knockout })
+      : null;
     const baselineBlock = baseline
       ? `\n📊 STATISTICAL BASELINE (computed from squad ratings + recent form — ANCHOR your probabilities to this):
 - ${teams[0]} win ${baseline.winA}% | Draw ${baseline.draw}% | ${teams[1]} win ${baseline.winB}%
 - Model expected scoreline: ${baseline.score}
 - Composite strength: ${teams[0]} ${baseline.ratingA}, ${teams[1]} ${baseline.ratingB}
-Stay within ~10-15% of these numbers unless the breaking news clearly justifies more, and do not flip the favourite without strong justification.\n`
+- Upset potential: underdog ~${upset.upsetChance}% to ${knockout ? "advance" : "win"}, volatility ${upset.volatility}/100 (${upset.unpredictability} unpredictability)${knockout ? " — knockout: a draw goes to extra time/penalties, a near coin-flip" : ""}
+Stay within ~10-15% of these numbers unless the breaking news clearly justifies more, and do not flip the favourite without strong justification. When volatility is high, acknowledge the genuine upset risk in your verdict.\n`
       : "";
 
-    userPrompt = `Predict this FIFA World Cup 2026 match: ${match}
+    userPrompt = `Predict this FIFA World Cup 2026 ${knockout ? "KNOCKOUT (single-leg; if level after 90 mins it goes to extra time then a penalty shootout — a near coin-flip that lets underdogs through)" : "group-stage"} match: ${match}
 ${newsContext}${baselineBlock}
 LIVE RAG Data (current squads, coaches, ages, recent form, player ratings, World Football Elo Ratings):
 ${liveDataStr}
@@ -378,7 +404,7 @@ CRITICAL RULES FOR PREDICTIONS:
         const parsed = safeParseJson(text);
         if (parsed && parsed.teamA) {
           // Ground the LLM's narrative in the deterministic baseline.
-          groundPrediction(parsed, baseline, signalA, signalB, teams);
+          groundPrediction(parsed, baseline, signalA, signalB, teams, knockout);
 
           if (supabase && match) {
             await supabase

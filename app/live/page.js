@@ -111,10 +111,12 @@ export default function PredictionHub() {
     setLoading(false);
   }, []);
 
-  const handlePredict = useCallback(async (fixture) => {
+  const handlePredict = useCallback(async (fixture, knockoutArg = false) => {
     const matchStr = typeof fixture === "string" ? fixture : (fixture.resolvedMatch || fixture.match);
+    // Knockout → a draw is decided in ET/penalties, so upset potential is higher.
+    const knockout = typeof fixture === "object" ? (fixture.stage && fixture.stage !== "Group Stage") : knockoutArg;
     setActiveMatch(matchStr);
-    if (fixture && fixture.date) setActiveMeta({ date: fixture.date, group: fixture.group });
+    if (fixture && fixture.date) setActiveMeta({ date: fixture.date, group: fixture.group, knockout });
     setPrediction(null);
     setPredictionText("");
     setError("");
@@ -123,7 +125,7 @@ export default function PredictionHub() {
       const res = await fetch("/api/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "predict", match: matchStr }),
+        body: JSON.stringify({ type: "predict", match: matchStr, knockout }),
       });
       // Parse defensively: on a serverless timeout/crash the platform returns an
       // HTML error page, not JSON. Reading text first lets us show a clear,
@@ -210,7 +212,7 @@ export default function PredictionHub() {
           prediction={prediction}
           predictionText={predictionText}
           onClose={closeModal}
-          onRetry={() => handlePredict(activeMatch)}
+          onRetry={() => handlePredict(activeMatch, activeMeta?.knockout)}
         />
       )}
     </div>
@@ -284,7 +286,7 @@ function PredictionCard({ p }) {
         <span className={`pred-score-team${favA ? " is-fav" : ""}`}>
           <FlagImg src={getFlag(p.teamA)} className="pred-score-flag" />
         </span>
-        <span className="pred-scoreline">{p.predictedScore}</span>
+        <span className="pred-scoreline">{p.predictedScore}{p.toPenalties ? <span style={{ fontSize: 12, fontWeight: 700, opacity: 0.85 }}>&nbsp;→ pens</span> : ""}</span>
         <span className={`pred-score-team pred-score-team--right${favB ? " is-fav" : ""}`}>
           <FlagImg src={getFlag(p.teamB)} className="pred-score-flag" />
         </span>
@@ -297,6 +299,27 @@ function PredictionCard({ p }) {
         </span>
         <span className={`pred-conf pred-conf--${conf}`}>{p.confidence} confidence</span>
       </div>
+
+      {p.knockout && p.advanceA != null && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", margin: "4px 0", fontSize: 13 }}>
+          <span style={{ color: "#9ea2a4" }}>⚑ To advance</span>
+          <b style={{ color: "#fff" }}>{p.teamA} {p.advanceA}%</b>
+          <span style={{ color: "#9ea2a4" }}>·</span>
+          <b style={{ color: "#fff" }}>{p.teamB} {p.advanceB}%</b>
+          <span style={{ color: "#9ea2a4", fontSize: 12 }}>(incl. penalties)</span>
+        </div>
+      )}
+
+      {p.upsetChance != null && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", margin: "4px 0", fontSize: 13 }}>
+          <span style={{ color: "#9ea2a4" }}>🎲 Upset potential</span>
+          <b style={{ color: "#fde047" }}>{p.upsetChance}%</b>
+          <span style={{ color: "#9ea2a4" }}>· volatility</span>
+          <span style={{ fontWeight: 700, color: p.unpredictability === "High" ? "#ff6b6b" : p.unpredictability === "Medium" ? "#fbbf24" : "#3ddc84" }}>
+            {p.unpredictability} ({p.volatility}/100)
+          </span>
+        </div>
+      )}
 
       {p.basis && <p className="pred-basis">{p.basis}</p>}
 

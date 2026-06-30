@@ -5,6 +5,8 @@
 import { findRapidTeam, getRapidSquad, getRapidRecentStats, getRapidTeamStatistics } from "./apiFootball.js";
 import { supabase } from "./supabase.js";
 import { getWcStandings, lookupWcRecord } from "./wcStandings.js";
+import { canonicalTeam, isSameTeam } from "./teamNormalization.js";
+import { getAllWcMatches } from "./wcMatches.js";
 
 // ── In-memory cache ──
 const cache = new Map();
@@ -22,27 +24,77 @@ function setCache(key, data) {
 
 // ── Public API ──
 
+// All squad rows, cached. The `country` column spells some teams differently
+// from our schedule names with no substring overlap (e.g. "Côte D'Ivoire" for
+// Ivory Coast), so we match on the CANONICAL key — which collapses every known
+// spelling to one — instead of a brittle ilike substring.
+let allTeamsCache = null;
+async function getAllSupabaseTeams() {
+  if (allTeamsCache && Date.now() - allTeamsCache.ts < CACHE_TTL) return allTeamsCache.data;
+  if (!supabase) return [];
+  const { data, error } = await supabase.from('fifa_wc26_prediction').select('*');
+  if (error || !data) return allTeamsCache?.data || [];
+  allTeamsCache = { data, ts: Date.now() };
+  return data;
+}
+
 export async function getSupabaseTeam(teamName) {
   if (!supabase) return null;
-  const n = teamName.toLowerCase().trim();
-  const { data, error } = await supabase
-    .from('fifa_wc26_prediction')
-    .select('*')
-    .ilike('country', `%${n}%`)
-    .limit(1);
-  if (!error && data && data.length > 0) return data[0];
-  return null;
+  const all = await getAllSupabaseTeams();
+  const key = canonicalTeam(teamName);
+  return all.find((row) => canonicalTeam(row.country) === key) || null;
+}
+
+// Elo (and squad rating) by canonical name, for opponent-quality scoring.
+async function eloByCanonical() {
+  const all = await getAllSupabaseTeams();
+  const map = {};
+  for (const row of all) {
+    const e = Number(row?.metrics?.elo);
+    if (!Number.isNaN(e)) map[canonicalTeam(row.country)] = e;
+  }
+  return map;
+}
+
+/**
+ * "Signature results" — wins or draws against clearly STRONGER opponents (by
+ * Elo) in the World Cup so far. Beating a giant (Paraguay over Germany) or
+ * holding one is a real form signal that flat win/draw/loss totals miss. Returns
+ * a small rating bonus + the notable results for the prompt.
+ */
+function signatureResults(teamName, ownElo, wcMatches, eloMap) {
+  if (!ownElo) return { bonus: 0, results: [] };
+  const results = [];
+  for (const m of wcMatches) {
+    if (m.status !== "FINISHED" || m.score?.home == null || m.score?.away == null) continue;
+    let opp, my, op;
+    if (isSameTeam(m.home, teamName)) { opp = m.away; my = m.score.home; op = m.score.away; }
+    else if (isSameTeam(m.away, teamName)) { opp = m.home; my = m.score.away; op = m.score.home; }
+    else continue;
+    const oppElo = eloMap[canonicalTeam(opp)];
+    if (!oppElo) continue;
+    const gap = oppElo - ownElo; // > 0 ⇒ opponent was the stronger side
+    if (gap < 40) continue;
+    if (my > op) results.push({ opp, oppElo, gap, kind: "beat" });
+    else if (my === op) results.push({ opp, oppElo, gap, kind: "drew" });
+  }
+  let bonus = 0;
+  for (const r of results) bonus += (r.kind === "beat" ? 1 : 0.5) * Math.min(r.gap, 350) / 180;
+  return { bonus: Math.min(bonus, 4.5), results };
 }
 
 /** Build a rich RAG context string + signals for a match. */
 export async function buildMatchAnalysis(team1Name, team2Name) {
-  const [rapidTeam1, rapidTeam2, supaTeam1, supaTeam2, wcStandings] = await Promise.all([
+  const [rapidTeam1, rapidTeam2, supaTeam1, supaTeam2, wcStandings, wcData, eloMap] = await Promise.all([
     findRapidTeam(team1Name),
     findRapidTeam(team2Name),
     getSupabaseTeam(team1Name),
     getSupabaseTeam(team2Name),
-    getWcStandings()
+    getWcStandings(),
+    getAllWcMatches(),
+    eloByCanonical(),
   ]);
+  const wcMatches = wcData?.matches || [];
 
   const parts = [];
   const signals = [];
@@ -234,6 +286,16 @@ export async function buildMatchAnalysis(team1Name, team2Name) {
         ...Array(wcRec.l).fill("L"),
       ];
       section += `\n**World Cup group form:** ${wcRec.w}W ${wcRec.d}D ${wcRec.l}L — GF ${wcRec.gf}, GA ${wcRec.ga}, GD ${wcRec.gd > 0 ? "+" : ""}${wcRec.gd}, ${wcRec.pts} pts\n`;
+    }
+
+    // ── Signature results: wins/draws vs clearly stronger sides (by Elo) ──
+    const sig = signatureResults(name, signal.elo, wcMatches, eloMap);
+    signal.qualityBonus = sig.bonus;
+    if (sig.results.length) {
+      signal.bigResults = sig.results;
+      section += `\n**Signature results (form vs stronger teams):** ${sig.results
+        .map((r) => `${r.kind} ${r.opp} (Elo ${r.oppElo}, +${Math.round(r.gap)} stronger)`)
+        .join("; ")} — a genuine quality/upset signal beyond their W-D-L.\n`;
     }
 
     parts.push(section);
