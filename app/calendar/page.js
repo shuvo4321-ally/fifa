@@ -35,6 +35,19 @@ export default function Calendar() {
     return () => clearTimeout(t);
   }, []);
 
+  // Deep-link from the home hero: /calendar?match=<index> opens that fixture's
+  // scorecard popup directly, same as clicking its row.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const idx = params.get("match");
+    if (idx == null) return;
+    const fixture = FIXTURES_2026[Number(idx)];
+    if (!fixture || !fixture.match.includes(" vs ")) return;
+    setActiveStage(fixture.stage);
+    const [rt1, rt2] = resolveTeams(fixture);
+    setSelectedFixture({ ...fixture, match: `${rt1} vs ${rt2}`, flag1: getFlag(rt1), flag2: getFlag(rt2) });
+  }, []);
+
   const filteredFixtures = FIXTURES_2026.filter(f => f.stage === activeStage);
 
   const getFlag = (teamName) => {

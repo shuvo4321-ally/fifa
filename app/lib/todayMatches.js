@@ -81,13 +81,14 @@ export function buildTodaySlide(now) {
   const bracket = buildBracket(standings, GROUPS_2026, FIXTURES_2026);
 
   const fixtures = FIXTURES_2026
-    .filter((f) => f.match.includes(" vs "))
-    .map((f) => {
+    .map((f, idx) => ({ f, idx }))
+    .filter(({ f }) => f.match.includes(" vs "))
+    .map(({ f, idx }) => {
       const k = kickoffMs(f);
       const [t1, t2] = resolveMatchTeams(f, standings, thirds, bracket);
       const live = getLiveScoreSync(t1, t2);
       const isFinished = live && live.status === "FINISHED";
-      return { ...f, k, dayKey: fixtureDayKey(f), t1, t2, isFinished };
+      return { ...f, idx, k, dayKey: fixtureDayKey(f), t1, t2, isFinished };
     })
     .filter((f) => !Number.isNaN(f.k) && f.dayKey);
   if (fixtures.length === 0) return null;
@@ -114,8 +115,8 @@ export function buildTodaySlide(now) {
       flag2: getFlag(t2),
       time: f.time,
       over: f.k + MATCH_OVER_MS < now,
-      // Deep-link straight to this match's group table on the schedule page.
-      href: slug ? `/calendar#${slug}` : "/calendar",
+      // Deep-link to the schedule page and auto-open this match's scorecard popup.
+      href: `/calendar?match=${f.idx}${slug ? `#${slug}` : ""}`,
     };
   });
 
