@@ -21,5 +21,24 @@ export const TV_CHANNELS = [
     kid: "adca25b8779e4168a0cd710f59f61ccf",
     key: "be5383ed3cd8079f4ffe78ad067f476a",
     no_proxy: false
+  },
+  {
+    name: "TSN SPORTS HD",
+    logo: "https://www.bellmedia.ca/lede/wp-content/uploads/2024/09/18581592_10155403529061055_8240563011649656197_n.jpg",
+    group: "TSN",
+    url: "https://lb.xyzcloud3.xyz/tsn1/index.m3u8?",
+    type: "hls",
+    no_proxy: false,
+    referer: "https://xyzstreams.st/"
+  },
+  {
+    name: "HD SERVER ENG",
+    logo: "",
+    group: "HD",
+    url: "https://edgestreams.pro/hls/24SDAZFcsqnj24.m3u8?",
+    type: "hls",
+    no_proxy: false,
+    referer: "https://streamscenter.online/",
+    origin: "https://streamscenter.online"
   }
 ];
