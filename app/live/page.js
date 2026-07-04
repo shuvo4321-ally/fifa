@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { FIXTURES_2026, GROUPS_2026 } from "../data/schedule2026";
 import { getLiveScoreSync, useGroupStandings } from "../lib/liveScores";
-import { thirdAssignmentsByWinner } from "../lib/knockoutBracket";
+import { thirdAssignmentsByWinner, buildBracket } from "../lib/knockoutBracket";
 
 // Build a name → flag lookup once from the group data.
 const FLAGS = {};
@@ -59,6 +59,10 @@ export default function PredictionHub() {
   // so the list re-renders the instant a result lands).
   const standings = useGroupStandings(GROUPS_2026, FIXTURES_2026);
   const thirds = thirdAssignmentsByWinner(standings, GROUPS_2026);
+  // Full bracket with winner advancement (R32 → R16 → QF → SF → Final), used to
+  // resolve R16+ fixtures live as each round's results land — same source the
+  // calendar and home hero use, so none of them can disagree.
+  const bracket = buildBracket(standings, GROUPS_2026, FIXTURES_2026);
 
   // Resolve knockout placeholders to the live teams: "B1" = Group B winner,
   // "D2" = runner-up, "E1 vs 3rd …" = winner vs the bracket-assigned third.
@@ -69,12 +73,23 @@ export default function PredictionHub() {
     if (rows && rows.some((r) => r.gp > 0)) return rows[Number(m[2]) - 1]?.name || spec;
     return spec;
   };
-  const resolveMatch = (matchStr) => {
+  // Resolve a fixture's two teams, including R16+ ("Winner 73 vs Winner 75")
+  // and the third-place match, via the bracket's live advancement — not just
+  // the R32-level group-slot placeholders.
+  const resolveMatch = (fixture) => {
+    const matchStr = typeof fixture === "string" ? fixture : fixture.match;
     const [r1, r2] = splitMatch(matchStr);
     let t1 = resolveSlot(r1), t2 = resolveSlot(r2);
-    const w1 = r1.match(/^([A-L])1$/), w2 = r2.match(/^([A-L])1$/);
-    if (w1 && /^3rd/i.test(r2) && thirds[w1[1]]) t2 = thirds[w1[1]];
-    else if (w2 && /^3rd/i.test(r1) && thirds[w2[1]]) t1 = thirds[w2[1]];
+    const ref = typeof fixture === "object" ? fixture.ref : null;
+    if (ref) {
+      const m = bracket.rounds?.[ref.round]?.[ref.i];
+      if (m?.s1 && !m.s1.tbd) t1 = m.s1.name;
+      if (m?.s2 && !m.s2.tbd) t2 = m.s2.name;
+    } else {
+      const w1 = r1.match(/^([A-L])1$/), w2 = r2.match(/^([A-L])1$/);
+      if (w1 && /^3rd/i.test(r2) && thirds[w1[1]]) t2 = thirds[w1[1]];
+      else if (w2 && /^3rd/i.test(r1) && thirds[w2[1]]) t1 = thirds[w2[1]];
+    }
     return [t1, t2];
   };
 
@@ -84,7 +99,7 @@ export default function PredictionHub() {
   const upcomingFixtures = FIXTURES_2026
     .filter((f) => f.match.includes(" vs ") && !hasFixtureStarted(f, now))
     .map((f) => {
-      const [t1, t2] = resolveMatch(f.match);
+      const [t1, t2] = resolveMatch(f);
       return { ...f, t1, t2, resolvedMatch: `${t1} vs ${t2}` };
     })
     .filter((f) => {
