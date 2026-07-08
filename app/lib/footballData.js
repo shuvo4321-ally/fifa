@@ -4,9 +4,52 @@
  */
 import { findRapidTeam, getRapidSquad, getRapidRecentStats, getRapidTeamStatistics } from "./apiFootball.js";
 import { supabase } from "./supabase.js";
-import { getWcStandings, lookupWcRecord } from "./wcStandings.js";
 import { canonicalTeam, isSameTeam } from "./teamNormalization.js";
 import { getAllWcMatches } from "./wcMatches.js";
+
+// A knockout round per ESPN's `season.slug` tag; anything else (incl. null,
+// which covers the group stage) is treated as a group match.
+const isKnockoutRound = (round) => /round-of|quarterfinal|semifinal|\bfinal\b|third-place/i.test(round || "");
+
+/**
+ * A team's full World Cup record so far — group AND knockout — read straight
+ * from the match feed instead of the group-standings endpoint (which freezes
+ * at group W/D/L and never reflects R32+ results once the group stage ends).
+ * Knockout games can't draw: a level scoreline there is decided in ET/pens, so
+ * `winner` (not raw goals) decides W/L for those.
+ */
+function computeWcForm(teamName, wcMatches) {
+  const played = [];
+  for (const m of wcMatches) {
+    if (m.status !== "FINISHED" || m.score?.home == null || m.score?.away == null) continue;
+    let isHome;
+    if (isSameTeam(m.home, teamName)) isHome = true;
+    else if (isSameTeam(m.away, teamName)) isHome = false;
+    else continue;
+    const myG = isHome ? m.score.home : m.score.away;
+    const oppG = isHome ? m.score.away : m.score.home;
+    const opp = isHome ? m.away : m.home;
+    let result;
+    if (isKnockoutRound(m.round) && m.winner) {
+      result = m.winner === (isHome ? "home" : "away") ? "W" : "L";
+    } else {
+      result = myG === oppG ? "D" : myG > oppG ? "W" : "L";
+    }
+    played.push({ date: m.utcDate, opp, myG, oppG, result, round: m.round });
+  }
+  played.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+  let w = 0, d = 0, l = 0, gf = 0, ga = 0;
+  const outcomes = [];
+  for (const p of played) {
+    if (p.result === "W") w++;
+    else if (p.result === "D") d++;
+    else l++;
+    gf += p.myG;
+    ga += p.oppG;
+    outcomes.push(p.result);
+  }
+  return { w, d, l, gf, ga, played: played.length, outcomes, matches: played };
+}
 
 // ── In-memory cache ──
 const cache = new Map();
@@ -85,12 +128,11 @@ function signatureResults(teamName, ownElo, wcMatches, eloMap) {
 
 /** Build a rich RAG context string + signals for a match. */
 export async function buildMatchAnalysis(team1Name, team2Name) {
-  const [rapidTeam1, rapidTeam2, supaTeam1, supaTeam2, wcStandings, wcData, eloMap] = await Promise.all([
+  const [rapidTeam1, rapidTeam2, supaTeam1, supaTeam2, wcData, eloMap] = await Promise.all([
     findRapidTeam(team1Name),
     findRapidTeam(team2Name),
     getSupabaseTeam(team1Name),
     getSupabaseTeam(team2Name),
-    getWcStandings(),
     getAllWcMatches(),
     eloByCanonical(),
   ]);
@@ -274,18 +316,21 @@ export async function buildMatchAnalysis(team1Name, team2Name) {
       }
     }
 
-    // ── Actual World Cup form (highest priority) ──
-    const wcRec = lookupWcRecord(wcStandings, name);
-    if (wcRec && wcRec.gp > 0) {
-      signal.form = { w: wcRec.w, d: wcRec.d, l: wcRec.l, played: wcRec.gp };
-      signal.gf = wcRec.gf;
-      signal.ga = wcRec.ga;
-      signal.outcomes = [
-        ...Array(wcRec.w).fill("W"),
-        ...Array(wcRec.d).fill("D"),
-        ...Array(wcRec.l).fill("L"),
-      ];
-      section += `\n**World Cup group form:** ${wcRec.w}W ${wcRec.d}D ${wcRec.l}L — GF ${wcRec.gf}, GA ${wcRec.ga}, GD ${wcRec.gd > 0 ? "+" : ""}${wcRec.gd}, ${wcRec.pts} pts\n`;
+    // ── Actual World Cup form (highest priority) — group AND knockout results
+    //    played so far, not just the frozen group-stage table. ──
+    const wcForm = computeWcForm(name, wcMatches);
+    if (wcForm.played > 0) {
+      signal.form = { w: wcForm.w, d: wcForm.d, l: wcForm.l, played: wcForm.played };
+      signal.gf = wcForm.gf;
+      signal.ga = wcForm.ga;
+      signal.outcomes = wcForm.outcomes;
+      section += `\n**World Cup form (all rounds so far):** ${wcForm.w}W ${wcForm.d}D ${wcForm.l}L — GF ${wcForm.gf}, GA ${wcForm.ga}\n`;
+      const koResults = wcForm.matches.filter((m) => isKnockoutRound(m.round));
+      if (koResults.length) {
+        section += `**Knockout run:** ${koResults
+          .map((m) => `${m.result} ${m.myG}-${m.oppG} vs ${m.opp} (${m.round})`)
+          .join("; ")}\n`;
+      }
     }
 
     // ── Signature results: wins/draws vs clearly stronger sides (by Elo) ──
