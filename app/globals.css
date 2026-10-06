@@ -3615,6 +3615,57 @@ a.search-result:hover {
   border-radius: 100px;
 }
 
+.livetv-search {
+  width: 100%;
+  max-width: 360px;
+  margin-bottom: var(--space-4);
+  padding: 10px 14px;
+  font: inherit;
+  color: #fff;
+  background: var(--color-surface-raised);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+}
+
+.livetv-search:focus {
+  outline: none;
+  border-color: var(--brand-yellow);
+}
+
+.livetv-groups {
+  display: flex;
+  gap: var(--space-3);
+  overflow-x: auto;
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-5);
+  scrollbar-width: thin;
+}
+
+.livetv-group {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text-tertiary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 100px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.livetv-group.is-active {
+  color: #0a0a0a;
+  background: var(--brand-yellow);
+  border-color: var(--brand-yellow);
+}
+
+.livetv-group-n {
+  opacity: 0.6;
+  font-weight: 600;
+}
+
 /* Live TV — mobile */
 @media (max-width: 640px) {
   .livetv-stage {

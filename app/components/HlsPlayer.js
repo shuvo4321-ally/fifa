@@ -248,7 +248,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
       // fall back to NATIVE HLS when hls.js can't run (iOS Safari) — Chromium
       // reports canPlayType("…mpegurl")="maybe" but can't actually play it, so
       // checking native first wrongly sent it down a dead path.
-      if (Hls.isSupported()) {
+      if (Hls.isSupported() && streamType !== "native") {
         const hls = new Hls({
           enableWorker: true,
           lowLatencyMode: true,
@@ -291,7 +291,7 @@ export default function HlsPlayer({ src, poster, onFullscreen, onPrev, onNext, s
           scheduleReconnect();
         });
       } else {
-        // Native HLS (iOS Safari) — also through the proxy.
+        // Native HLS (iOS Safari) or a plain media stream (e.g. radio).
         video.src = streamSrc;
       }
     }
